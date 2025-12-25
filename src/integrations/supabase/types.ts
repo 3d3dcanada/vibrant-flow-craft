@@ -14,7 +14,601 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      achievements: {
+        Row: {
+          created_at: string
+          description: string
+          icon: string | null
+          id: string
+          name: string
+          points_reward: number | null
+          type: Database["public"]["Enums"]["achievement_type"]
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          icon?: string | null
+          id?: string
+          name: string
+          points_reward?: number | null
+          type: Database["public"]["Enums"]["achievement_type"]
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          icon?: string | null
+          id?: string
+          name?: string
+          points_reward?: number | null
+          type?: Database["public"]["Enums"]["achievement_type"]
+        }
+        Relationships: []
+      }
+      coupon_usage: {
+        Row: {
+          coupon_id: string
+          id: string
+          order_id: string | null
+          used_at: string
+          user_id: string
+        }
+        Insert: {
+          coupon_id: string
+          id?: string
+          order_id?: string | null
+          used_at?: string
+          user_id: string
+        }
+        Update: {
+          coupon_id?: string
+          id?: string
+          order_id?: string | null
+          used_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_usage_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupons: {
+        Row: {
+          code: string
+          created_at: string
+          current_uses: number | null
+          discount_type: string
+          discount_value: number
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+          min_purchase_cad: number | null
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          current_uses?: number | null
+          discount_type: string
+          discount_value: number
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          min_purchase_cad?: number | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          current_uses?: number | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          min_purchase_cad?: number | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
+      creator_models: {
+        Row: {
+          category: string | null
+          created_at: string
+          creator_id: string
+          description: string | null
+          download_count: number | null
+          file_url: string | null
+          id: string
+          is_active: boolean | null
+          is_approved: boolean | null
+          name: string
+          price_credits: number | null
+          print_count: number | null
+          revenue_share_percent: number | null
+          thumbnail_url: string | null
+          total_earnings_credits: number | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          download_count?: number | null
+          file_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_approved?: boolean | null
+          name: string
+          price_credits?: number | null
+          print_count?: number | null
+          revenue_share_percent?: number | null
+          thumbnail_url?: string | null
+          total_earnings_credits?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          download_count?: number | null
+          file_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_approved?: boolean | null
+          name?: string
+          price_credits?: number | null
+          print_count?: number | null
+          revenue_share_percent?: number | null
+          thumbnail_url?: string | null
+          total_earnings_credits?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      credit_transactions: {
+        Row: {
+          amount: number
+          balance_after: number
+          created_at: string
+          description: string | null
+          id: string
+          reference_id: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          balance_after: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      credit_wallets: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          lifetime_earned: number
+          lifetime_spent: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          lifetime_earned?: number
+          lifetime_spent?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          lifetime_earned?: number
+          lifetime_spent?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      gift_cards: {
+        Row: {
+          code: string
+          created_at: string
+          credits_value: number
+          expires_at: string | null
+          id: string
+          is_redeemed: boolean | null
+          price_cad: number
+          purchased_by: string | null
+          redeemed_at: string | null
+          redeemed_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          credits_value: number
+          expires_at?: string | null
+          id?: string
+          is_redeemed?: boolean | null
+          price_cad: number
+          purchased_by?: string | null
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          credits_value?: number
+          expires_at?: string | null
+          id?: string
+          is_redeemed?: boolean | null
+          price_cad?: number
+          purchased_by?: string | null
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+        }
+        Relationships: []
+      }
+      point_transactions: {
+        Row: {
+          activity_type: Database["public"]["Enums"]["point_activity_type"]
+          balance_after: number
+          created_at: string
+          description: string | null
+          id: string
+          points: number
+          reference_id: string | null
+          user_id: string
+        }
+        Insert: {
+          activity_type: Database["public"]["Enums"]["point_activity_type"]
+          balance_after: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          points: number
+          reference_id?: string | null
+          user_id: string
+        }
+        Update: {
+          activity_type?: Database["public"]["Enums"]["point_activity_type"]
+          balance_after?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          points?: number
+          reference_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      point_wallets: {
+        Row: {
+          balance: number
+          created_at: string
+          current_streak_days: number | null
+          id: string
+          last_activity_date: string | null
+          lifetime_earned: number
+          lifetime_redeemed: number
+          longest_streak_days: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          current_streak_days?: number | null
+          id?: string
+          last_activity_date?: string | null
+          lifetime_earned?: number
+          lifetime_redeemed?: number
+          longest_streak_days?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          current_streak_days?: number | null
+          id?: string
+          last_activity_date?: string | null
+          lifetime_earned?: number
+          lifetime_redeemed?: number
+          longest_streak_days?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          address_line1: string | null
+          address_line2: string | null
+          avatar_url: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          postal_code: string | null
+          profile_completion_percent: number | null
+          province: string | null
+          updated_at: string
+        }
+        Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          avatar_url?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          postal_code?: string | null
+          profile_completion_percent?: number | null
+          province?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          avatar_url?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          postal_code?: string | null
+          profile_completion_percent?: number | null
+          province?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      recycling_drops: {
+        Row: {
+          created_at: string
+          id: string
+          location: string | null
+          material_type: string
+          points_earned: number
+          user_id: string
+          verified: boolean | null
+          verified_at: string | null
+          verified_by: string | null
+          weight_grams: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location?: string | null
+          material_type: string
+          points_earned: number
+          user_id: string
+          verified?: boolean | null
+          verified_at?: string | null
+          verified_by?: string | null
+          weight_grams: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location?: string | null
+          material_type?: string
+          points_earned?: number
+          user_id?: string
+          verified?: boolean | null
+          verified_at?: string | null
+          verified_by?: string | null
+          weight_grams?: number
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          converted_at: string | null
+          created_at: string
+          id: string
+          points_awarded: number | null
+          referral_code: string
+          referred_email: string
+          referred_user_id: string | null
+          referrer_id: string
+          status: string
+        }
+        Insert: {
+          converted_at?: string | null
+          created_at?: string
+          id?: string
+          points_awarded?: number | null
+          referral_code: string
+          referred_email: string
+          referred_user_id?: string | null
+          referrer_id: string
+          status?: string
+        }
+        Update: {
+          converted_at?: string | null
+          created_at?: string
+          id?: string
+          points_awarded?: number | null
+          referral_code?: string
+          referred_email?: string
+          referred_user_id?: string | null
+          referrer_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      social_shares: {
+        Row: {
+          created_at: string
+          id: string
+          platform: string
+          points_earned: number | null
+          reference_id: string | null
+          share_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          platform: string
+          points_earned?: number | null
+          reference_id?: string | null
+          share_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          platform?: string
+          points_earned?: number | null
+          reference_id?: string | null
+          share_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          admin_fee_discount_percent: number | null
+          auto_renew: boolean | null
+          bed_rental_discount_percent: number | null
+          billing_cycle: string | null
+          created_at: string
+          credits_included: number | null
+          expires_at: string | null
+          id: string
+          price_cad: number | null
+          started_at: string
+          stripe_subscription_id: string | null
+          tier: Database["public"]["Enums"]["subscription_tier"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_fee_discount_percent?: number | null
+          auto_renew?: boolean | null
+          bed_rental_discount_percent?: number | null
+          billing_cycle?: string | null
+          created_at?: string
+          credits_included?: number | null
+          expires_at?: string | null
+          id?: string
+          price_cad?: number | null
+          started_at?: string
+          stripe_subscription_id?: string | null
+          tier?: Database["public"]["Enums"]["subscription_tier"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_fee_discount_percent?: number | null
+          auto_renew?: boolean | null
+          bed_rental_discount_percent?: number | null
+          billing_cycle?: string | null
+          created_at?: string
+          credits_included?: number | null
+          expires_at?: string | null
+          id?: string
+          price_cad?: number | null
+          started_at?: string
+          stripe_subscription_id?: string | null
+          tier?: Database["public"]["Enums"]["subscription_tier"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_achievements: {
+        Row: {
+          achievement_id: string
+          id: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          id?: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          id?: string
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_referral_codes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          user_id: string
+          uses_count: number | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          user_id: string
+          uses_count?: number | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+          uses_count?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +617,31 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      achievement_type:
+        | "first_print"
+        | "recycler_bronze"
+        | "recycler_silver"
+        | "recycler_gold"
+        | "referral_champion"
+        | "social_butterfly"
+        | "model_creator"
+        | "loyal_customer"
+        | "streak_7_day"
+        | "streak_30_day"
+        | "big_spender"
+      point_activity_type:
+        | "signup_bonus"
+        | "profile_completion"
+        | "referral_sent"
+        | "referral_converted"
+        | "social_share"
+        | "recycling_drop"
+        | "model_upload"
+        | "purchase"
+        | "review"
+        | "streak_bonus"
+        | "achievement_unlock"
+      subscription_tier: "free" | "maker" | "pro"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +768,34 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      achievement_type: [
+        "first_print",
+        "recycler_bronze",
+        "recycler_silver",
+        "recycler_gold",
+        "referral_champion",
+        "social_butterfly",
+        "model_creator",
+        "loyal_customer",
+        "streak_7_day",
+        "streak_30_day",
+        "big_spender",
+      ],
+      point_activity_type: [
+        "signup_bonus",
+        "profile_completion",
+        "referral_sent",
+        "referral_converted",
+        "social_share",
+        "recycling_drop",
+        "model_upload",
+        "purchase",
+        "review",
+        "streak_bonus",
+        "achievement_unlock",
+      ],
+      subscription_tier: ["free", "maker", "pro"],
+    },
   },
 } as const
