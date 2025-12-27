@@ -134,7 +134,7 @@ const Dashboard = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <GlowCard className="p-6 h-full" glowColor="secondary">
+              <GlowCard className="p-6 h-full" variant="teal">
                 <div className="flex items-center justify-between mb-4">
                   <div className="p-3 rounded-xl bg-secondary/20">
                     <Coins className="w-6 h-6 text-secondary" />
@@ -159,7 +159,7 @@ const Dashboard = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <GlowCard className="p-6 h-full" glowColor="primary">
+              <GlowCard className="p-6 h-full" variant="magenta">
                 <div className="flex items-center justify-between mb-4">
                   <div className="p-3 rounded-xl bg-primary/20">
                     <Sparkles className="w-6 h-6 text-primary" />
@@ -185,7 +185,7 @@ const Dashboard = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
-              <GlowCard className="p-6 h-full" glowColor="primary">
+              <GlowCard className="p-6 h-full" variant="magenta">
                 <div className="flex items-center justify-between mb-4">
                   <div className="p-3 rounded-xl bg-yellow-500/20">
                     <Trophy className="w-6 h-6 text-yellow-500" />
@@ -209,7 +209,7 @@ const Dashboard = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
             >
-              <GlowCard className="p-6 h-full" glowColor="secondary">
+              <GlowCard className="p-6 h-full" variant="teal">
                 <div className="flex items-center justify-between mb-4">
                   <div className="p-3 rounded-xl bg-green-500/20">
                     <TrendingUp className="w-6 h-6 text-green-500" />

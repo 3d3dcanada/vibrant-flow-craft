@@ -95,7 +95,7 @@ const Achievements = () => {
                         ? 'border-yellow-500/50 bg-yellow-500/5' 
                         : 'opacity-60 grayscale'
                     }`}
-                    glowColor={isUnlocked ? 'secondary' : undefined}
+                    variant={isUnlocked ? 'teal' : 'neutral'}
                   >
                     <div className="flex items-start gap-4">
                       <div className={`p-3 rounded-xl ${
