@@ -1,9 +1,10 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Menu, X, Database, Zap } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Menu, X, Database, Zap, User, LogIn } from "lucide-react";
 import AnimatedLogo from "./AnimatedLogo";
 import NeonButton from "./NeonButton";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navLinks = [
   { label: "About Us", href: "#about" },
@@ -14,6 +15,8 @@ const navLinks = [
 export const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
 
   // Handle scroll
   if (typeof window !== "undefined") {
@@ -70,6 +73,29 @@ export const Navbar = () => {
               >
                 GET PRICE
               </NeonButton>
+
+              {/* Auth Button */}
+              {!loading && (
+                user ? (
+                  <NeonButton
+                    variant="outline"
+                    size="md"
+                    icon={<User className="w-4 h-4" />}
+                    onClick={() => navigate('/dashboard')}
+                  >
+                    Dashboard
+                  </NeonButton>
+                ) : (
+                  <NeonButton
+                    variant="secondary"
+                    size="md"
+                    icon={<LogIn className="w-4 h-4" />}
+                    onClick={() => navigate('/auth')}
+                  >
+                    Login
+                  </NeonButton>
+                )
+              )}
             </div>
 
             {/* Mobile Menu Toggle */}
@@ -122,7 +148,7 @@ export const Navbar = () => {
               ))}
 
               <motion.div
-                className="pt-8"
+                className="pt-8 space-y-4"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
@@ -138,6 +164,36 @@ export const Navbar = () => {
                 >
                   START PRINTING
                 </NeonButton>
+
+                {!loading && (
+                  user ? (
+                    <NeonButton
+                      variant="outline"
+                      size="lg"
+                      className="w-full"
+                      icon={<User className="w-5 h-5" />}
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        navigate('/dashboard');
+                      }}
+                    >
+                      Dashboard
+                    </NeonButton>
+                  ) : (
+                    <NeonButton
+                      variant="primary"
+                      size="lg"
+                      className="w-full"
+                      icon={<LogIn className="w-5 h-5" />}
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        navigate('/auth');
+                      }}
+                    >
+                      Login / Sign Up
+                    </NeonButton>
+                  )
+                )}
               </motion.div>
             </div>
           </motion.div>

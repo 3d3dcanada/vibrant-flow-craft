@@ -186,7 +186,7 @@ const Subscription = () => {
                   
                   <GlowCard 
                     className={`p-6 h-full ${colorClasses[plan.color as keyof typeof colorClasses]} ${plan.popular ? 'ring-2 ring-secondary' : ''}`}
-                    glowColor={plan.color === 'secondary' ? 'secondary' : 'primary'}
+                    variant={plan.color === 'secondary' ? 'teal' : plan.color === 'primary' ? 'magenta' : 'neutral'}
                   >
                     {/* Plan Header */}
                     <div className="text-center mb-6">
@@ -249,7 +249,7 @@ const Subscription = () => {
                       ) : (
                         <NeonButton 
                           className="w-full"
-                          variant={plan.popular ? 'default' : 'secondary'}
+                          variant={plan.popular ? 'primary' : 'secondary'}
                         >
                           {plan.price === 0 ? 'Get Started' : 'Subscribe Now'}
                         </NeonButton>
