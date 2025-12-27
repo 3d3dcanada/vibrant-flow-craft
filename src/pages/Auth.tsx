@@ -21,10 +21,13 @@ const Auth = () => {
   const [referralCode, setReferralCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
-  
+  const [demoEmail, setDemoEmail] = useState<string | null>(null);
+
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const DEMO_PASSWORD = 'DemoPass123!';
 
   useEffect(() => {
     if (user) {
@@ -34,7 +37,7 @@ const Auth = () => {
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {};
-    
+
     try {
       emailSchema.parse(email);
     } catch (e) {
@@ -42,7 +45,7 @@ const Auth = () => {
         newErrors.email = e.errors[0].message;
       }
     }
-    
+
     try {
       passwordSchema.parse(password);
     } catch (e) {
@@ -50,38 +53,82 @@ const Auth = () => {
         newErrors.password = e.errors[0].message;
       }
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleCreateDemoAccount = async () => {
+    setLoading(true);
+    setErrors({});
+
+    const generatedEmail = `demo+${Date.now()}@example.com`;
+
+    try {
+      const { error } = await signUp(generatedEmail, DEMO_PASSWORD, 'Demo User');
+      if (error) {
+        toast({
+          title: 'Demo Account Error',
+          description: error.message,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      setDemoEmail(generatedEmail);
+      toast({
+        title: 'Demo account created',
+        description: `Email: ${generatedEmail}  |  Password: ${DEMO_PASSWORD}`,
+      });
+      navigate('/dashboard');
+    } catch {
+      toast({
+        title: 'Demo Account Error',
+        description: 'Could not create a demo account. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     setLoading(true);
-    
+
     try {
       if (isLogin) {
         const { error } = await signIn(email, password);
         if (error) {
-          if (error.message.includes('Invalid login credentials')) {
+          const msg = (error?.message || '').toLowerCase();
+
+          if (msg.includes('invalid login credentials')) {
             toast({
-              title: "Login Failed",
-              description: "Invalid email or password. Please try again.",
-              variant: "destructive"
+              title: 'Login Failed',
+              description:
+                "Invalid email or password. If you don't have an account yet, switch to Sign up (or use Demo Account).",
+              variant: 'destructive',
+            });
+          } else if (msg.includes('email') && msg.includes('confirm')) {
+            toast({
+              title: 'Email not confirmed',
+              description:
+                'Your account exists but needs email confirmation. Try signing up again with a fresh email or use Demo Account for testing.',
+              variant: 'destructive',
             });
           } else {
             toast({
-              title: "Login Error",
+              title: 'Login Error',
               description: error.message,
-              variant: "destructive"
+              variant: 'destructive',
             });
           }
         } else {
           toast({
-            title: "Welcome back!",
+            title: 'Welcome back!',
             description: "You've successfully logged in.",
           });
           navigate('/dashboard');
@@ -91,31 +138,31 @@ const Auth = () => {
         if (error) {
           if (error.message.includes('User already registered')) {
             toast({
-              title: "Account Exists",
-              description: "This email is already registered. Please sign in instead.",
-              variant: "destructive"
+              title: 'Account Exists',
+              description: 'This email is already registered. Please sign in instead.',
+              variant: 'destructive',
             });
             setIsLogin(true);
           } else {
             toast({
-              title: "Signup Error",
+              title: 'Signup Error',
               description: error.message,
-              variant: "destructive"
+              variant: 'destructive',
             });
           }
         } else {
           toast({
-            title: "Welcome to 3D3D Canada! 🎉",
+            title: 'Welcome to 3D3D Canada! 🎉',
             description: "Your account has been created. You've earned 100 welcome points!",
           });
           navigate('/dashboard');
         }
       }
-    } catch (error: any) {
+    } catch {
       toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive"
+        title: 'Error',
+        description: 'An unexpected error occurred. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
