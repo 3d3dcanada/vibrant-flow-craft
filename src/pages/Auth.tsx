@@ -59,17 +59,29 @@ const Auth = () => {
   };
 
   const handleCreateDemoAccount = async () => {
+    if (loading) return;
+
     setLoading(true);
     setErrors({});
 
     const generatedEmail = `demo+${Date.now()}@example.com`;
 
     try {
-      const { error } = await signUp(generatedEmail, DEMO_PASSWORD, 'Demo User');
-      if (error) {
+      const { error: signUpError } = await signUp(generatedEmail, DEMO_PASSWORD, 'Demo User');
+      if (signUpError) {
         toast({
-          title: 'Demo Account Error',
-          description: error.message,
+          title: 'Demo account error',
+          description: signUpError.message,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const { error: signInError } = await signIn(generatedEmail, DEMO_PASSWORD);
+      if (signInError) {
+        toast({
+          title: 'Demo login error',
+          description: signInError.message,
           variant: 'destructive',
         });
         return;
@@ -77,13 +89,13 @@ const Auth = () => {
 
       setDemoEmail(generatedEmail);
       toast({
-        title: 'Demo account created',
-        description: `Email: ${generatedEmail}  |  Password: ${DEMO_PASSWORD}`,
+        title: 'Demo ready',
+        description: 'Signed in with a temporary demo account.',
       });
-      navigate('/dashboard');
+      // Navigation happens when auth state updates (see useEffect above)
     } catch {
       toast({
-        title: 'Demo Account Error',
+        title: 'Demo account error',
         description: 'Could not create a demo account. Please try again.',
         variant: 'destructive',
       });
@@ -129,33 +141,45 @@ const Auth = () => {
         } else {
           toast({
             title: 'Welcome back!',
-            description: "You've successfully logged in.",
+            description: "You're successfully logged in.",
           });
-          navigate('/dashboard');
+          // Navigation happens when auth state updates (see useEffect above)
         }
       } else {
-        const { error } = await signUp(email, password, fullName);
-        if (error) {
-          if (error.message.includes('User already registered')) {
+        const { error: signUpError } = await signUp(email, password, fullName);
+        if (signUpError) {
+          if (signUpError.message.includes('User already registered')) {
             toast({
-              title: 'Account Exists',
+              title: 'Account exists',
               description: 'This email is already registered. Please sign in instead.',
               variant: 'destructive',
             });
             setIsLogin(true);
           } else {
             toast({
-              title: 'Signup Error',
-              description: error.message,
+              title: 'Signup error',
+              description: signUpError.message,
               variant: 'destructive',
             });
           }
         } else {
+          // Ensure the user is actually signed in (prevents "signup succeeded" but dashboard redirects back).
+          const { error: signInError } = await signIn(email, password);
+          if (signInError) {
+            toast({
+              title: 'Signup succeeded, but login failed',
+              description: signInError.message,
+              variant: 'destructive',
+            });
+            setIsLogin(true);
+            return;
+          }
+
           toast({
-            title: 'Welcome to 3D3D Canada! 🎉',
-            description: "Your account has been created. You've earned 100 welcome points!",
+            title: 'Account created',
+            description: "You're signed in and ready to go.",
           });
-          navigate('/dashboard');
+          // Navigation happens when auth state updates (see useEffect above)
         }
       }
     } catch {
@@ -327,6 +351,38 @@ const Auth = () => {
                 )}
               </NeonButton>
             </form>
+
+            {/* Demo */}
+            <div className="mt-6">
+              <div className="flex items-center gap-3 my-4">
+                <div className="h-px flex-1 bg-border/60" />
+                <span className="text-xs text-muted-foreground">or</span>
+                <div className="h-px flex-1 bg-border/60" />
+              </div>
+
+              <NeonButton
+                type="button"
+                variant="outline"
+                size="md"
+                className="w-full h-12"
+                disabled={loading}
+                onClick={handleCreateDemoAccount}
+                icon={<Sparkles className="w-5 h-5" />}
+              >
+                1‑Click Demo Login
+              </NeonButton>
+
+              <p className="mt-2 text-xs text-muted-foreground text-center">
+                Creates a temporary demo account and signs you in instantly.
+              </p>
+
+              {demoEmail && (
+                <p className="mt-2 text-xs text-muted-foreground text-center">
+                  Demo email:{" "}
+                  <span className="font-mono text-secondary">{demoEmail}</span>
+                </p>
+              )}
+            </div>
 
             {/* Toggle */}
             <div className="mt-6 text-center">
