@@ -29,6 +29,7 @@ import Mission from "./pages/Mission";
 import About from "./pages/About";
 import Refunds from "./pages/Refunds";
 import CommunityPolicy from "./pages/CommunityPolicy";
+import Schedule from "./pages/Schedule";
 
 // Maker Dashboard pages
 import MakerOverview from "./pages/maker/MakerOverview";
@@ -71,6 +72,7 @@ const App = () => (
             <Route path="/about" element={<About />} />
             <Route path="/refunds" element={<Refunds />} />
             <Route path="/community-policy" element={<CommunityPolicy />} />
+            <Route path="/schedule" element={<Schedule />} />
             
             {/* Dashboard routes */}
             <Route path="/dashboard" element={<Dashboard />} />
