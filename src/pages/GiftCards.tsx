@@ -14,6 +14,7 @@ import {
   ArrowLeft, Gift, Send, Users, Check, Copy, Sparkles,
   CreditCard, Mail, Calendar
 } from 'lucide-react';
+import { cadToCredits, formatCredits, formatCad } from '@/config/credits';
 
 const GiftCards = () => {
   const navigate = useNavigate();
@@ -73,11 +74,12 @@ const GiftCards = () => {
     );
   }
 
+  // Gift card options: 10 credits = $1 CAD
   const giftCardOptions = [
-    { price: 25, credits: 100, bonus: 0 },
-    { price: 50, credits: 200, bonus: 10 },
-    { price: 100, credits: 400, bonus: 40 },
-    { price: 200, credits: 800, bonus: 100 },
+    { price: 25, credits: cadToCredits(25), bonus: 0 },       // $25 = 250 credits
+    { price: 50, credits: cadToCredits(50), bonus: 25 },      // $50 = 500 credits + 25 bonus
+    { price: 100, credits: cadToCredits(100), bonus: 75 },    // $100 = 1000 credits + 75 bonus
+    { price: 200, credits: cadToCredits(200), bonus: 200 },   // $200 = 2000 credits + 200 bonus
   ];
 
   return (
@@ -221,7 +223,7 @@ const GiftCards = () => {
                         </div>
                         <div>
                           <div className="font-medium text-foreground">
-                            {card.credits_value} Credits • ${card.price_cad} CAD
+                            {formatCredits(card.credits_value)} • {formatCad(card.price_cad)}
                           </div>
                           <div className="text-sm font-mono text-secondary">
                             {card.code}

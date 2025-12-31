@@ -16,6 +16,7 @@ import {
   ArrowLeft, Upload, Download, Search, Grid, List, Star,
   Eye, Heart, Package, Filter, Plus, X, Coins, Award, Users
 } from 'lucide-react';
+import { formatCredits } from '@/config/credits';
 
 const CommunityModels = () => {
   const navigate = useNavigate();
@@ -394,7 +395,7 @@ const CommunityModels = () => {
                           className="bg-input border-border max-w-[150px]"
                         />
                         <span className="text-sm text-muted-foreground">
-                          {uploadForm.price_credits === 0 ? 'Free for everyone!' : `You earn ${Math.floor(uploadForm.price_credits * 0.8)} credits per download`}
+                          {uploadForm.price_credits === 0 ? 'Free for everyone!' : `You earn ${formatCredits(Math.floor(uploadForm.price_credits * 0.8))} per download`}
                         </span>
                       </div>
                     </div>
