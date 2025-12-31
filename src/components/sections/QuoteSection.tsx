@@ -1,20 +1,18 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Upload, Link as LinkIcon, Check, Leaf, Heart, CloudUpload, Trash2 } from "lucide-react";
 import { GlowCard } from "../ui/GlowCard";
 import NeonButton from "../ui/NeonButton";
+import PricingBreakdown from "../ui/PricingBreakdown";
+import { 
+  MaterialType, 
+  MATERIAL_RATES, 
+  calculateQuoteBreakdown 
+} from "@/config/pricing";
 
 type Mode = "upload" | "url";
-type Material = "PLA" | "PETG" | "TPU" | "CARBON";
 
-const PRICES: Record<Material, number> = {
-  PLA: 0.09,
-  PETG: 0.11,
-  TPU: 0.18,
-  CARBON: 0.35,
-};
-
-const materials: { key: Material; name: string; tag: string; level: number }[] = [
+const materials: { key: MaterialType; name: string; tag: string; level: number }[] = [
   { key: "PLA", name: "PLA", tag: "Standard", level: 33 },
   { key: "PETG", name: "PETG", tag: "Durable", level: 66 },
   { key: "TPU", name: "TPU", tag: "Flexible", level: 100 },
@@ -23,21 +21,28 @@ const materials: { key: Material; name: string; tag: string; level: number }[] =
 
 export const QuoteSection = () => {
   const [mode, setMode] = useState<Mode>("upload");
-  const [material, setMaterial] = useState<Material>("PLA");
+  const [material, setMaterial] = useState<MaterialType>("PLA");
   const [weight, setWeight] = useState(100);
   const [qty, setQty] = useState(1);
   const [file, setFile] = useState<File | null>(null);
   const [url, setUrl] = useState("");
   const [isScanning, setIsScanning] = useState(false);
 
-  const calculatePrice = () => {
-    const baseFee = 15.0;
-    const royalty = 0.25;
-    const matCost = weight * PRICES[material];
-    let total = (baseFee + matCost + royalty) * qty;
-    if (qty >= 10) total = total * 0.9;
-    return total.toFixed(2);
-  };
+  // Estimate print time based on weight (rough approximation: 1g ≈ 3-4 minutes)
+  const estimatedPrintHours = useMemo(() => {
+    return Math.max(0.5, (weight * 3.5) / 60); // 3.5 min per gram average
+  }, [weight]);
+
+  // Calculate quote breakdown using pricing config
+  const quoteBreakdown = useMemo(() => {
+    return calculateQuoteBreakdown(
+      material,
+      weight,
+      qty,
+      estimatedPrintHours,
+      { id: 'none', hours: 0 } // No post-processing by default
+    );
+  }, [material, weight, qty, estimatedPrintHours]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -401,32 +406,14 @@ export const QuoteSection = () => {
                   </div>
                 </div>
 
-                {/* Pricing Display */}
+                {/* Pricing Breakdown */}
                 <div className="border-t border-border/30 pt-6">
-                  <div className="flex justify-between items-end mb-6">
-                    <div>
-                      <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                        Estimated Total (CAD)
-                      </p>
-                      <p className="text-[10px] text-success mt-1">
-                        ✓ Includes 25¢ Designer Royalty
-                      </p>
-                    </div>
-                    <motion.div
-                      className="text-5xl font-tech font-bold text-foreground"
-                      key={calculatePrice()}
-                      initial={{ scale: 1.1, color: "hsl(var(--secondary))" }}
-                      animate={{ scale: 1, color: "hsl(var(--foreground))" }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      ${calculatePrice()}
-                    </motion.div>
-                  </div>
-
+                  <PricingBreakdown breakdown={quoteBreakdown} qty={qty} />
+                  
                   <NeonButton
                     variant="secondary"
                     size="xl"
-                    className="w-full bg-gradient-to-r from-secondary to-primary"
+                    className="w-full bg-gradient-to-r from-secondary to-primary mt-6"
                     icon={<span>→</span>}
                     iconPosition="right"
                   >
