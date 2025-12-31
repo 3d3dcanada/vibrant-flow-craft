@@ -19,6 +19,8 @@ import CommunityCleanup from "./pages/CommunityCleanup";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import ETransferCheckout from "./pages/ETransferCheckout";
+import PromoProducts from "./pages/PromoProducts";
+import BusinessSubscription from "./pages/BusinessSubscription";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +38,8 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/promo-products" element={<PromoProducts />} />
+            <Route path="/business-subscription" element={<BusinessSubscription />} />
             
             {/* Dashboard routes */}
             <Route path="/dashboard" element={<Dashboard />} />
