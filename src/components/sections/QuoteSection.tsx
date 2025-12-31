@@ -1,14 +1,16 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { 
   Upload, Link as LinkIcon, Check, Leaf, Heart, CloudUpload, Trash2, Tag, X, Zap, 
-  AlertCircle, Clock, Wrench, Package, User, ChevronDown, ChevronUp, ExternalLink
+  AlertCircle, Clock, Wrench, Package, User, ChevronDown, ChevronUp, ExternalLink, Send, Loader2
 } from "lucide-react";
 import { GlowCard } from "../ui/GlowCard";
 import NeonButton from "../ui/NeonButton";
 import PricingBreakdown from "../ui/PricingBreakdown";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { useSubmitPrintRequest } from "@/hooks/useMakerData";
 import { 
   MaterialType, 
   MATERIAL_RATES, 
@@ -54,6 +56,10 @@ export const QuoteSection = () => {
   const { user } = useAuth();
   const isMember = !!user;
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const submitRequestMutation = useSubmitPrintRequest();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // File/URL mode
   const [mode, setMode] = useState<Mode>("upload");
@@ -1014,16 +1020,99 @@ export const QuoteSection = () => {
                     variant="secondary"
                     size="xl"
                     className="w-full bg-gradient-to-r from-secondary to-primary mt-4"
-                    icon={<span>→</span>}
+                    icon={isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                     iconPosition="right"
-                    disabled={!validation.isValid}
+                    disabled={!validation.isValid || isSubmitting}
+                    onClick={async () => {
+                      setIsSubmitting(true);
+                      try {
+                        // Build specs object
+                        const specs = {
+                          jobSize,
+                          materialType,
+                          material: MATERIAL_RATES[materialType].name,
+                          color,
+                          quantity: qty,
+                          grams: weight,
+                          hours: effectiveHours,
+                          deliverySpeed,
+                          postProcessing: postProcessingEnabled ? {
+                            tier: postProcessingTier,
+                            minutes: postProcessingMinutes
+                          } : null,
+                          hardwareNotes: hardwareEnabled ? hardwareNotes : null,
+                          estimatedTotal: quoteBreakdown.total
+                        };
+
+                        // Build attribution object
+                        const attribution = modelRequest?.attribution || fileAttribution || (
+                          modelRequest ? {
+                            source_platform: modelRequest.repositoryName,
+                            model_url: modelRequest.modelUrl,
+                          } : url ? {
+                            source_platform: 'URL Import',
+                            model_url: url
+                          } : file ? {
+                            source_platform: 'Direct Upload'
+                          } : {}
+                        );
+
+                        await submitRequestMutation.mutateAsync({
+                          specs,
+                          attribution,
+                          notes: promoQuote ? `Promo Product: ${promoQuote.productName}` : undefined
+                        });
+
+                        toast({
+                          title: "Request Submitted!",
+                          description: "Your print request has been sent to our makers. We'll be in touch soon.",
+                        });
+
+                        // Clear form after successful submission
+                        clearPromoQuote();
+                        
+                        // Show join CTA if not logged in
+                        if (!user) {
+                          toast({
+                            title: "Join free to track your request",
+                            description: "Create an account to track status and get updates.",
+                            action: (
+                              <NeonButton size="sm" onClick={() => navigate('/auth')}>
+                                Sign Up
+                              </NeonButton>
+                            )
+                          });
+                        }
+                      } catch (error) {
+                        console.error('Submit error:', error);
+                        toast({
+                          title: "Submission Failed",
+                          description: "There was an error submitting your request. Please try again.",
+                          variant: "destructive"
+                        });
+                      } finally {
+                        setIsSubmitting(false);
+                      }
+                    }}
                   >
-                    PROCEED TO ORDER
+                    {isSubmitting ? 'SUBMITTING...' : 'SUBMIT REQUEST'}
                   </NeonButton>
 
                   <p className="text-center text-[10px] text-muted-foreground mt-3">
-                    Valid for 48 hours. Subject to manual geometry review.
+                    Quote valid for 48 hours. A maker will review and confirm your request.
                   </p>
+                  
+                  {!user && (
+                    <p className="text-center text-xs text-secondary mt-2">
+                      <button 
+                        onClick={() => navigate('/auth')}
+                        className="underline hover:no-underline"
+                      >
+                        Join free
+                      </button>
+                      {" "}to track your request status
+                    </p>
+                  )}
                 </div>
               </div>
             </GlowCard>

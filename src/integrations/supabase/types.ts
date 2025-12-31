@@ -856,7 +856,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_maker: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       achievement_type:

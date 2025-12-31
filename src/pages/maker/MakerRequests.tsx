@@ -4,11 +4,22 @@ import { GlowCard } from '@/components/ui/GlowCard';
 import { NeonButton } from '@/components/ui/NeonButton';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { usePendingRequests, useMakerRequests, useClaimRequest, useUpdateRequestStatus, useCreateJob } from '@/hooks/useMakerData';
+import { 
+  usePendingRequests, 
+  useMakerRequests, 
+  useClaimRequest, 
+  useUpdateRequestStatus, 
+  useCreateJob,
+  useIsAdmin,
+  useAllMakers,
+  useAssignRequestToMaker,
+  useAllUnassignedRequests
+} from '@/hooks/useMakerData';
+import { useProfile } from '@/hooks/useUserData';
 import { useToast } from '@/hooks/use-toast';
 import { 
   ClipboardList, ExternalLink, User, Package, Clock, 
-  CheckCircle, XCircle, ArrowRight, Loader2
+  CheckCircle, XCircle, ArrowRight, Loader2, Shield, UserPlus
 } from 'lucide-react';
 import {
   Dialog,
@@ -25,18 +36,41 @@ import MakerGuard from '@/components/guards/MakerGuard';
 
 const MakerRequests = () => {
   const { toast } = useToast();
+  const { data: profile } = useProfile();
+  const { data: isAdmin } = useIsAdmin();
   const { data: pendingRequests = [], isLoading: loadingPending } = usePendingRequests();
   const { data: makerRequests = [], isLoading: loadingMaker } = useMakerRequests();
+  const { data: allUnassignedRequests = [] } = useAllUnassignedRequests();
+  const { data: allMakers = [] } = useAllMakers();
   
   const claimMutation = useClaimRequest();
   const updateStatusMutation = useUpdateRequestStatus();
   const createJobMutation = useCreateJob();
+  const assignMutation = useAssignRequestToMaker();
   
   const [convertDialogOpen, setConvertDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
   const [slaHours, setSlaHours] = useState('48');
+  
+  // Admin assignment state
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [selectedMakerId, setSelectedMakerId] = useState<string>('');
+  const [assigningRequestId, setAssigningRequestId] = useState<string | null>(null);
+
+  // Check if maker can claim (has required fields)
+  const canMakerClaim = profile?.dry_box_required_ack && 
+    profile?.availability_status === 'available' &&
+    profile?.onboarding_completed;
 
   const handleClaim = async (requestId: string) => {
+    if (!canMakerClaim) {
+      toast({ 
+        title: 'Cannot claim request', 
+        description: 'Complete your maker profile and ensure you are available.',
+        variant: 'destructive'
+      });
+      return;
+    }
     try {
       await claimMutation.mutateAsync(requestId);
       toast({ title: 'Request claimed', description: 'The request has been assigned to you.' });
@@ -69,7 +103,36 @@ const MakerRequests = () => {
     }
   };
 
-  const RequestCard = ({ request, isPending }: { request: any; isPending: boolean }) => (
+  const handleAdminAssign = async () => {
+    if (!assigningRequestId || !selectedMakerId) return;
+    try {
+      await assignMutation.mutateAsync({ 
+        requestId: assigningRequestId, 
+        makerId: selectedMakerId 
+      });
+      toast({ title: 'Request assigned', description: 'The request has been assigned to the maker.' });
+      setAssignDialogOpen(false);
+      setAssigningRequestId(null);
+      setSelectedMakerId('');
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to assign request', variant: 'destructive' });
+    }
+  };
+
+  const openAssignDialog = (requestId: string) => {
+    setAssigningRequestId(requestId);
+    setSelectedMakerId('');
+    setAssignDialogOpen(true);
+  };
+
+  // Use all unassigned for admin, pending for makers
+  const unassignedRequests = isAdmin ? allUnassignedRequests : pendingRequests;
+
+  const RequestCard = ({ request, isPending, showAdminControls }: { 
+    request: any; 
+    isPending: boolean;
+    showAdminControls?: boolean;
+  }) => (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -93,7 +156,7 @@ const MakerRequests = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
           <div>
             <div className="text-xs text-muted-foreground">Material</div>
-            <div className="text-sm font-medium">{request.specs?.material || 'PLA'}</div>
+            <div className="text-sm font-medium">{request.specs?.material || request.specs?.materialType || 'PLA'}</div>
           </div>
           <div>
             <div className="text-xs text-muted-foreground">Color</div>
@@ -108,6 +171,19 @@ const MakerRequests = () => {
             <div className="text-sm font-medium">{request.specs?.quantity || 1}</div>
           </div>
         </div>
+
+        {/* Extra specs */}
+        {(request.specs?.grams || request.specs?.hours) && (
+          <div className="flex gap-4 mb-4 text-xs text-muted-foreground">
+            {request.specs?.grams && <span>Weight: {request.specs.grams}g</span>}
+            {request.specs?.hours && <span>Est. Time: {request.specs.hours.toFixed(1)}h</span>}
+            {request.specs?.deliverySpeed && (
+              <Badge variant={request.specs.deliverySpeed === 'emergency' ? 'destructive' : 'outline'} className="text-xs">
+                {request.specs.deliverySpeed === 'emergency' ? 'RUSH' : 'Standard'}
+              </Badge>
+            )}
+          </div>
+        )}
 
         {/* Quantity breaks display */}
         <div className="flex gap-2 mb-4 text-xs text-muted-foreground">
@@ -147,23 +223,50 @@ const MakerRequests = () => {
           </div>
         )}
 
+        {/* Estimated Total */}
+        {request.specs?.estimatedTotal && (
+          <div className="text-sm font-medium text-secondary mb-4">
+            Est. Total: ${request.specs.estimatedTotal.toFixed(2)} CAD
+          </div>
+        )}
+
         {/* Actions */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {isPending ? (
             <>
-              <NeonButton 
-                size="sm" 
-                onClick={() => handleClaim(request.id)}
-                disabled={claimMutation.isPending}
-              >
-                {claimMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <CheckCircle className="w-4 h-4 mr-1" /> Claim
-                  </>
-                )}
-              </NeonButton>
+              {/* Admin assign button */}
+              {showAdminControls && (
+                <NeonButton 
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => openAssignDialog(request.id)}
+                >
+                  <UserPlus className="w-4 h-4 mr-1" /> Assign to Maker
+                </NeonButton>
+              )}
+              
+              {/* Maker claim button (if allowed) */}
+              {canMakerClaim && !showAdminControls && (
+                <NeonButton 
+                  size="sm" 
+                  onClick={() => handleClaim(request.id)}
+                  disabled={claimMutation.isPending}
+                >
+                  {claimMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-1" /> Claim
+                    </>
+                  )}
+                </NeonButton>
+              )}
+              
+              {!canMakerClaim && !showAdminControls && (
+                <Badge variant="outline" className="text-warning border-warning">
+                  Complete profile to claim
+                </Badge>
+              )}
             </>
           ) : request.status === 'claimed' ? (
             <>
@@ -196,102 +299,169 @@ const MakerRequests = () => {
     <DashboardLayout>
       <MakerGuard>
         <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-tech font-bold text-foreground">Requests & Quotes</h1>
-        <p className="text-muted-foreground">Manage incoming print requests</p>
-      </div>
-
-      <Tabs defaultValue="pending">
-        <TabsList>
-          <TabsTrigger value="pending" className="flex items-center gap-2">
-            <ClipboardList className="w-4 h-4" />
-            Pending ({pendingRequests.length})
-          </TabsTrigger>
-          <TabsTrigger value="claimed" className="flex items-center gap-2">
-            <Package className="w-4 h-4" />
-            My Requests ({makerRequests.length})
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="pending" className="space-y-4 mt-4">
-          {loadingPending ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-secondary" />
-            </div>
-          ) : pendingRequests.length === 0 ? (
-            <GlowCard className="p-12 text-center">
-              <ClipboardList className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="font-semibold mb-2">No pending requests</h3>
-              <p className="text-sm text-muted-foreground">New requests will appear here</p>
-            </GlowCard>
-          ) : (
-            <div className="grid gap-4">
-              {pendingRequests.map(req => (
-                <RequestCard key={req.id} request={req} isPending={true} />
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="claimed" className="space-y-4 mt-4">
-          {loadingMaker ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-secondary" />
-            </div>
-          ) : makerRequests.length === 0 ? (
-            <GlowCard className="p-12 text-center">
-              <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="font-semibold mb-2">No claimed requests</h3>
-              <p className="text-sm text-muted-foreground">Claim requests from the pending tab</p>
-            </GlowCard>
-          ) : (
-            <div className="grid gap-4">
-              {makerRequests.map(req => (
-                <RequestCard key={req.id} request={req} isPending={false} />
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-
-      {/* Convert to Job Dialog */}
-      <Dialog open={convertDialogOpen} onOpenChange={setConvertDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Convert to Job</DialogTitle>
-            <DialogDescription>
-              Set the SLA target for this job
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
+          <div className="flex items-center justify-between">
             <div>
-              <Label>Delivery Speed / SLA Target</Label>
-              <Select value={slaHours} onValueChange={setSlaHours}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="24">Emergency (&lt;24h, +15-25%)</SelectItem>
-                  <SelectItem value="48">Standard Basic (24-48h)</SelectItem>
-                  <SelectItem value="168">Large (4-8 days)</SelectItem>
-                </SelectContent>
-              </Select>
+              <h1 className="text-2xl font-tech font-bold text-foreground">Requests & Quotes</h1>
+              <p className="text-muted-foreground">Manage incoming print requests</p>
             </div>
+            {isAdmin && (
+              <Badge variant="secondary" className="gap-1">
+                <Shield className="w-3 h-3" /> Admin
+              </Badge>
+            )}
           </div>
-          <DialogFooter>
-            <NeonButton variant="secondary" onClick={() => setConvertDialogOpen(false)}>
-              Cancel
-            </NeonButton>
-            <NeonButton onClick={handleConvertToJob} disabled={createJobMutation.isPending}>
-              {createJobMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+
+          <Tabs defaultValue="unassigned">
+            <TabsList>
+              <TabsTrigger value="unassigned" className="flex items-center gap-2">
+                <ClipboardList className="w-4 h-4" />
+                Unassigned ({unassignedRequests.length})
+              </TabsTrigger>
+              <TabsTrigger value="my-requests" className="flex items-center gap-2">
+                <Package className="w-4 h-4" />
+                My Requests ({makerRequests.length})
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="unassigned" className="space-y-4 mt-4">
+              {loadingPending ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-secondary" />
+                </div>
+              ) : unassignedRequests.length === 0 ? (
+                <GlowCard className="p-12 text-center">
+                  <ClipboardList className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="font-semibold mb-2">No unassigned requests</h3>
+                  <p className="text-sm text-muted-foreground">New customer requests will appear here</p>
+                </GlowCard>
               ) : (
-                'Create Job'
+                <div className="grid gap-4">
+                  {unassignedRequests.map(req => (
+                    <RequestCard key={req.id} request={req} isPending={true} showAdminControls={isAdmin} />
+                  ))}
+                </div>
               )}
-            </NeonButton>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </TabsContent>
+
+            <TabsContent value="my-requests" className="space-y-4 mt-4">
+              {loadingMaker ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-secondary" />
+                </div>
+              ) : makerRequests.length === 0 ? (
+                <GlowCard className="p-12 text-center">
+                  <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="font-semibold mb-2">No assigned requests</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {isAdmin ? 'Assign requests from the unassigned tab' : 'Claim requests from the unassigned tab'}
+                  </p>
+                </GlowCard>
+              ) : (
+                <div className="grid gap-4">
+                  {makerRequests.map(req => (
+                    <RequestCard key={req.id} request={req} isPending={false} />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+
+          {/* Convert to Job Dialog */}
+          <Dialog open={convertDialogOpen} onOpenChange={setConvertDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Convert to Job</DialogTitle>
+                <DialogDescription>
+                  Set an SLA target for this job. The job will appear in your Jobs Queue.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>SLA Target</Label>
+                  <Select value={slaHours} onValueChange={setSlaHours}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="24">Emergency - 24 hours</SelectItem>
+                      <SelectItem value="48">Standard Small - 48 hours</SelectItem>
+                      <SelectItem value="96">Standard Medium - 4 days</SelectItem>
+                      <SelectItem value="192">Large - 8 days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <NeonButton variant="secondary" onClick={() => setConvertDialogOpen(false)}>
+                  Cancel
+                </NeonButton>
+                <NeonButton onClick={handleConvertToJob} disabled={createJobMutation.isPending}>
+                  {createJobMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    'Create Job'
+                  )}
+                </NeonButton>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Admin Assign Dialog */}
+          <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Assign to Maker</DialogTitle>
+                <DialogDescription>
+                  Select a maker to assign this request to. Only verified makers with completed onboarding are shown.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>Select Maker</Label>
+                  <Select value={selectedMakerId} onValueChange={setSelectedMakerId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a maker..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allMakers.map(maker => (
+                        <SelectItem key={maker.id} value={maker.id}>
+                          <div className="flex items-center gap-2">
+                            <span>{maker.full_name || maker.display_name || maker.email}</span>
+                            <Badge 
+                              variant={maker.availability_status === 'available' ? 'secondary' : 'outline'}
+                              className="text-xs"
+                            >
+                              {maker.availability_status}
+                            </Badge>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {allMakers.length === 0 && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      No verified makers available. Makers must complete onboarding first.
+                    </p>
+                  )}
+                </div>
+              </div>
+              <DialogFooter>
+                <NeonButton variant="secondary" onClick={() => setAssignDialogOpen(false)}>
+                  Cancel
+                </NeonButton>
+                <NeonButton 
+                  onClick={handleAdminAssign} 
+                  disabled={!selectedMakerId || assignMutation.isPending}
+                >
+                  {assignMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    'Assign'
+                  )}
+                </NeonButton>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </MakerGuard>
     </DashboardLayout>
