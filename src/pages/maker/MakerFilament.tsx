@@ -42,14 +42,14 @@ const MakerFilament = () => {
   const deleteMutation = useDeleteFilament();
   
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingFilament, setEditingFilament] = useState<MakerFilament | null>(null);
+  const [editingFilament, setEditingFilament] = useState<MakerFilamentType | null>(null);
   
   const [form, setForm] = useState({
     material: 'PLA',
     color: '',
     brand: '',
     grams_remaining: 1000,
-    dry_status: 'unknown' as MakerFilament['dry_status'],
+    dry_status: 'unknown' as MakerFilamentType['dry_status'],
     notes: ''
   });
 
@@ -65,7 +65,7 @@ const MakerFilament = () => {
     setEditingFilament(null);
   };
 
-  const handleOpenDialog = (fil?: MakerFilament) => {
+  const handleOpenDialog = (fil?: MakerFilamentType) => {
     if (fil) {
       setEditingFilament(fil);
       setForm({
@@ -108,7 +108,7 @@ const MakerFilament = () => {
     }
   };
 
-  const handleQuickUpdate = async (fil: MakerFilament, updates: Partial<MakerFilament>) => {
+  const handleQuickUpdate = async (fil: MakerFilamentType, updates: Partial<MakerFilamentType>) => {
     try {
       await updateMutation.mutateAsync({ filamentId: fil.id, updates });
       toast({ title: 'Updated' });
