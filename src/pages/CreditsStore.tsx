@@ -14,6 +14,7 @@ import {
   ArrowLeft, Coins, Gift, CreditCard, Wallet, TrendingUp,
   CheckCircle, ArrowRight, Sparkles, Tag, Calendar, ShoppingCart
 } from 'lucide-react';
+import { creditsToCad, formatCredits, formatCad, CAD_PER_CREDIT } from '@/config/credits';
 
 const CreditsStore = () => {
   const navigate = useNavigate();
@@ -67,13 +68,15 @@ const CreditsStore = () => {
     );
   }
 
+  // Credit packages: 10 credits = $1 CAD
+  // Prices stay the same, credits are 10x the CAD value + bonus
   const creditPackages = [
-    { credits: 20, price: 5, popular: false, bonus: 0 },
-    { credits: 50, price: 12, popular: false, bonus: 2 },
-    { credits: 100, price: 22, popular: true, bonus: 10 },
-    { credits: 250, price: 50, popular: false, bonus: 35 },
-    { credits: 500, price: 95, popular: false, bonus: 80 },
-    { credits: 1000, price: 175, popular: false, bonus: 200 },
+    { credits: 50, price: 5, popular: false, bonus: 0 },      // $5 = 50 credits
+    { credits: 120, price: 12, popular: false, bonus: 0 },    // $12 = 120 credits
+    { credits: 220, price: 22, popular: true, bonus: 20 },    // $22 = 220 credits + 20 bonus
+    { credits: 500, price: 50, popular: false, bonus: 50 },   // $50 = 500 credits + 50 bonus
+    { credits: 950, price: 95, popular: false, bonus: 100 },  // $95 = 950 credits + 100 bonus
+    { credits: 1750, price: 175, popular: false, bonus: 250 }, // $175 = 1750 credits + 250 bonus
   ];
 
   const paymentMethods = [
@@ -149,10 +152,10 @@ const CreditsStore = () => {
                   <div>
                     <div className="text-sm text-muted-foreground">Your Balance</div>
                     <div className="text-4xl font-tech font-bold text-foreground">
-                      {creditWallet?.balance?.toLocaleString() || 0} <span className="text-lg text-muted-foreground">credits</span>
+                      {formatCredits(creditWallet?.balance || 0)}
                     </div>
                     <div className="text-sm text-muted-foreground mt-1">
-                      ≈ ${((creditWallet?.balance || 0) * 0.25).toFixed(2)} CAD value
+                      ≈ {formatCad(creditsToCad(creditWallet?.balance || 0))}
                     </div>
                   </div>
                 </div>
@@ -240,7 +243,7 @@ const CreditsStore = () => {
                             ${pkg.price} <span className="text-sm text-muted-foreground">CAD</span>
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            ${(pkg.price / (pkg.credits + pkg.bonus)).toFixed(2)}/credit
+                            ${((pkg.price / (pkg.credits + pkg.bonus)) * 10).toFixed(2)}/10 credits
                           </div>
                         </div>
                         

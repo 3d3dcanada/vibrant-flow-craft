@@ -9,11 +9,13 @@ import {
   MapPin,
   Percent,
   Calendar,
-  Heart
+  Heart,
+  Coins
 } from "lucide-react";
 import { GlowCard } from "@/components/ui/GlowCard";
 import NeonButton from "@/components/ui/NeonButton";
 import AnimatedLogo from "@/components/ui/AnimatedLogo";
+import { cadToCredits, formatCredits, formatCad } from "@/config/credits";
 
 const subscriptionBenefits = [
   {
@@ -123,9 +125,13 @@ const BusinessSubscription = () => {
                 <h2 className="text-3xl font-tech font-bold text-foreground mb-2">
                   Business Support
                 </h2>
-                <div className="mb-6">
+                <div className="mb-2">
                   <span className="text-5xl font-tech font-bold text-secondary">$149</span>
                   <span className="text-muted-foreground">/month</span>
+                </div>
+                <div className="flex items-center justify-center gap-2 mb-6 text-sm text-muted-foreground">
+                  <Coins className="w-4 h-4 text-secondary" />
+                  <span>= {formatCredits(cadToCredits(149))} value</span>
                 </div>
                 
                 <ul className="space-y-3 mb-8 text-left">

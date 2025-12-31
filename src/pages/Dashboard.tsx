@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { creditsToCad, formatCad, CAD_PER_CREDIT, cadToCredits } from '@/config/credits';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -139,7 +140,7 @@ const Dashboard = () => {
                   <div className="p-3 rounded-xl bg-secondary/20">
                     <Coins className="w-6 h-6 text-secondary" />
                   </div>
-                  <span className="text-xs text-muted-foreground">$0.25 CAD each</span>
+                  <span className="text-xs text-muted-foreground">{formatCad(CAD_PER_CREDIT)}/credit</span>
                 </div>
                 <div className="text-3xl font-tech font-bold text-foreground">
                   {creditWallet?.balance?.toLocaleString() || 0}
@@ -321,15 +322,15 @@ const Dashboard = () => {
                 <div className="grid grid-cols-3 gap-2 mb-4">
                   <div className="p-2 rounded-lg bg-background/50 border border-primary/20 text-center">
                     <div className="text-sm font-bold text-foreground">$25</div>
-                    <div className="text-xs text-muted-foreground">100 credits</div>
+                    <div className="text-xs text-muted-foreground">{cadToCredits(25)} credits</div>
                   </div>
                   <div className="p-2 rounded-lg bg-background/50 border border-secondary/20 text-center">
                     <div className="text-sm font-bold text-foreground">$50</div>
-                    <div className="text-xs text-muted-foreground">210 credits</div>
+                    <div className="text-xs text-muted-foreground">{cadToCredits(50)} credits</div>
                   </div>
                   <div className="p-2 rounded-lg bg-background/50 border border-primary/20 text-center">
                     <div className="text-sm font-bold text-foreground">$100</div>
-                    <div className="text-xs text-muted-foreground">440 credits</div>
+                    <div className="text-xs text-muted-foreground">{cadToCredits(100)} credits</div>
                   </div>
                 </div>
                 
