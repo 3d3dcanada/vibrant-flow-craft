@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { useCreditWallet, useCreditTransactions } from '@/hooks/useUserData';
 import { ParticleBackground } from '@/components/ui/ParticleBackground';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
@@ -48,14 +49,40 @@ const CreditsStore = () => {
       return;
     }
     setRedeeming(true);
-    // Simulated - would need edge function for real implementation
-    setTimeout(() => {
-      toast({ 
-        title: "Coming Soon!", 
-        description: "Gift card redemption will be available soon. Contact us to redeem manually.",
+    
+    try {
+      const { data, error } = await supabase.rpc('redeem_gift_card', { 
+        p_code: giftCardCode.trim() 
       });
+      
+      if (error) throw error;
+      
+      const result = data as { success: boolean; error?: string; credits_value?: number; new_balance?: number; message?: string };
+      
+      if (!result.success) {
+        toast({ 
+          title: "Redemption Failed", 
+          description: result.error || "Unable to redeem gift card",
+          variant: "destructive" 
+        });
+      } else {
+        toast({ 
+          title: "Success!", 
+          description: result.message || `Redeemed +${result.credits_value} credits!`,
+        });
+        setGiftCardCode('');
+        // Refresh wallet balance
+        window.location.reload();
+      }
+    } catch (error: any) {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to redeem gift card",
+        variant: "destructive" 
+      });
+    } finally {
       setRedeeming(false);
-    }, 1000);
+    }
   };
 
   if (authLoading || isLoading) {

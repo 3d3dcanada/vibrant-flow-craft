@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { 
-  ArrowLeft, Gift, Send, Users, Check, Copy, Sparkles,
+  ArrowLeft, Gift, Send, Users, Check, Sparkles,
   CreditCard, Mail, Calendar
 } from 'lucide-react';
 import { cadToCredits, formatCredits, formatCad } from '@/config/credits';
@@ -31,14 +31,14 @@ const GiftCards = () => {
     }
   }, [user, authLoading, navigate]);
 
-  // Fetch user's purchased gift cards
+  // Fetch user's purchased gift cards - NEVER expose codes
   const { data: myGiftCards, isLoading } = useQuery({
     queryKey: ['my_gift_cards', user?.id],
     queryFn: async () => {
       if (!user) return [];
       const { data, error } = await supabase
         .from('gift_cards')
-        .select('*')
+        .select('id, credits_value, price_cad, is_redeemed, created_at, redeemed_at, purchased_by, redeemed_by')
         .or(`purchased_by.eq.${user.id},redeemed_by.eq.${user.id}`)
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -225,35 +225,23 @@ const GiftCards = () => {
                           <div className="font-medium text-foreground">
                             {formatCredits(card.credits_value)} • {formatCad(card.price_cad)}
                           </div>
-                          <div className="text-sm font-mono text-secondary">
-                            {card.code}
-                          </div>
                           <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
                             <Calendar className="w-3 h-3" />
                             {new Date(card.created_at).toLocaleDateString('en-CA')}
-                            {card.redeemed_by === user?.id && ' • Received'}
-                            {card.purchased_by === user?.id && card.redeemed_by !== user?.id && ' • Purchased'}
+                            {card.redeemed_by === user?.id && card.purchased_by !== user?.id && ' • Received'}
+                            {card.purchased_by === user?.id && ' • Purchased'}
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
-                        {card.is_redeemed ? (
-                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-muted-foreground text-sm">
-                            <Check className="w-4 h-4" />
-                            Redeemed
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(card.code);
-                              toast({ title: "Copied!", description: "Gift card code copied to clipboard" });
-                            }}
-                            className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-secondary/20 text-secondary text-sm hover:bg-secondary/30 transition-colors"
-                          >
-                            <Copy className="w-4 h-4" />
-                            Copy Code
-                          </button>
-                        )}
+                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm ${
+                          card.is_redeemed 
+                            ? 'bg-muted text-muted-foreground' 
+                            : 'bg-success/20 text-success'
+                        }`}>
+                          <Check className="w-4 h-4" />
+                          {card.is_redeemed ? 'Redeemed' : 'Active'}
+                        </span>
                       </div>
                     </div>
                   </GlowCard>

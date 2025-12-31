@@ -1017,6 +1017,7 @@ export type Database = {
     Functions: {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_maker: { Args: { _user_id: string }; Returns: boolean }
+      redeem_gift_card: { Args: { p_code: string }; Returns: Json }
     }
     Enums: {
       achievement_type:
