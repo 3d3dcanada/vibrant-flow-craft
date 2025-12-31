@@ -6,7 +6,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface PrinterStatus {
+// UUID v4 regex pattern
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+interface PrinterStatusResponse {
   connected: boolean;
   state: 'idle' | 'printing' | 'paused' | 'offline' | 'error';
   progress?: number;
@@ -14,12 +17,13 @@ interface PrinterStatus {
     bed?: number;
     hotend?: number;
   };
+  last_seen_at?: string;
   error?: string;
 }
 
-async function checkOctoPrint(url: string, apiKey: string): Promise<PrinterStatus> {
+async function checkOctoPrint(url: string, apiKey: string): Promise<PrinterStatusResponse> {
   try {
-    console.log(`Checking OctoPrint at ${url}`);
+    console.log('Checking OctoPrint connection...');
     
     // Check version/connectivity
     const versionRes = await fetch(`${url}/api/version`, {
@@ -40,7 +44,7 @@ async function checkOctoPrint(url: string, apiKey: string): Promise<PrinterStatu
       signal: AbortSignal.timeout(10000)
     });
     
-    let state: PrinterStatus['state'] = 'idle';
+    let state: PrinterStatusResponse['state'] = 'idle';
     let progress: number | undefined;
     
     if (jobRes.ok) {
@@ -55,7 +59,7 @@ async function checkOctoPrint(url: string, apiKey: string): Promise<PrinterStatu
     }
     
     // Get temps
-    let temps: PrinterStatus['temps'];
+    let temps: PrinterStatusResponse['temps'];
     try {
       const printerRes = await fetch(`${url}/api/printer`, {
         headers: { 'X-Api-Key': apiKey },
@@ -74,14 +78,14 @@ async function checkOctoPrint(url: string, apiKey: string): Promise<PrinterStatu
     
     return { connected: true, state, progress, temps };
   } catch (err: any) {
-    console.error('OctoPrint check failed:', err);
-    return { connected: false, state: 'offline', error: err?.message || 'Connection failed' };
+    console.error('OctoPrint check failed:', err?.message);
+    return { connected: false, state: 'offline', error: 'Connection failed' };
   }
 }
 
-async function checkMoonraker(url: string): Promise<PrinterStatus> {
+async function checkMoonraker(url: string): Promise<PrinterStatusResponse> {
   try {
-    console.log(`Checking Moonraker at ${url}`);
+    console.log('Checking Moonraker connection...');
     
     // Check server info
     const infoRes = await fetch(`${url}/server/info`, {
@@ -97,9 +101,9 @@ async function checkMoonraker(url: string): Promise<PrinterStatus> {
       signal: AbortSignal.timeout(10000)
     });
     
-    let state: PrinterStatus['state'] = 'idle';
+    let state: PrinterStatusResponse['state'] = 'idle';
     let progress: number | undefined;
-    let temps: PrinterStatus['temps'];
+    let temps: PrinterStatusResponse['temps'];
     
     if (stateRes.ok) {
       const stateData = await stateRes.json();
@@ -122,8 +126,8 @@ async function checkMoonraker(url: string): Promise<PrinterStatus> {
     
     return { connected: true, state, progress, temps };
   } catch (err: any) {
-    console.error('Moonraker check failed:', err);
-    return { connected: false, state: 'offline', error: err?.message || 'Connection failed' };
+    console.error('Moonraker check failed:', err?.message);
+    return { connected: false, state: 'offline', error: 'Connection failed' };
   }
 }
 
@@ -134,35 +138,87 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const { printer_id } = await req.json();
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
-    if (!printer_id) {
+    // 1) REQUIRE AUTHENTICATED CALLER
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.log('Missing authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create client with user's JWT to get their identity
+    const supabaseUser = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+    
+    const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
+    
+    if (authError || !user) {
+      console.log('Invalid or expired token:', authError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Invalid or expired authentication token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userId = user.id;
+    console.log(`Authenticated user: ${userId}`);
+
+    // Parse and validate input
+    const body = await req.json();
+    const { printer_id } = body;
+    
+    // 4) VALIDATE PRINTER_ID IS UUID FORMAT
+    if (!printer_id || typeof printer_id !== 'string') {
       return new Response(
         JSON.stringify({ error: 'printer_id is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    console.log(`Fetching printer ${printer_id}`);
     
-    // Fetch printer details
-    const { data: printer, error: fetchError } = await supabase
+    if (!UUID_REGEX.test(printer_id)) {
+      console.log(`Invalid UUID format: ${printer_id}`);
+      return new Response(
+        JSON.stringify({ error: 'Invalid printer_id format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Use service role to fetch printer (bypasses RLS for ownership check)
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // 2) VERIFY PRINTER OWNERSHIP BEFORE DOING ANYTHING
+    const { data: printer, error: fetchError } = await supabaseAdmin
       .from('maker_printers')
-      .select('*')
+      .select('id, maker_id, connection_type, connection_url, api_key')
       .eq('id', printer_id)
       .single();
 
     if (fetchError || !printer) {
-      console.error('Printer fetch error:', fetchError);
+      console.log('Printer not found:', fetchError?.message);
       return new Response(
         JSON.stringify({ error: 'Printer not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    // CRITICAL: Verify the caller owns this printer
+    if (printer.maker_id !== userId) {
+      console.log(`Access denied: user ${userId} does not own printer ${printer_id} (owner: ${printer.maker_id})`);
+      return new Response(
+        JSON.stringify({ error: 'Access denied: you do not own this printer' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`Ownership verified for printer ${printer_id}`);
+
+    // Check if printer has connection configured
     if (printer.connection_type === 'none' || !printer.connection_url) {
       return new Response(
         JSON.stringify({ 
@@ -174,7 +230,8 @@ serve(async (req) => {
       );
     }
 
-    let status: PrinterStatus;
+    // Perform status check
+    let status: PrinterStatusResponse;
 
     if (printer.connection_type === 'octoprint') {
       if (!printer.api_key) {
@@ -190,11 +247,12 @@ serve(async (req) => {
       status = { connected: false, state: 'offline', error: 'Unknown connection type' };
     }
 
-    // Update printer record
-    const { error: updateError } = await supabase
+    // Update printer record with latest status
+    const now = new Date().toISOString();
+    const { error: updateError } = await supabaseAdmin
       .from('maker_printers')
       .update({
-        last_seen_at: new Date().toISOString(),
+        last_seen_at: now,
         last_status: status,
         status: status.connected 
           ? (status.state === 'printing' ? 'printing' : 'available')
@@ -206,16 +264,26 @@ serve(async (req) => {
       console.error('Failed to update printer:', updateError);
     }
 
-    console.log(`Printer ${printer_id} status:`, status);
+    // 3) NEVER RETURN SECRETS - only return normalized status payload
+    const safeResponse: PrinterStatusResponse = {
+      connected: status.connected,
+      state: status.state,
+      progress: status.progress,
+      temps: status.temps,
+      last_seen_at: now,
+      error: status.error
+    };
+
+    console.log(`Printer ${printer_id} status check complete: ${status.state}`);
 
     return new Response(
-      JSON.stringify(status),
+      JSON.stringify(safeResponse),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error: any) {
-    console.error('Error in printer-status:', error);
+    console.error('Error in printer-status:', error?.message);
     return new Response(
-      JSON.stringify({ error: error?.message || 'Unknown error' }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
