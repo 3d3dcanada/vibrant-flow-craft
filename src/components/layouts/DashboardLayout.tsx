@@ -29,7 +29,7 @@ const customerNav: NavItem[] = [
 
 const communityNav: NavItem[] = [
   { label: 'Recycling', icon: Recycle, href: '/dashboard/recycling' },
-  { label: 'Community Cleanup', icon: TreePine, href: '/dashboard/cleanup' },
+  { label: 'Community Cleanup', icon: TreePine, href: '/dashboard/community-cleanup' },
   { label: 'Community Models', icon: Package, href: '/dashboard/community' },
 ];
 
