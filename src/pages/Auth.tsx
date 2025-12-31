@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { NeonButton } from '@/components/ui/NeonButton';
 import { ParticleBackground } from '@/components/ui/ParticleBackground';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
-import { Loader2, Mail, Lock, User, Gift, ArrowRight, Sparkles, KeyRound, CheckCircle, CloudOff } from 'lucide-react';
+import { Loader2, Mail, Lock, User, Gift, ArrowRight, KeyRound, CheckCircle, CloudOff, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 import { backendReady } from '@/config/backend';
@@ -29,15 +29,12 @@ const Auth = () => {
   const [referralCode, setReferralCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({});
-  const [demoEmail, setDemoEmail] = useState<string | null>(null);
   const [resetSent, setResetSent] = useState(false);
 
   const { signIn, signUp, user, resetPassword, updatePassword } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-
-  const DEMO_PASSWORD = 'DemoPass123!';
 
   // Get return URL from navigation state
   const locationState = location.state as { returnTo?: string; isSignup?: boolean } | null;
@@ -100,51 +97,6 @@ const Auth = () => {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-
-  const handleCreateDemoAccount = async () => {
-    if (loading) return;
-
-    setLoading(true);
-    setErrors({});
-
-    const generatedEmail = `demo+${Date.now()}@example.com`;
-
-    try {
-      const { error: signUpError } = await signUp(generatedEmail, DEMO_PASSWORD, 'Demo User');
-      if (signUpError) {
-        toast({
-          title: 'Demo account error',
-          description: signUpError.message,
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      const { error: signInError } = await signIn(generatedEmail, DEMO_PASSWORD);
-      if (signInError) {
-        toast({
-          title: 'Demo login error',
-          description: signInError.message,
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      setDemoEmail(generatedEmail);
-      toast({
-        title: 'Demo ready',
-        description: 'Signed in with a temporary demo account.',
-      });
-    } catch {
-      toast({
-        title: 'Demo account error',
-        description: 'Could not create a demo account. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
@@ -245,14 +197,14 @@ const Auth = () => {
             toast({
               title: 'Login Failed',
               description:
-                "Invalid email or password. If you don't have an account yet, switch to Sign up (or use Demo Account).",
+                "Invalid email or password. If you don't have an account yet, switch to Sign up.",
               variant: 'destructive',
             });
           } else if (msg.includes('email') && msg.includes('confirm')) {
             toast({
               title: 'Email not confirmed',
               description:
-                'Your account exists but needs email confirmation. Try signing up again with a fresh email or use Demo Account for testing.',
+                'Your account exists but needs email confirmation. Please check your inbox or try signing up again.',
               variant: 'destructive',
             });
           } else {
@@ -574,40 +526,6 @@ const Auth = () => {
                 )}
               </NeonButton>
             </form>
-
-            {/* Demo (login/signup only) */}
-            {(mode === 'login' || mode === 'signup') && (
-              <div className="mt-6">
-                <div className="flex items-center gap-3 my-4">
-                  <div className="h-px flex-1 bg-border/60" />
-                  <span className="text-xs text-muted-foreground">or</span>
-                  <div className="h-px flex-1 bg-border/60" />
-                </div>
-
-                <NeonButton
-                  type="button"
-                  variant="outline"
-                  size="md"
-                  className="w-full h-12"
-                  disabled={loading}
-                  onClick={handleCreateDemoAccount}
-                  icon={<Sparkles className="w-5 h-5" />}
-                >
-                  1‑Click Demo Login
-                </NeonButton>
-
-                <p className="mt-2 text-xs text-muted-foreground text-center">
-                  Creates a temporary demo account and signs you in instantly.
-                </p>
-
-                {demoEmail && (
-                  <p className="mt-2 text-xs text-muted-foreground text-center">
-                    Demo email:{" "}
-                    <span className="font-mono text-secondary">{demoEmail}</span>
-                  </p>
-                )}
-              </div>
-            )}
 
             {/* Toggle Login/Signup */}
             {(mode === 'login' || mode === 'signup') && (
