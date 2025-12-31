@@ -405,3 +405,109 @@ export const useTestPrinterConnection = () => {
     }
   });
 };
+
+// Get all makers for admin assignment
+export const useAllMakers = () => {
+  return useQuery({
+    queryKey: ['all_makers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, display_name, email, availability_status')
+        .eq('role', 'maker')
+        .eq('onboarding_completed', true)
+        .order('full_name', { ascending: true });
+      if (error) throw error;
+      return data;
+    }
+  });
+};
+
+// Get all unassigned requests for admin
+export const useAllUnassignedRequests = () => {
+  return useQuery({
+    queryKey: ['all_unassigned_requests'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('print_requests')
+        .select('*')
+        .is('maker_id', null)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as PrintRequest[];
+    }
+  });
+};
+
+// Admin assign request to maker
+export const useAssignRequestToMaker = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ requestId, makerId }: { requestId: string; makerId: string }) => {
+      const { error } = await supabase
+        .from('print_requests')
+        .update({ maker_id: makerId, status: 'claimed' })
+        .eq('id', requestId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pending_requests'] });
+      queryClient.invalidateQueries({ queryKey: ['all_unassigned_requests'] });
+      queryClient.invalidateQueries({ queryKey: ['maker_requests'] });
+    }
+  });
+};
+
+// Submit a print request (from quote section)
+export const useSubmitPrintRequest = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  
+  return useMutation({
+    mutationFn: async (request: {
+      specs: Record<string, any>;
+      attribution?: Record<string, any>;
+      notes?: string;
+    }) => {
+      const { data, error } = await supabase
+        .from('print_requests')
+        .insert({
+          user_id: user?.id || null,
+          maker_id: null,
+          status: 'pending',
+          specs: request.specs,
+          attribution: request.attribution || {},
+          notes: request.notes || null
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pending_requests'] });
+      queryClient.invalidateQueries({ queryKey: ['all_unassigned_requests'] });
+    }
+  });
+};
+
+// Check if user is admin
+export const useIsAdmin = () => {
+  const { user } = useAuth();
+  
+  return useQuery({
+    queryKey: ['is_admin', user?.id],
+    queryFn: async () => {
+      if (!user) return false;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+      if (error) return false;
+      return data?.role === 'admin';
+    },
+    enabled: !!user
+  });
+};
