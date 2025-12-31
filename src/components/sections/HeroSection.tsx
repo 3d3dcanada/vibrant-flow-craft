@@ -1,10 +1,26 @@
 import { motion } from "framer-motion";
-import { ArrowUp, FileUp, GraduationCap } from "lucide-react";
+import { FileUp, GraduationCap } from "lucide-react";
+import { useState, useEffect } from "react";
 import NeonButton from "../ui/NeonButton";
 import StatsCounter from "../ui/StatsCounter";
 import LiveTicker from "../ui/LiveTicker";
 
 export const HeroSection = () => {
+  const [makersAvailable, setMakersAvailable] = useState(17);
+
+  useEffect(() => {
+    const updateMakers = () => {
+      const randomNumber = Math.floor(Math.random() * 34) + 1;
+      setMakersAvailable(randomNumber);
+      // Random interval between 2-6 seconds
+      const nextInterval = Math.floor(Math.random() * 4000) + 2000;
+      setTimeout(updateMakers, nextInterval);
+    };
+    
+    const initialTimeout = setTimeout(updateMakers, 3000);
+    return () => clearTimeout(initialTimeout);
+  }, []);
+
   return (
     <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
@@ -21,8 +37,15 @@ export const HeroSection = () => {
             <span className="relative inline-flex rounded-full h-3 w-3 bg-success" />
           </span>
           <span className="text-xs font-bold tracking-widest text-muted-foreground">
-            ATLANTIC NETWORK:{" "}
-            <span className="text-success">ACTIVE (50+ NODES)</span>
+            <motion.span 
+              key={makersAvailable}
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-success"
+            >
+              {makersAvailable}
+            </motion.span>
+            <span className="text-success"> MAKERS AVAILABLE</span>
           </span>
         </motion.div>
 
@@ -57,8 +80,6 @@ export const HeroSection = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
-          The distributed factory for{" "}
-          <strong className="text-foreground">New Brunswick, Nova Scotia, & PEI</strong>.
           Upload a file, get an instant price, and a local maker starts building it immediately.
           <span className="block mt-4 text-sm text-secondary">
             <span className="inline-flex items-center gap-1">
@@ -105,10 +126,10 @@ export const HeroSection = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 1 }}
         >
-          <StatsCounter value="24h" label="Avg Turnaround" suffix="" delay={0} />
-          <StatsCounter value="50+" label="Vetted Makers" delay={200} />
-          <StatsCounter value="25¢" label="Designer Royalties" delay={400} />
-          <StatsCounter value="100%" label="Satisfaction Guarantee" delay={600} />
+          <StatsCounter value="24-48h" label="Avg Turnaround" suffix="" delay={0} />
+          <StatsCounter value="20+" label="Vetted Makers" delay={200} />
+          <StatsCounter value="$0.25+" label="Designer Royalties" delay={400} />
+          <StatsCounter value="97.3%" label="Satisfaction Guarantee" delay={600} />
         </motion.div>
       </div>
 

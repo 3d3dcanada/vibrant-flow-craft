@@ -8,9 +8,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import RepositoryDrawer from "@/components/repositories/RepositoryDrawer";
 
 const navLinks = [
-  { label: "About Us", href: "#about" },
-  { label: "Materials Wiki", href: "#materials" },
-  { label: "How It Works", href: "#how-it-works" },
+  { label: "Mission", href: "/mission", isRoute: true },
+  { label: "About", href: "/about", isRoute: true },
+  { label: "How It Works", href: "#how-it-works", isRoute: false },
+  { label: "Materials", href: "#materials", isRoute: false },
+  { label: "Schedule", href: "/schedule", isRoute: true },
 ];
 
 export const Navbar = () => {
@@ -49,13 +51,23 @@ export const Navbar = () => {
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
               {navLinks.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  className="text-sm font-medium text-foreground hover:text-secondary transition-colors relative group py-2 animated-underline"
-                >
-                  {link.label}
-                </a>
+                link.isRoute ? (
+                  <Link
+                    key={link.label}
+                    to={link.href}
+                    className="text-sm font-medium text-foreground hover:text-secondary transition-colors relative group py-2 animated-underline"
+                  >
+                    {link.label}
+                  </Link>
+                ) : (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    className="text-sm font-medium text-foreground hover:text-secondary transition-colors relative group py-2 animated-underline"
+                  >
+                    {link.label}
+                  </a>
+                )
               ))}
 
               <motion.button
@@ -137,17 +149,34 @@ export const Navbar = () => {
               </div>
 
               {navLinks.map((link, index) => (
-                <motion.a
-                  key={link.label}
-                  href={link.href}
-                  className="text-2xl font-tech font-bold text-foreground hover:text-secondary transition-colors flex items-center justify-center gap-3"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  {link.label}
-                </motion.a>
+                link.isRoute ? (
+                  <motion.div
+                    key={link.label}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <Link
+                      to={link.href}
+                      className="text-2xl font-tech font-bold text-foreground hover:text-secondary transition-colors flex items-center justify-center gap-3"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      {link.label}
+                    </Link>
+                  </motion.div>
+                ) : (
+                  <motion.a
+                    key={link.label}
+                    href={link.href}
+                    className="text-2xl font-tech font-bold text-foreground hover:text-secondary transition-colors flex items-center justify-center gap-3"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    {link.label}
+                  </motion.a>
+                )
               ))}
 
               <motion.div
