@@ -3,7 +3,8 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { 
   Upload, Link as LinkIcon, Check, Leaf, Heart, CloudUpload, Trash2, Tag, X, Zap, 
-  AlertCircle, Clock, Wrench, Package, User, ChevronDown, ChevronUp, ExternalLink, Send, Loader2
+  AlertCircle, Clock, Wrench, Package, User, ChevronDown, ChevronUp, ExternalLink, Send, Loader2,
+  Copy, Mail, CloudOff
 } from "lucide-react";
 import { GlowCard } from "../ui/GlowCard";
 import NeonButton from "../ui/NeonButton";
@@ -27,6 +28,8 @@ import {
   RUSH_RATES,
   getMinimumGrams
 } from "@/config/pricing";
+import { backendReady, CONTACT_EMAIL } from "@/config/backend";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 import { PrintRequestFormData, ModelAttribution, createAttribution } from "@/types/modelSource";
 
@@ -60,6 +63,7 @@ export const QuoteSection = () => {
   const { toast } = useToast();
   const submitRequestMutation = useSubmitPrintRequest();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [offlineModalOpen, setOfflineModalOpen] = useState(false);
   
   // File/URL mode
   const [mode, setMode] = useState<Mode>("upload");
@@ -1024,6 +1028,12 @@ export const QuoteSection = () => {
                     iconPosition="right"
                     disabled={!validation.isValid || isSubmitting}
                     onClick={async () => {
+                      // If backend not ready, show offline modal instead
+                      if (!backendReady) {
+                        setOfflineModalOpen(true);
+                        return;
+                      }
+
                       setIsSubmitting(true);
                       try {
                         // Build specs object
@@ -1097,6 +1107,75 @@ export const QuoteSection = () => {
                   >
                     {isSubmitting ? 'SUBMITTING...' : 'SUBMIT REQUEST'}
                   </NeonButton>
+
+                  {/* Offline Request Modal */}
+                  <Dialog open={offlineModalOpen} onOpenChange={setOfflineModalOpen}>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                          <CloudOff className="w-5 h-5 text-amber-500" />
+                          Requests aren't live yet
+                        </DialogTitle>
+                        <DialogDescription>
+                          Copy your quote summary and contact us directly to submit your request.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="p-3 rounded-lg bg-muted/50 border border-border text-xs font-mono space-y-1">
+                          <p><strong>Job Size:</strong> {JOB_SIZE_DEFAULTS[jobSize].label}</p>
+                          <p><strong>Material:</strong> {MATERIAL_RATES[materialType].name}</p>
+                          <p><strong>Color:</strong> {COLOR_OPTIONS.find(c => c.value === color)?.label || color}</p>
+                          <p><strong>Quantity:</strong> {qty}</p>
+                          <p><strong>Weight:</strong> {weight}g</p>
+                          <p><strong>Est. Hours:</strong> {effectiveHours.toFixed(1)}</p>
+                          <p><strong>Delivery:</strong> {deliverySpeed === 'emergency' ? 'Emergency (<24h)' : 'Standard'}</p>
+                          {url && <p><strong>Model URL:</strong> {url}</p>}
+                          <p><strong>Est. Total:</strong> ${quoteBreakdown.total.toFixed(2)} CAD</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <NeonButton
+                            variant="secondary"
+                            size="sm"
+                            className="flex-1"
+                            icon={<Copy className="w-4 h-4" />}
+                            onClick={() => {
+                              const details = `3D3D Print Request
+Job Size: ${JOB_SIZE_DEFAULTS[jobSize].label}
+Material: ${MATERIAL_RATES[materialType].name}
+Color: ${COLOR_OPTIONS.find(c => c.value === color)?.label || color}
+Quantity: ${qty}
+Weight: ${weight}g
+Est. Hours: ${effectiveHours.toFixed(1)}
+Delivery: ${deliverySpeed === 'emergency' ? 'Emergency (<24h)' : 'Standard'}
+${url ? `Model URL: ${url}` : ''}
+Est. Total: $${quoteBreakdown.total.toFixed(2)} CAD`;
+                              navigator.clipboard.writeText(details);
+                              toast({
+                                title: "Copied!",
+                                description: "Request details copied to clipboard.",
+                              });
+                            }}
+                          >
+                            Copy Details
+                          </NeonButton>
+                          <NeonButton
+                            variant="primary"
+                            size="sm"
+                            className="flex-1"
+                            icon={<Mail className="w-4 h-4" />}
+                            onClick={() => {
+                              window.location.href = `mailto:${CONTACT_EMAIL}?subject=3D3D Print Request&body=${encodeURIComponent(`Hi 3D3D Team,\n\nI'd like to submit a print request:\n\nJob Size: ${JOB_SIZE_DEFAULTS[jobSize].label}\nMaterial: ${MATERIAL_RATES[materialType].name}\nColor: ${COLOR_OPTIONS.find(c => c.value === color)?.label || color}\nQuantity: ${qty}\nWeight: ${weight}g\nEst. Hours: ${effectiveHours.toFixed(1)}\nDelivery: ${deliverySpeed === 'emergency' ? 'Emergency (<24h)' : 'Standard'}\n${url ? `Model URL: ${url}\n` : ''}\nEst. Total: $${quoteBreakdown.total.toFixed(2)} CAD\n\nThanks!`)}`;
+                            }}
+                          >
+                            Email Us
+                          </NeonButton>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground text-center">
+                          Contact: {CONTACT_EMAIL}
+                        </p>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
 
                   {/* Legal Summary Callout */}
                   <div className="mt-4 p-3 rounded-lg bg-muted/30 border border-border/50 text-[10px] text-muted-foreground space-y-1">

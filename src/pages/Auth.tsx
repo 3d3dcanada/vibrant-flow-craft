@@ -7,9 +7,10 @@ import { Input } from '@/components/ui/input';
 import { NeonButton } from '@/components/ui/NeonButton';
 import { ParticleBackground } from '@/components/ui/ParticleBackground';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
-import { Loader2, Mail, Lock, User, Gift, ArrowRight, Sparkles, KeyRound, CheckCircle } from 'lucide-react';
+import { Loader2, Mail, Lock, User, Gift, ArrowRight, Sparkles, KeyRound, CheckCircle, CloudOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
+import { backendReady } from '@/config/backend';
 
 const emailSchema = z.string().email('Please enter a valid email address');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
@@ -350,6 +351,23 @@ const Auth = () => {
 
           {/* Card */}
           <div className="glass-card p-8 rounded-2xl border border-primary/20">
+            {/* Backend Offline Banner */}
+            {!backendReady && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3"
+              >
+                <CloudOff className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-foreground">Backend not connected yet</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Sign-in will be enabled at launch. Thanks for your patience!
+                  </p>
+                </div>
+              </motion.div>
+            )}
+
             {/* Header */}
             <div className="text-center mb-8">
               <motion.h1 
