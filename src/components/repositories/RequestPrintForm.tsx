@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Link as LinkIcon, Package, Layers, Hash, FileText, Send, X } from "lucide-react";
+import { Link as LinkIcon, Package, Layers, Hash, FileText, Send, X, User, ChevronDown, ChevronUp } from "lucide-react";
 import { Repository } from "@/data/repositories";
-import { MaterialType, MATERIAL_RATES } from "@/config/pricing";
-import { ModelSource, PrintRequestFormData } from "@/types/modelSource";
+import { MaterialType } from "@/config/pricing";
+import { ModelAttribution, PrintRequestFormData, createAttribution } from "@/types/modelSource";
 import NeonButton from "@/components/ui/NeonButton";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -39,6 +39,11 @@ export const RequestPrintForm = ({ repository, onClose, onSubmit }: RequestPrint
   const [materialType, setMaterialType] = useState<MaterialType>("PLA_STANDARD");
   const [quantity, setQuantity] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Attribution fields (optional)
+  const [showAttribution, setShowAttribution] = useState(false);
+  const [designerName, setDesignerName] = useState("");
+  const [designerProfileUrl, setDesignerProfileUrl] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,12 +51,14 @@ export const RequestPrintForm = ({ repository, onClose, onSubmit }: RequestPrint
 
     setIsSubmitting(true);
 
-    const modelSource: ModelSource = {
-      platform: repository?.name,
-      modelUrl: modelUrl.trim(),
-      licenseNote: repository?.licenseNotes,
-      notes: notes.trim() || undefined,
-    };
+    // Create attribution with auto-populated fields
+    const attribution = createAttribution({
+      source_platform: repository?.name,
+      model_url: modelUrl.trim(),
+      designer_name: designerName.trim() || undefined,
+      designer_profile_url: designerProfileUrl.trim() || undefined,
+      license_note: repository?.licenseNotes,
+    });
 
     const formData: PrintRequestFormData = {
       modelUrl: modelUrl.trim(),
@@ -61,7 +68,7 @@ export const RequestPrintForm = ({ repository, onClose, onSubmit }: RequestPrint
       jobSize,
       materialType,
       quantity,
-      modelSource,
+      attribution,
     };
 
     onSubmit(formData);
@@ -79,11 +86,11 @@ export const RequestPrintForm = ({ repository, onClose, onSubmit }: RequestPrint
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className="w-full max-w-md bg-card border border-border rounded-xl shadow-2xl overflow-hidden"
+        className="w-full max-w-md bg-card border border-border rounded-xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-5 py-4 border-b border-border bg-muted/30 flex items-center justify-between">
+        <div className="px-5 py-4 border-b border-border bg-muted/30 flex items-center justify-between sticky top-0 z-10">
           <div>
             <h3 className="font-bold text-foreground font-tech">Request a Print</h3>
             {repository && (
@@ -190,6 +197,61 @@ export const RequestPrintForm = ({ repository, onClose, onSubmit }: RequestPrint
               rows={2}
               className="w-full bg-background/50 border border-border rounded-lg px-4 py-3 text-sm text-foreground focus:border-primary outline-none resize-none transition-all"
             />
+          </div>
+
+          {/* Designer Attribution (Collapsible) */}
+          <div className="border border-border/50 rounded-lg overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setShowAttribution(!showAttribution)}
+              className="w-full px-4 py-3 flex items-center justify-between bg-muted/20 hover:bg-muted/40 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <User className="w-3 h-3 text-muted-foreground" />
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                  Designer Attribution (optional)
+                </span>
+              </div>
+              {showAttribution ? (
+                <ChevronUp className="w-4 h-4 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+              )}
+            </button>
+            
+            {showAttribution && (
+              <div className="p-4 space-y-3 border-t border-border/50">
+                <p className="text-[10px] text-muted-foreground leading-relaxed">
+                  We track this only for attribution and creator goodwill. No fees are enforced.
+                </p>
+                
+                <div>
+                  <label className="text-[10px] text-muted-foreground mb-1 block">
+                    Designer Name
+                  </label>
+                  <input
+                    type="text"
+                    value={designerName}
+                    onChange={(e) => setDesignerName(e.target.value)}
+                    placeholder="e.g., MakersMuse"
+                    className="w-full bg-background/50 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:border-primary outline-none transition-all"
+                  />
+                </div>
+                
+                <div>
+                  <label className="text-[10px] text-muted-foreground mb-1 block">
+                    Designer Profile URL
+                  </label>
+                  <input
+                    type="url"
+                    value={designerProfileUrl}
+                    onChange={(e) => setDesignerProfileUrl(e.target.value)}
+                    placeholder="https://..."
+                    className="w-full bg-background/50 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:border-primary outline-none font-mono transition-all"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Not logged in notice */}
