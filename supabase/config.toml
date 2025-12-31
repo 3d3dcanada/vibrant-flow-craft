@@ -1,1 +1,7 @@
 project_id = "zcmqrecmnhjvhtmezqsn"
+
+[functions.submit-recycling-drop]
+verify_jwt = false
+
+[functions.claim-social-reward]
+verify_jwt = false

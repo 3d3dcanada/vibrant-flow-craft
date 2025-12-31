@@ -11,6 +11,7 @@ import { GlowCard } from '@/components/ui/GlowCard';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { RECYCLING_REWARDS } from '@/config/rewards';
 import { 
   ArrowLeft, Recycle, Scale, MapPin, Leaf, Check, Calendar,
   Award, TrendingUp, Sparkles
@@ -41,6 +42,14 @@ const Recycling = () => {
       toast({ title: "Error", description: "Please enter a valid weight", variant: "destructive" });
       return;
     }
+    if (weight > RECYCLING_REWARDS.MAX_GRAMS_PER_SUBMISSION) {
+      toast({ 
+        title: "Error", 
+        description: `Maximum ${RECYCLING_REWARDS.MAX_GRAMS_PER_SUBMISSION / 1000}kg per submission`, 
+        variant: "destructive" 
+      });
+      return;
+    }
     if (!form.location.trim()) {
       toast({ title: "Error", description: "Please enter a drop-off location", variant: "destructive" });
       return;
@@ -48,30 +57,35 @@ const Recycling = () => {
 
     setSubmitting(true);
     try {
-      const points = weight; // 1 point per gram
-
-      const { error } = await supabase.from('recycling_drops').insert({
-        user_id: user?.id,
-        weight_grams: weight,
-        material_type: form.material_type,
-        location: form.location,
-        points_earned: points,
-        verified: false,
+      // Call edge function instead of direct DB insert
+      // Points are calculated SERVER-SIDE only
+      const { data, error } = await supabase.functions.invoke('submit-recycling-drop', {
+        body: {
+          grams: weight,
+          material_type: form.material_type,
+          location: form.location.trim(),
+        },
       });
 
       if (error) throw error;
+      
+      if (!data.ok) {
+        throw new Error(data.message || 'Failed to submit recycling drop');
+      }
 
       toast({
         title: "Drop Logged!",
-        description: `Your ${weight}g recycling drop has been submitted for verification. You'll earn ${points} points once verified!`,
+        description: data.message || `Your ${weight}g recycling drop has been submitted for verification.`,
       });
       
       setForm({ weight_grams: '', material_type: 'PLA', location: '' });
       refetch();
     } catch (err: any) {
+      // Handle specific error types from edge function
+      const errorMessage = err?.message || err?.error?.message || "Failed to log recycling drop";
       toast({
         title: "Error",
-        description: err.message || "Failed to log recycling drop",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -225,7 +239,10 @@ const Recycling = () => {
 
               <div className="flex items-center justify-between">
                 <div className="text-sm text-muted-foreground">
-                  You'll earn <span className="text-success font-bold">+{form.weight_grams || 0} points</span> when verified
+                  Estimated: <span className="text-success font-bold">~{form.weight_grams || 0} points</span> when verified
+                  <span className="text-xs block text-muted-foreground/70">
+                    (Max {RECYCLING_REWARDS.MAX_SUBMISSIONS_PER_DAY} drops/day)
+                  </span>
                 </div>
                 <NeonButton onClick={handleSubmit} disabled={submitting}>
                   {submitting ? 'Submitting...' : 'Log Drop'}
