@@ -1,29 +1,37 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { NeonButton } from '@/components/ui/NeonButton';
 import { ParticleBackground } from '@/components/ui/ParticleBackground';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
-import { Loader2, Mail, Lock, User, Gift, ArrowRight, Sparkles } from 'lucide-react';
+import { Loader2, Mail, Lock, User, Gift, ArrowRight, Sparkles, KeyRound, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 
 const emailSchema = z.string().email('Please enter a valid email address');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
 
+type AuthMode = 'login' | 'signup' | 'forgot' | 'reset';
+
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const [searchParams] = useSearchParams();
+  const initialMode = searchParams.get('mode') as AuthMode | null;
+  
+  const [mode, setMode] = useState<AuthMode>(initialMode === 'reset' ? 'reset' : 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({});
   const [demoEmail, setDemoEmail] = useState<string | null>(null);
+  const [resetSent, setResetSent] = useState(false);
 
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, user, resetPassword, updatePassword } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -36,33 +44,56 @@ const Auth = () => {
 
   useEffect(() => {
     // If coming from quote with isSignup flag, switch to signup mode
-    if (locationState?.isSignup && isLogin) {
-      setIsLogin(false);
+    if (locationState?.isSignup && mode === 'login') {
+      setMode('signup');
     }
   }, [locationState?.isSignup]);
 
+  // Check if user is logged in and redirect (but check onboarding first)
   useEffect(() => {
     if (user) {
-      navigate(returnTo);
+      // Check if onboarding is completed
+      supabase
+        .from('profiles')
+        .select('onboarding_completed')
+        .eq('id', user.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data?.onboarding_completed === false) {
+            navigate('/onboarding');
+          } else {
+            navigate(returnTo);
+          }
+        });
     }
   }, [user, navigate, returnTo]);
 
   const validateForm = () => {
-    const newErrors: { email?: string; password?: string } = {};
+    const newErrors: { email?: string; password?: string; confirmPassword?: string } = {};
 
-    try {
-      emailSchema.parse(email);
-    } catch (e) {
-      if (e instanceof z.ZodError) {
-        newErrors.email = e.errors[0].message;
+    if (mode !== 'reset') {
+      try {
+        emailSchema.parse(email);
+      } catch (e) {
+        if (e instanceof z.ZodError) {
+          newErrors.email = e.errors[0].message;
+        }
       }
     }
 
-    try {
-      passwordSchema.parse(password);
-    } catch (e) {
-      if (e instanceof z.ZodError) {
-        newErrors.password = e.errors[0].message;
+    if (mode === 'login' || mode === 'signup' || mode === 'reset') {
+      try {
+        passwordSchema.parse(password);
+      } catch (e) {
+        if (e instanceof z.ZodError) {
+          newErrors.password = e.errors[0].message;
+        }
+      }
+    }
+
+    if (mode === 'reset') {
+      if (password !== confirmPassword) {
+        newErrors.confirmPassword = 'Passwords do not match';
       }
     }
 
@@ -104,7 +135,6 @@ const Auth = () => {
         title: 'Demo ready',
         description: 'Signed in with a temporary demo account.',
       });
-      // Navigation happens when auth state updates (see useEffect above)
     } catch {
       toast({
         title: 'Demo account error',
@@ -116,7 +146,45 @@ const Auth = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      emailSchema.parse(email);
+    } catch {
+      setErrors({ email: 'Please enter a valid email address' });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { error } = await resetPassword(email);
+      if (error) {
+        toast({
+          title: 'Error',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        setResetSent(true);
+        toast({
+          title: 'Email sent',
+          description: 'Check your inbox for a password reset link.',
+        });
+      }
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) return;
@@ -124,7 +192,50 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      if (isLogin) {
+      const { error } = await updatePassword(password);
+      if (error) {
+        toast({
+          title: 'Error',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Password updated',
+          description: 'Your password has been successfully reset.',
+        });
+        setMode('login');
+        setPassword('');
+        setConfirmPassword('');
+      }
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (mode === 'forgot') {
+      return handleForgotPassword(e);
+    }
+
+    if (mode === 'reset') {
+      return handleResetPassword(e);
+    }
+
+    if (!validateForm()) return;
+
+    setLoading(true);
+
+    try {
+      if (mode === 'login') {
         const { error } = await signIn(email, password);
         if (error) {
           const msg = (error?.message || '').toLowerCase();
@@ -155,9 +266,8 @@ const Auth = () => {
             title: 'Welcome back!',
             description: "You're successfully logged in.",
           });
-          // Navigation happens when auth state updates (see useEffect above)
         }
-      } else {
+      } else if (mode === 'signup') {
         const { error: signUpError } = await signUp(email, password, fullName);
         if (signUpError) {
           if (signUpError.message.includes('User already registered')) {
@@ -166,7 +276,7 @@ const Auth = () => {
               description: 'This email is already registered. Please sign in instead.',
               variant: 'destructive',
             });
-            setIsLogin(true);
+            setMode('login');
           } else {
             toast({
               title: 'Signup error',
@@ -175,7 +285,7 @@ const Auth = () => {
             });
           }
         } else {
-          // Ensure the user is actually signed in (prevents "signup succeeded" but dashboard redirects back).
+          // Auto sign in after signup
           const { error: signInError } = await signIn(email, password);
           if (signInError) {
             toast({
@@ -183,7 +293,7 @@ const Auth = () => {
               description: signInError.message,
               variant: 'destructive',
             });
-            setIsLogin(true);
+            setMode('login');
             return;
           }
 
@@ -191,7 +301,6 @@ const Auth = () => {
             title: 'Account created',
             description: "You're signed in and ready to go.",
           });
-          // Navigation happens when auth state updates (see useEffect above)
         }
       }
     } catch {
@@ -202,6 +311,24 @@ const Auth = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getTitle = () => {
+    switch (mode) {
+      case 'login': return 'Welcome Back';
+      case 'signup': return 'Join the Network';
+      case 'forgot': return 'Reset Password';
+      case 'reset': return 'Set New Password';
+    }
+  };
+
+  const getSubtitle = () => {
+    switch (mode) {
+      case 'login': return 'Sign in to access your dashboard';
+      case 'signup': return 'Create your account and earn 100 bonus points!';
+      case 'forgot': return 'Enter your email to receive a reset link';
+      case 'reset': return 'Choose a new secure password';
     }
   };
 
@@ -227,22 +354,37 @@ const Auth = () => {
             <div className="text-center mb-8">
               <motion.h1 
                 className="text-3xl font-tech font-bold text-foreground mb-2"
-                key={isLogin ? 'login' : 'signup'}
+                key={mode}
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
               >
-                {isLogin ? 'Welcome Back' : 'Join the Network'}
+                {getTitle()}
               </motion.h1>
               <p className="text-muted-foreground">
-                {isLogin 
-                  ? 'Sign in to access your dashboard' 
-                  : 'Create your account and earn 100 bonus points!'}
+                {getSubtitle()}
               </p>
             </div>
 
+            {/* Reset Sent Confirmation */}
+            {mode === 'forgot' && resetSent && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="mb-6 p-4 rounded-xl bg-success/10 border border-success/20 flex items-center gap-3"
+              >
+                <CheckCircle className="w-5 h-5 text-success shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-foreground">Check your email</p>
+                  <p className="text-xs text-muted-foreground">
+                    We've sent a password reset link to {email}
+                  </p>
+                </div>
+              </motion.div>
+            )}
+
             {/* Signup Benefits */}
             <AnimatePresence mode="wait">
-              {!isLogin && (
+              {mode === 'signup' && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
@@ -265,8 +407,9 @@ const Auth = () => {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Full Name (signup only) */}
               <AnimatePresence mode="wait">
-                {!isLogin && (
+                {mode === 'signup' && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
@@ -280,55 +423,89 @@ const Auth = () => {
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         className="pl-10 bg-background/50 border-primary/20 focus:border-secondary h-12"
-                        required={!isLogin}
+                        required
                       />
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
 
-              <div className="space-y-1">
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    type="email"
-                    placeholder="Email Address"
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      setErrors(prev => ({ ...prev, email: undefined }));
-                    }}
-                    className={`pl-10 bg-background/50 border-primary/20 focus:border-secondary h-12 ${errors.email ? 'border-destructive' : ''}`}
-                    required
-                  />
+              {/* Email (login, signup, forgot) */}
+              {mode !== 'reset' && (
+                <div className="space-y-1">
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input
+                      type="email"
+                      placeholder="Email Address"
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setErrors(prev => ({ ...prev, email: undefined }));
+                      }}
+                      className={`pl-10 bg-background/50 border-primary/20 focus:border-secondary h-12 ${errors.email ? 'border-destructive' : ''}`}
+                      required
+                    />
+                  </div>
+                  {errors.email && (
+                    <p className="text-xs text-destructive ml-1">{errors.email}</p>
+                  )}
                 </div>
-                {errors.email && (
-                  <p className="text-xs text-destructive ml-1">{errors.email}</p>
-                )}
-              </div>
+              )}
 
-              <div className="space-y-1">
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    type="password"
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      setErrors(prev => ({ ...prev, password: undefined }));
-                    }}
-                    className={`pl-10 bg-background/50 border-primary/20 focus:border-secondary h-12 ${errors.password ? 'border-destructive' : ''}`}
-                    required
-                  />
+              {/* Password (login, signup, reset) */}
+              {mode !== 'forgot' && (
+                <div className="space-y-1">
+                  <div className="relative">
+                    {mode === 'reset' ? (
+                      <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    ) : (
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    )}
+                    <Input
+                      type="password"
+                      placeholder={mode === 'reset' ? 'New Password' : 'Password'}
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        setErrors(prev => ({ ...prev, password: undefined }));
+                      }}
+                      className={`pl-10 bg-background/50 border-primary/20 focus:border-secondary h-12 ${errors.password ? 'border-destructive' : ''}`}
+                      required
+                    />
+                  </div>
+                  {errors.password && (
+                    <p className="text-xs text-destructive ml-1">{errors.password}</p>
+                  )}
                 </div>
-                {errors.password && (
-                  <p className="text-xs text-destructive ml-1">{errors.password}</p>
-                )}
-              </div>
+              )}
 
+              {/* Confirm Password (reset only) */}
+              {mode === 'reset' && (
+                <div className="space-y-1">
+                  <div className="relative">
+                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input
+                      type="password"
+                      placeholder="Confirm New Password"
+                      value={confirmPassword}
+                      onChange={(e) => {
+                        setConfirmPassword(e.target.value);
+                        setErrors(prev => ({ ...prev, confirmPassword: undefined }));
+                      }}
+                      className={`pl-10 bg-background/50 border-primary/20 focus:border-secondary h-12 ${errors.confirmPassword ? 'border-destructive' : ''}`}
+                      required
+                    />
+                  </div>
+                  {errors.confirmPassword && (
+                    <p className="text-xs text-destructive ml-1">{errors.confirmPassword}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Referral Code (signup only) */}
               <AnimatePresence mode="wait">
-                {!isLogin && (
+                {mode === 'signup' && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
@@ -348,6 +525,19 @@ const Auth = () => {
                 )}
               </AnimatePresence>
 
+              {/* Forgot Password Link (login only) */}
+              {mode === 'login' && (
+                <div className="text-right">
+                  <button
+                    type="button"
+                    onClick={() => setMode('forgot')}
+                    className="text-xs text-muted-foreground hover:text-secondary transition-colors"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+              )}
+
               <NeonButton
                 type="submit"
                 className="w-full h-12 text-base"
@@ -357,62 +547,86 @@ const Auth = () => {
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   <>
-                    {isLogin ? 'Sign In' : 'Create Account'}
+                    {mode === 'login' && 'Sign In'}
+                    {mode === 'signup' && 'Create Account'}
+                    {mode === 'forgot' && 'Send Reset Link'}
+                    {mode === 'reset' && 'Update Password'}
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </>
                 )}
               </NeonButton>
             </form>
 
-            {/* Demo */}
-            <div className="mt-6">
-              <div className="flex items-center gap-3 my-4">
-                <div className="h-px flex-1 bg-border/60" />
-                <span className="text-xs text-muted-foreground">or</span>
-                <div className="h-px flex-1 bg-border/60" />
-              </div>
+            {/* Demo (login/signup only) */}
+            {(mode === 'login' || mode === 'signup') && (
+              <div className="mt-6">
+                <div className="flex items-center gap-3 my-4">
+                  <div className="h-px flex-1 bg-border/60" />
+                  <span className="text-xs text-muted-foreground">or</span>
+                  <div className="h-px flex-1 bg-border/60" />
+                </div>
 
-              <NeonButton
-                type="button"
-                variant="outline"
-                size="md"
-                className="w-full h-12"
-                disabled={loading}
-                onClick={handleCreateDemoAccount}
-                icon={<Sparkles className="w-5 h-5" />}
-              >
-                1‑Click Demo Login
-              </NeonButton>
+                <NeonButton
+                  type="button"
+                  variant="outline"
+                  size="md"
+                  className="w-full h-12"
+                  disabled={loading}
+                  onClick={handleCreateDemoAccount}
+                  icon={<Sparkles className="w-5 h-5" />}
+                >
+                  1‑Click Demo Login
+                </NeonButton>
 
-              <p className="mt-2 text-xs text-muted-foreground text-center">
-                Creates a temporary demo account and signs you in instantly.
-              </p>
-
-              {demoEmail && (
                 <p className="mt-2 text-xs text-muted-foreground text-center">
-                  Demo email:{" "}
-                  <span className="font-mono text-secondary">{demoEmail}</span>
+                  Creates a temporary demo account and signs you in instantly.
                 </p>
-              )}
-            </div>
 
-            {/* Toggle */}
-            <div className="mt-6 text-center">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setErrors({});
-                }}
-                className="text-sm text-muted-foreground hover:text-secondary transition-colors"
-              >
-                {isLogin ? (
-                  <>Don't have an account? <span className="text-secondary font-semibold">Sign up</span></>
-                ) : (
-                  <>Already have an account? <span className="text-secondary font-semibold">Sign in</span></>
+                {demoEmail && (
+                  <p className="mt-2 text-xs text-muted-foreground text-center">
+                    Demo email:{" "}
+                    <span className="font-mono text-secondary">{demoEmail}</span>
+                  </p>
                 )}
-              </button>
-            </div>
+              </div>
+            )}
+
+            {/* Toggle Login/Signup */}
+            {(mode === 'login' || mode === 'signup') && (
+              <div className="mt-6 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode(mode === 'login' ? 'signup' : 'login');
+                    setErrors({});
+                  }}
+                  className="text-sm text-muted-foreground hover:text-secondary transition-colors"
+                >
+                  {mode === 'login' ? (
+                    <>Don't have an account? <span className="text-secondary font-semibold">Sign up</span></>
+                  ) : (
+                    <>Already have an account? <span className="text-secondary font-semibold">Sign in</span></>
+                  )}
+                </button>
+              </div>
+            )}
+
+            {/* Back to Login (forgot/reset) */}
+            {(mode === 'forgot' || mode === 'reset') && (
+              <div className="mt-6 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('login');
+                    setErrors({});
+                    setResetSent(false);
+                  }}
+                  className="text-sm text-muted-foreground hover:text-secondary transition-colors"
+                >
+                  ← Back to sign in
+                </button>
+              </div>
+            )}
 
             {/* Legal */}
             <p className="mt-6 text-xs text-center text-muted-foreground/60">
