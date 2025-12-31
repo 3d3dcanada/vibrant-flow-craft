@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCreditWallet, useCreditTransactions } from '@/hooks/useUserData';
@@ -17,14 +17,23 @@ import {
 
 const CreditsStore = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'buy' | 'redeem' | 'history'>('buy');
   const [giftCardCode, setGiftCardCode] = useState('');
   const [redeeming, setRedeeming] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState<number | null>(null);
 
   const { data: creditWallet, isLoading } = useCreditWallet();
   const { data: transactions } = useCreditTransactions(20);
+
+  // Check if returning from checkout
+  useEffect(() => {
+    if (searchParams.get('success') === 'true') {
+      toast({ title: "Payment Received!", description: "Your credits will be added once we confirm payment." });
+    }
+  }, [searchParams, toast]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -238,9 +247,10 @@ const CreditsStore = () => {
                         <NeonButton 
                           size="sm" 
                           className="w-full mt-4"
-                          variant={pkg.popular ? 'primary' : 'secondary'}
+                          variant={selectedPackage === index ? 'primary' : pkg.popular ? 'primary' : 'secondary'}
+                          onClick={() => setSelectedPackage(index)}
                         >
-                          Select
+                          {selectedPackage === index ? 'Selected ✓' : 'Select'}
                         </NeonButton>
                       </GlowCard>
                     </motion.div>
@@ -263,6 +273,18 @@ const CreditsStore = () => {
                           ? 'hover:border-secondary' 
                           : 'opacity-50 cursor-not-allowed'
                       }`}
+                      onClick={() => {
+                        if (method.available && method.id === 'etransfer') {
+                          if (selectedPackage === null) {
+                            toast({ title: "Select a package", description: "Please select a credit package first", variant: "destructive" });
+                            return;
+                          }
+                          const pkg = creditPackages[selectedPackage];
+                          navigate(`/dashboard/credits/checkout?credits=${pkg.credits}&bonus=${pkg.bonus}&price=${pkg.price}`);
+                        } else if (method.available && method.id === 'giftcard') {
+                          setActiveTab('redeem');
+                        }
+                      }}
                     >
                       <div className="flex items-center gap-4">
                         <div className="p-3 rounded-xl bg-secondary/20">
@@ -282,6 +304,26 @@ const CreditsStore = () => {
                   ))}
                 </div>
               </div>
+
+              {/* Checkout Button */}
+              {selectedPackage !== null && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
+                >
+                  <NeonButton
+                    size="lg"
+                    onClick={() => {
+                      const pkg = creditPackages[selectedPackage];
+                      navigate(`/dashboard/credits/checkout?credits=${pkg.credits}&bonus=${pkg.bonus}&price=${pkg.price}`);
+                    }}
+                    className="shadow-2xl px-8"
+                  >
+                    Proceed to Checkout - ${creditPackages[selectedPackage].price} CAD
+                  </NeonButton>
+                </motion.div>
+              )}
 
               {/* Info Box */}
               <GlowCard className="p-5 bg-primary/5 border-primary/20">
