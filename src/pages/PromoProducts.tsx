@@ -5,91 +5,7 @@ import { ArrowLeft, Package, ShoppingCart, Star, Briefcase } from "lucide-react"
 import { GlowCard } from "@/components/ui/GlowCard";
 import NeonButton from "@/components/ui/NeonButton";
 import AnimatedLogo from "@/components/ui/AnimatedLogo";
-
-const MONTH_1_PRODUCTS = [
-  // Office Items
-  {
-    id: "keychain-custom",
-    category: "Office",
-    name: "Custom Logo Keychain",
-    description: "Durable keychain with your company logo. Perfect for trade shows and client gifts.",
-    image: "https://images.unsplash.com/photo-1622434641406-a158123450f9?w=400&h=300&fit=crop",
-    moqs: [25, 50, 100],
-  },
-  {
-    id: "business-card-holder",
-    category: "Office",
-    name: "Business Card Holder",
-    description: "Elegant desktop card holder. Showcase your brand on every desk.",
-    image: "https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=300&fit=crop",
-    moqs: [25, 50, 100],
-  },
-  {
-    id: "pen-holder",
-    category: "Office",
-    name: "Branded Pen Holder",
-    description: "Sleek pen organizer with custom branding. Keep desks tidy and branded.",
-    image: "https://images.unsplash.com/photo-1507499739999-097706ad8914?w=400&h=300&fit=crop",
-    moqs: [25, 50, 100],
-  },
-  {
-    id: "phone-stand",
-    category: "Office",
-    name: "Phone Stand",
-    description: "Adjustable phone stand for desks. Your logo visible all day.",
-    image: "https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=300&fit=crop",
-    moqs: [25, 50, 100],
-  },
-  {
-    id: "cable-organizer",
-    category: "Office",
-    name: "Cable Organizer",
-    description: "Desktop cable management clip. Practical daily-use item.",
-    image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop",
-    moqs: [25, 50, 100],
-  },
-  // Utility Items
-  {
-    id: "bottle-opener",
-    category: "Utility",
-    name: "Bottle Opener",
-    description: "Custom branded bottle opener keychain. Great for events.",
-    image: "https://images.unsplash.com/photo-1608270586620-248524c67de9?w=400&h=300&fit=crop",
-    moqs: [25, 50, 100],
-  },
-  {
-    id: "shopping-cart-token",
-    category: "Utility",
-    name: "Shopping Cart Token",
-    description: "Reusable cart coin with your logo. Daily brand exposure.",
-    image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=300&fit=crop",
-    moqs: [25, 50, 100],
-  },
-  {
-    id: "luggage-tag",
-    category: "Utility",
-    name: "Luggage Tag",
-    description: "Durable travel luggage tag. Perfect for corporate travel kits.",
-    image: "https://images.unsplash.com/photo-1553531384-411a247ccd73?w=400&h=300&fit=crop",
-    moqs: [25, 50, 100],
-  },
-  {
-    id: "coaster",
-    category: "Utility",
-    name: "Branded Coaster",
-    description: "Custom coasters for offices and events. Protects surfaces, promotes brands.",
-    image: "https://images.unsplash.com/photo-1615484477778-ca3b77940c25?w=400&h=300&fit=crop",
-    moqs: [25, 50, 100],
-  },
-  {
-    id: "chip-clip",
-    category: "Utility",
-    name: "Chip Clip",
-    description: "Useful snack bag clip with branding. Kitchen staple with your logo.",
-    image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop",
-    moqs: [25, 50, 100],
-  },
-];
+import { PROMO_PRODUCTS, getPromoProductById } from "@/data/promoProducts";
 
 const PromoProducts = () => {
   const navigate = useNavigate();
@@ -97,12 +13,27 @@ const PromoProducts = () => {
   const [selectedMoq, setSelectedMoq] = useState<number>(25);
 
   const handleGetQuote = (productId: string, moq: number) => {
-    // Navigate to quote section with preset parameters
-    navigate(`/#quote?product=${productId}&qty=${moq}&type=promo`);
+    const product = getPromoProductById(productId);
+    if (!product) return;
+    
+    // Navigate to homepage quote section with router state
+    navigate("/#quote", {
+      state: {
+        promoQuote: {
+          productId: product.id,
+          productName: product.name,
+          quantity: moq,
+          material: product.defaultMaterial,
+          gramsPerUnit: product.gramsPerUnit,
+          minutesPerUnit: product.minutesPerUnit,
+          logoTextMaxChars: product.logoTextMaxChars,
+        }
+      }
+    });
   };
 
-  const officeProducts = MONTH_1_PRODUCTS.filter(p => p.category === "Office");
-  const utilityProducts = MONTH_1_PRODUCTS.filter(p => p.category === "Utility");
+  const officeProducts = PROMO_PRODUCTS.filter(p => p.category === "Office");
+  const utilityProducts = PROMO_PRODUCTS.filter(p => p.category === "Utility");
 
   return (
     <div className="min-h-screen bg-background text-foreground">
