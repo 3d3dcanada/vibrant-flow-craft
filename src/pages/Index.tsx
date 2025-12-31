@@ -2,6 +2,7 @@ import Navbar from "@/components/ui/Navbar";
 import ParticleBackground from "@/components/ui/ParticleBackground";
 import AmbientGlow from "@/components/ui/AmbientGlow";
 import HeroSection from "@/components/sections/HeroSection";
+import QuickActionsCTA from "@/components/sections/QuickActionsCTA";
 import HowItWorksSection from "@/components/sections/HowItWorksSection";
 import AboutSection from "@/components/sections/AboutSection";
 import MaterialsSection from "@/components/sections/MaterialsSection";
@@ -23,6 +24,7 @@ const Index = () => {
       {/* Main Content */}
       <main>
         <HeroSection />
+        <QuickActionsCTA />
         <HowItWorksSection />
         <AboutSection />
         <MaterialsSection />

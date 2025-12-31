@@ -38,7 +38,6 @@ const Auth = () => {
 
   // Get return URL from navigation state
   const locationState = location.state as { returnTo?: string; isSignup?: boolean } | null;
-  const returnTo = locationState?.returnTo || '/dashboard';
 
   useEffect(() => {
     // If coming from quote with isSignup flag, switch to signup mode
@@ -47,24 +46,39 @@ const Auth = () => {
     }
   }, [locationState?.isSignup]);
 
-  // Check if user is logged in and redirect (but check onboarding first)
+  // Check if user is logged in and redirect based on role from DB
   useEffect(() => {
     if (user) {
-      // Check if onboarding is completed
+      // Fetch profile to check role and onboarding status
       supabase
         .from('profiles')
-        .select('onboarding_completed')
+        .select('role, onboarding_completed')
         .eq('id', user.id)
         .maybeSingle()
-        .then(({ data }) => {
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Error fetching profile:', error);
+            navigate('/dashboard');
+            return;
+          }
+          
           if (data?.onboarding_completed === false) {
             navigate('/onboarding');
+            return;
+          }
+          
+          // Route based on role from database - single source of truth
+          const role = data?.role || 'customer';
+          if (role === 'admin') {
+            navigate('/dashboard/admin');
+          } else if (role === 'maker') {
+            navigate('/dashboard/maker');
           } else {
-            navigate(returnTo);
+            navigate('/dashboard');
           }
         });
     }
-  }, [user, navigate, returnTo]);
+  }, [user, navigate]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string; confirmPassword?: string } = {};

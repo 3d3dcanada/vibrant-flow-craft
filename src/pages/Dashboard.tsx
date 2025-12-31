@@ -34,8 +34,18 @@ const Dashboard = () => {
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/auth');
+      return;
     }
-  }, [user, authLoading, navigate]);
+    
+    // Redirect admin and maker roles to their respective dashboards
+    if (!authLoading && !profileLoading && user && profile) {
+      if (profile.role === 'admin') {
+        navigate('/dashboard/admin');
+      } else if (profile.role === 'maker') {
+        navigate('/dashboard/maker');
+      }
+    }
+  }, [user, authLoading, profileLoading, profile, navigate]);
 
   const handleSignOut = async () => {
     await signOut();
