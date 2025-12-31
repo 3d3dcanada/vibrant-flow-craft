@@ -353,49 +353,79 @@ export type Database = {
         Row: {
           address_line1: string | null
           address_line2: string | null
+          availability_status: string | null
           avatar_url: string | null
           city: string | null
           country: string | null
           created_at: string
+          display_name: string | null
+          dry_box_required_ack: boolean | null
           email: string | null
           full_name: string | null
+          hardware_inserts_capable: boolean | null
           id: string
+          materials_supported: string | null
+          nozzle_sizes: string | null
+          onboarding_completed: boolean | null
           phone: string | null
+          post_processing_capable: boolean | null
           postal_code: string | null
+          printer_models: string | null
           profile_completion_percent: number | null
           province: string | null
+          role: string | null
           updated_at: string
         }
         Insert: {
           address_line1?: string | null
           address_line2?: string | null
+          availability_status?: string | null
           avatar_url?: string | null
           city?: string | null
           country?: string | null
           created_at?: string
+          display_name?: string | null
+          dry_box_required_ack?: boolean | null
           email?: string | null
           full_name?: string | null
+          hardware_inserts_capable?: boolean | null
           id: string
+          materials_supported?: string | null
+          nozzle_sizes?: string | null
+          onboarding_completed?: boolean | null
           phone?: string | null
+          post_processing_capable?: boolean | null
           postal_code?: string | null
+          printer_models?: string | null
           profile_completion_percent?: number | null
           province?: string | null
+          role?: string | null
           updated_at?: string
         }
         Update: {
           address_line1?: string | null
           address_line2?: string | null
+          availability_status?: string | null
           avatar_url?: string | null
           city?: string | null
           country?: string | null
           created_at?: string
+          display_name?: string | null
+          dry_box_required_ack?: boolean | null
           email?: string | null
           full_name?: string | null
+          hardware_inserts_capable?: boolean | null
           id?: string
+          materials_supported?: string | null
+          nozzle_sizes?: string | null
+          onboarding_completed?: boolean | null
           phone?: string | null
+          post_processing_capable?: boolean | null
           postal_code?: string | null
+          printer_models?: string | null
           profile_completion_percent?: number | null
           province?: string | null
+          role?: string | null
           updated_at?: string
         }
         Relationships: []
