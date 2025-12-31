@@ -67,17 +67,18 @@ export const useUpsertPromoProduct = () => {
       if (id) {
         const { error } = await supabase
           .from('promo_products')
-          .update(rest as Parameters<typeof supabase.from<'promo_products'>>[0])
+          .update(rest)
           .eq('id', id as string);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('promo_products')
-          .insert(rest as Parameters<typeof supabase.from<'promo_products'>>[0]);
+          .insert(rest as any);
         if (error) throw error;
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['promo_products'] })
+  });
 };
 
 export const useDeletePromoProduct = () => {
@@ -116,17 +117,18 @@ export const useUpsertStoreItem = () => {
       if (id) {
         const { error } = await supabase
           .from('store_items')
-          .update(rest as Record<string, unknown>)
+          .update(rest)
           .eq('id', id as string);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('store_items')
-          .insert(rest as Record<string, unknown>);
+          .insert(rest as any);
         if (error) throw error;
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['store_items'] })
+  });
 };
 
 export const useDeleteStoreItem = () => {
@@ -165,17 +167,18 @@ export const useUpsertCreditPackage = () => {
       if (id) {
         const { error } = await supabase
           .from('credit_packages')
-          .update(rest as Record<string, unknown>)
+          .update(rest)
           .eq('id', id as string);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('credit_packages')
-          .insert(rest as Record<string, unknown>);
+          .insert(rest as any);
         if (error) throw error;
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['credit_packages'] })
+  });
 };
 
 export const useDeleteCreditPackage = () => {
