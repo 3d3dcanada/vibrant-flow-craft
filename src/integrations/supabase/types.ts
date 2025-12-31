@@ -175,6 +175,39 @@ export type Database = {
         }
         Relationships: []
       }
+      credit_packages: {
+        Row: {
+          active: boolean | null
+          bonus_credits: number | null
+          credits_amount: number
+          id: string
+          name: string
+          price_cad: number
+          tagline: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          bonus_credits?: number | null
+          credits_amount: number
+          id?: string
+          name: string
+          price_cad: number
+          tagline?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          bonus_credits?: number | null
+          credits_amount?: number
+          id?: string
+          name?: string
+          price_cad?: number
+          tagline?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       credit_transactions: {
         Row: {
           amount: number
@@ -576,6 +609,8 @@ export type Database = {
           full_name: string | null
           hardware_inserts_capable: boolean | null
           id: string
+          maker_verification_notes: string | null
+          maker_verified: boolean | null
           materials_supported: string | null
           nozzle_sizes: string | null
           onboarding_completed: boolean | null
@@ -602,6 +637,8 @@ export type Database = {
           full_name?: string | null
           hardware_inserts_capable?: boolean | null
           id: string
+          maker_verification_notes?: string | null
+          maker_verified?: boolean | null
           materials_supported?: string | null
           nozzle_sizes?: string | null
           onboarding_completed?: boolean | null
@@ -628,6 +665,8 @@ export type Database = {
           full_name?: string | null
           hardware_inserts_capable?: boolean | null
           id?: string
+          maker_verification_notes?: string | null
+          maker_verified?: boolean | null
           materials_supported?: string | null
           nozzle_sizes?: string | null
           onboarding_completed?: boolean | null
@@ -639,6 +678,51 @@ export type Database = {
           province?: string | null
           role?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      promo_products: {
+        Row: {
+          active: boolean | null
+          category: string
+          default_material: string | null
+          description: string | null
+          grams_per_unit: number | null
+          id: string
+          image_url: string | null
+          minutes_per_unit: number | null
+          month_tag: string | null
+          moqs: Json | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          category?: string
+          default_material?: string | null
+          description?: string | null
+          grams_per_unit?: number | null
+          id?: string
+          image_url?: string | null
+          minutes_per_unit?: number | null
+          month_tag?: string | null
+          moqs?: Json | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          category?: string
+          default_material?: string | null
+          description?: string | null
+          grams_per_unit?: number | null
+          id?: string
+          image_url?: string | null
+          minutes_per_unit?: number | null
+          month_tag?: string | null
+          moqs?: Json | null
+          name?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -717,6 +801,42 @@ export type Database = {
         }
         Relationships: []
       }
+      site_settings: {
+        Row: {
+          homepage_banner_cta_text: string | null
+          homepage_banner_cta_url: string | null
+          homepage_banner_enabled: boolean | null
+          homepage_banner_subtitle: string | null
+          homepage_banner_title: string | null
+          id: string
+          promo_pool_cap_cad: number | null
+          social_reward_credits: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          homepage_banner_cta_text?: string | null
+          homepage_banner_cta_url?: string | null
+          homepage_banner_enabled?: boolean | null
+          homepage_banner_subtitle?: string | null
+          homepage_banner_title?: string | null
+          id?: string
+          promo_pool_cap_cad?: number | null
+          social_reward_credits?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          homepage_banner_cta_text?: string | null
+          homepage_banner_cta_url?: string | null
+          homepage_banner_enabled?: boolean | null
+          homepage_banner_subtitle?: string | null
+          homepage_banner_title?: string | null
+          id?: string
+          promo_pool_cap_cad?: number | null
+          social_reward_credits?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       social_shares: {
         Row: {
           created_at: string
@@ -744,6 +864,45 @@ export type Database = {
           reference_id?: string | null
           share_type?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      store_items: {
+        Row: {
+          active: boolean | null
+          base_price_cad: number | null
+          credits_price: number | null
+          description: string | null
+          id: string
+          image_url: string | null
+          metadata: Json | null
+          name: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          base_price_cad?: number | null
+          credits_price?: number | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          metadata?: Json | null
+          name: string
+          type?: string
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          base_price_cad?: number | null
+          credits_price?: number | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          metadata?: Json | null
+          name?: string
+          type?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
