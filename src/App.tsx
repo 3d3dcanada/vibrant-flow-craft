@@ -27,6 +27,8 @@ import NotFound from "./pages/NotFound";
 // New pages
 import Mission from "./pages/Mission";
 import About from "./pages/About";
+import RecycleBuyback from "./pages/RecycleBuyback";
+import AdminBuybackRequests from "./pages/admin/AdminBuybackRequests";
 import Refunds from "./pages/Refunds";
 import CommunityPolicy from "./pages/CommunityPolicy";
 import Schedule from "./pages/Schedule";
@@ -73,6 +75,7 @@ const App = () => (
             <Route path="/refunds" element={<Refunds />} />
             <Route path="/community-policy" element={<CommunityPolicy />} />
             <Route path="/schedule" element={<Schedule />} />
+            <Route path="/recycle-buyback" element={<RecycleBuyback />} />
             
             {/* Dashboard routes */}
             <Route path="/dashboard" element={<Dashboard />} />
@@ -103,6 +106,7 @@ const App = () => (
             <Route path="/dashboard/admin/packages" element={<AdminCreditPackages />} />
             <Route path="/dashboard/admin/makers" element={<AdminMakerManager />} />
             <Route path="/dashboard/admin/ops" element={<AdminOperations />} />
+            <Route path="/dashboard/admin/buyback" element={<AdminBuybackRequests />} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

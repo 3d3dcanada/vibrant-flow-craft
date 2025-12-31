@@ -44,6 +44,63 @@ export type Database = {
         }
         Relationships: []
       }
+      buyback_requests: {
+        Row: {
+          admin_notes: string | null
+          brand_model: string | null
+          city: string | null
+          condition: string | null
+          contact_email: string
+          created_at: string
+          guest_email: string | null
+          id: string
+          item_type: Database["public"]["Enums"]["buyback_item_type"]
+          notes: string | null
+          photo_url: string | null
+          province: string | null
+          quoted_amount_cad: number | null
+          status: Database["public"]["Enums"]["buyback_status"]
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          brand_model?: string | null
+          city?: string | null
+          condition?: string | null
+          contact_email: string
+          created_at?: string
+          guest_email?: string | null
+          id?: string
+          item_type: Database["public"]["Enums"]["buyback_item_type"]
+          notes?: string | null
+          photo_url?: string | null
+          province?: string | null
+          quoted_amount_cad?: number | null
+          status?: Database["public"]["Enums"]["buyback_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          brand_model?: string | null
+          city?: string | null
+          condition?: string | null
+          contact_email?: string
+          created_at?: string
+          guest_email?: string | null
+          id?: string
+          item_type?: Database["public"]["Enums"]["buyback_item_type"]
+          notes?: string | null
+          photo_url?: string | null
+          province?: string | null
+          quoted_amount_cad?: number | null
+          status?: Database["public"]["Enums"]["buyback_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       coupon_usage: {
         Row: {
           coupon_id: string
@@ -1032,6 +1089,14 @@ export type Database = {
         | "streak_7_day"
         | "streak_30_day"
         | "big_spender"
+      buyback_item_type: "printer" | "filament" | "electronics" | "donation"
+      buyback_status:
+        | "new"
+        | "in_review"
+        | "quoted"
+        | "accepted"
+        | "declined"
+        | "closed"
       filament_dry_status: "dry" | "needs_drying" | "unknown"
       payout_status: "pending" | "processing" | "completed" | "rejected"
       point_activity_type:
@@ -1203,6 +1268,15 @@ export const Constants = {
         "streak_7_day",
         "streak_30_day",
         "big_spender",
+      ],
+      buyback_item_type: ["printer", "filament", "electronics", "donation"],
+      buyback_status: [
+        "new",
+        "in_review",
+        "quoted",
+        "accepted",
+        "declined",
+        "closed",
       ],
       filament_dry_status: ["dry", "needs_drying", "unknown"],
       payout_status: ["pending", "processing", "completed", "rejected"],
