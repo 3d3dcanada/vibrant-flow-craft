@@ -11,16 +11,16 @@ const footerLinks = {
     { label: "Repository Hub", href: "#", isRoute: false },
   ],
   company: [
-    { label: "About Us", href: "#about", isRoute: false },
+    { label: "Mission", href: "/mission", isRoute: true },
+    { label: "About Us", href: "/about", isRoute: true },
     { label: "Become a Maker", href: "#", isRoute: false },
     { label: "Designer Royalties", href: "#", isRoute: false },
-    { label: "Press Kit", href: "#", isRoute: false },
   ],
-  support: [
-    { label: "FAQ", href: "#", isRoute: false },
-    { label: "Contact", href: "mailto:hello@3d3d.ca", isRoute: false },
-    { label: "Privacy Policy", href: "/privacy", isRoute: true },
+  legal: [
     { label: "Terms of Service", href: "/terms", isRoute: true },
+    { label: "Privacy Policy", href: "/privacy", isRoute: true },
+    { label: "Refunds & Cancellations", href: "/refunds", isRoute: true },
+    { label: "Community Policy", href: "/community-policy", isRoute: true },
   ],
 };
 
