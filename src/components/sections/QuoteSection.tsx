@@ -1,7 +1,10 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useLocation } from "react-router-dom";
-import { Upload, Link as LinkIcon, Check, Leaf, Heart, CloudUpload, Trash2, Tag, X, Zap } from "lucide-react";
+import { 
+  Upload, Link as LinkIcon, Check, Leaf, Heart, CloudUpload, Trash2, Tag, X, Zap, 
+  AlertCircle, Clock, Wrench, Package
+} from "lucide-react";
 import { GlowCard } from "../ui/GlowCard";
 import NeonButton from "../ui/NeonButton";
 import PricingBreakdown from "../ui/PricingBreakdown";
@@ -10,11 +13,20 @@ import {
   MaterialType, 
   MATERIAL_RATES, 
   DeliverySpeed,
+  JobSize,
+  JOB_SIZE_DEFAULTS,
+  ColorOption,
+  COLOR_OPTIONS,
+  QUANTITY_QUICK_OPTIONS,
+  POST_PROCESSING_RATES,
+  PostProcessingTier,
   calculateQuoteBreakdown,
+  estimatePrintTimeFromWeight,
   RUSH_RATES
 } from "@/config/pricing";
 
 type Mode = "upload" | "url";
+type InputMode = "weight" | "time" | "both";
 
 interface PromoQuoteState {
   productId: string;
@@ -26,26 +38,47 @@ interface PromoQuoteState {
   logoTextMaxChars: number;
 }
 
-const materials: { key: MaterialType; name: string; tag: string; level: number }[] = [
-  { key: "PLA", name: "PLA", tag: "Standard", level: 33 },
-  { key: "PETG", name: "PETG", tag: "Durable", level: 66 },
-  { key: "TPU", name: "TPU", tag: "Flexible", level: 100 },
-  { key: "CARBON", name: "CARBON", tag: "Extreme", level: 100 },
+const materials: { key: MaterialType; name: string; tag: string }[] = [
+  { key: "PLA_STANDARD", name: "PLA Standard", tag: "Standard" },
+  { key: "PLA_SPECIALTY", name: "PLA Specialty", tag: "Glow/Wood/etc" },
+  { key: "PETG", name: "PETG", tag: "Durable" },
+  { key: "PETG_CF", name: "PETG-CF", tag: "Carbon Fiber" },
+  { key: "TPU", name: "TPU", tag: "Flexible" },
+  { key: "ABS_ASA", name: "ABS/ASA", tag: "Engineering" },
 ];
 
 export const QuoteSection = () => {
   const { user } = useAuth();
   const isMember = !!user;
   const location = useLocation();
+  
+  // File/URL mode
   const [mode, setMode] = useState<Mode>("upload");
-  const [material, setMaterial] = useState<MaterialType>("PLA");
-  const [weight, setWeight] = useState(100);
-  const [qty, setQty] = useState(1);
   const [file, setFile] = useState<File | null>(null);
   const [url, setUrl] = useState("");
   const [isScanning, setIsScanning] = useState(false);
-  const [promoQuote, setPromoQuote] = useState<PromoQuoteState | null>(null);
+  
+  // Quote inputs
+  const [jobSize, setJobSize] = useState<JobSize>("small");
+  const [materialType, setMaterialType] = useState<MaterialType>("PLA_STANDARD");
+  const [color, setColor] = useState<ColorOption>("black");
+  const [qty, setQty] = useState(1);
+  const [weight, setWeight] = useState(100);
+  const [hours, setHours] = useState<number | null>(null);
+  const [inputMode, setInputMode] = useState<InputMode>("weight");
   const [deliverySpeed, setDeliverySpeed] = useState<DeliverySpeed>("standard");
+  
+  // Post-processing
+  const [postProcessingEnabled, setPostProcessingEnabled] = useState(false);
+  const [postProcessingTier, setPostProcessingTier] = useState<PostProcessingTier>("standard");
+  const [postProcessingMinutes, setPostProcessingMinutes] = useState(15);
+  
+  // Hardware (display only for now)
+  const [hardwareEnabled, setHardwareEnabled] = useState(false);
+  const [hardwareNotes, setHardwareNotes] = useState("");
+  
+  // Promo quote state
+  const [promoQuote, setPromoQuote] = useState<PromoQuoteState | null>(null);
 
   // Check for promo quote state from navigation
   useEffect(() => {
@@ -53,10 +86,24 @@ export const QuoteSection = () => {
     if (state?.promoQuote) {
       const pq = state.promoQuote;
       setPromoQuote(pq);
-      setMaterial(pq.material);
+      // Map old material types to new ones
+      const materialMap: Record<string, MaterialType> = {
+        'PLA': 'PLA_STANDARD',
+        'PETG': 'PETG',
+        'TPU': 'TPU',
+        'CARBON': 'PETG_CF',
+      };
+      setMaterialType(materialMap[pq.material] || 'PLA_STANDARD');
       setQty(pq.quantity);
       setWeight(pq.gramsPerUnit * pq.quantity);
+      setHours((pq.minutesPerUnit * pq.quantity) / 60);
+      setInputMode("both");
       setFile({ name: `${pq.productName}.stl` } as File);
+      
+      // Set appropriate job size based on quantity
+      if (pq.quantity >= 50) setJobSize('large');
+      else if (pq.quantity >= 10) setJobSize('medium');
+      else setJobSize('small');
       
       setTimeout(() => {
         document.getElementById("quote")?.scrollIntoView({ behavior: "smooth" });
@@ -70,8 +117,10 @@ export const QuoteSection = () => {
     setPromoQuote(null);
     setFile(null);
     setWeight(100);
+    setHours(null);
     setQty(1);
-    setMaterial("PLA");
+    setMaterialType("PLA_STANDARD");
+    setInputMode("weight");
   };
 
   const getReturnToQuoteUrl = useCallback(() => {
@@ -81,27 +130,51 @@ export const QuoteSection = () => {
     return '/#quote';
   }, [promoQuote]);
 
-  // Estimate print time based on weight (rough approximation: 1g ≈ 3-4 minutes)
-  const estimatedPrintHours = useMemo(() => {
-    if (promoQuote) {
-      return (promoQuote.minutesPerUnit * qty) / 60;
+  // Determine effective print hours for pricing
+  const effectiveHours = useMemo(() => {
+    if (inputMode === "time" || inputMode === "both") {
+      return hours ?? JOB_SIZE_DEFAULTS[jobSize].defaultHours;
     }
-    return Math.max(0.5, (weight * 3.5) / 60);
-  }, [weight, promoQuote, qty]);
+    // Estimate from weight
+    return estimatePrintTimeFromWeight(weight);
+  }, [inputMode, hours, weight, jobSize]);
+
+  // Validation
+  const validation = useMemo(() => {
+    const errors: string[] = [];
+    if (qty < 1) errors.push("Quantity must be at least 1");
+    if (weight <= 0 && (inputMode === "weight" || inputMode === "both")) {
+      errors.push("Weight needed to price material");
+    }
+    return { isValid: errors.length === 0, errors };
+  }, [qty, weight, inputMode]);
 
   // Calculate quote breakdown using pricing config
   const quoteBreakdown = useMemo(() => {
-    return calculateQuoteBreakdown(
-      material,
-      weight,
+    return calculateQuoteBreakdown({
+      materialType,
+      grams: weight,
       qty,
-      estimatedPrintHours,
-      { id: 'none', hours: 0 },
-      isMember,
+      hours: effectiveHours,
+      jobSize,
       deliverySpeed,
-      RUSH_RATES.emergency // Use 15% default
-    );
-  }, [material, weight, qty, estimatedPrintHours, isMember, deliverySpeed]);
+      rushRate: RUSH_RATES.emergency,
+      postProcessingEnabled,
+      postProcessingTier,
+      postProcessingMinutes,
+      isMember,
+      color,
+    });
+  }, [materialType, weight, qty, effectiveHours, jobSize, deliverySpeed, postProcessingEnabled, postProcessingTier, postProcessingMinutes, isMember, color]);
+
+  // Quote summary for PricingBreakdown
+  const quoteSummary = useMemo(() => ({
+    jobSize: JOB_SIZE_DEFAULTS[jobSize].label,
+    material: MATERIAL_RATES[materialType].name,
+    color: COLOR_OPTIONS.find(c => c.value === color)?.label || color,
+    quantity: qty,
+    deliverySpeed: deliverySpeed === 'emergency' ? 'Emergency (<24h)' : 'Standard',
+  }), [jobSize, materialType, color, qty, deliverySpeed]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -301,7 +374,7 @@ export const QuoteSection = () => {
                       className="mb-6"
                     >
                       <div
-                        className={`relative w-full h-48 border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer group transition-all duration-300 ${
+                        className={`relative w-full h-36 border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer group transition-all duration-300 ${
                           file
                             ? "border-success/50 bg-success/5"
                             : "border-border hover:border-secondary hover:bg-secondary/5"
@@ -326,17 +399,10 @@ export const QuoteSection = () => {
                               ⟳
                             </motion.div>
                             <p className="text-sm text-secondary font-mono">Analyzing geometry...</p>
-                            <motion.div
-                              className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-secondary to-transparent"
-                              style={{ boxShadow: "0 0 10px hsl(var(--secondary))" }}
-                              initial={{ top: 0 }}
-                              animate={{ top: "100%" }}
-                              transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                            />
                           </div>
                         ) : file ? (
                           <div className="text-center">
-                            <div className="text-success text-4xl mb-2">✓</div>
+                            <div className="text-success text-3xl mb-2">✓</div>
                             <p className="text-sm font-mono text-foreground truncate max-w-[200px]">
                               {file.name}
                             </p>
@@ -352,14 +418,14 @@ export const QuoteSection = () => {
                           </div>
                         ) : (
                           <div className="text-center group-hover:scale-105 transition-transform">
-                            <div className="w-16 h-16 rounded-full bg-muted/30 flex items-center justify-center text-muted-foreground text-2xl mb-4 group-hover:text-secondary group-hover:shadow-glow-sm transition-all mx-auto">
+                            <div className="w-12 h-12 rounded-full bg-muted/30 flex items-center justify-center text-muted-foreground text-xl mb-3 group-hover:text-secondary transition-all mx-auto">
                               <Upload />
                             </div>
-                            <p className="text-base text-foreground font-bold font-tech">
+                            <p className="text-sm text-foreground font-bold font-tech">
                               DROP STL FILE HERE
                             </p>
                             <p className="text-xs text-muted-foreground mt-1">
-                              Supports .STL, .OBJ, .3MF (Max 50MB)
+                              .STL, .OBJ, .3MF (Max 50MB)
                             </p>
                           </div>
                         )}
@@ -384,7 +450,7 @@ export const QuoteSection = () => {
                           value={url}
                           onChange={(e) => setUrl(e.target.value)}
                           placeholder="https://www.thingiverse.com/thing:123456"
-                          className="w-full bg-background/50 border border-border rounded-lg px-4 py-3 text-sm text-foreground focus:border-secondary focus:shadow-glow-sm outline-none font-mono transition-all"
+                          className="w-full bg-background/50 border border-border rounded-lg px-4 py-3 text-sm text-foreground focus:border-secondary outline-none font-mono transition-all"
                         />
                         <NeonButton
                           variant="primary"
@@ -395,111 +461,205 @@ export const QuoteSection = () => {
                           {isScanning ? "..." : "SCAN"}
                         </NeonButton>
                       </div>
-                      {isScanning && (
-                        <motion.div
-                          className="mt-3 text-xs text-primary font-mono flex items-center gap-2"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                        >
-                          <motion.span
-                            animate={{ rotate: 360 }}
-                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                          >
-                            ⟳
-                          </motion.span>
-                          Establishing neural link to repository...
-                        </motion.div>
-                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
 
-                {/* Material Selection */}
-                <div className="mb-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <label className="text-sm font-bold text-foreground font-tech uppercase tracking-wider">
-                      Material Selection
-                    </label>
-                    <button
-                      onClick={() =>
-                        document.getElementById("materials")?.scrollIntoView({ behavior: "smooth" })
-                      }
-                      className="text-xs text-secondary hover:text-foreground transition-colors bg-secondary/10 px-2 py-1 rounded border border-secondary/20"
-                    >
-                      📖 Read Guide
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {materials.map((mat) => (
+                {/* Job Size Selection */}
+                <div className="mb-4">
+                  <label className="text-xs font-bold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-2">
+                    <Package className="w-3 h-3" />
+                    Job Size
+                  </label>
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    {(Object.entries(JOB_SIZE_DEFAULTS) as [JobSize, typeof JOB_SIZE_DEFAULTS.small][]).map(([size, config]) => (
                       <motion.button
-                        key={mat.key}
-                        onClick={() => setMaterial(mat.key)}
-                        className={`relative overflow-hidden p-3 rounded-xl text-left transition-all ${
-                          material === mat.key
-                            ? "bg-secondary/10 border border-secondary text-secondary shadow-glow-sm"
-                            : "bg-background/30 border border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+                        key={size}
+                        onClick={() => setJobSize(size)}
+                        className={`p-2 rounded-lg text-center transition-all ${
+                          jobSize === size
+                            ? "bg-secondary/10 border border-secondary text-secondary"
+                            : "bg-background/30 border border-border text-muted-foreground hover:border-foreground/30"
                         }`}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
-                        <div className="text-xs font-bold font-tech mb-1">{mat.name}</div>
-                        <div className="text-[10px] opacity-70">{mat.tag}</div>
-                        <div className="w-full h-1 bg-muted/30 mt-2 rounded-full overflow-hidden">
-                          <motion.div
-                            className={`h-full rounded-full ${
-                              material === mat.key ? "bg-secondary" : "bg-current"
-                            }`}
-                            initial={{ width: 0 }}
-                            animate={{ width: `${mat.level}%` }}
-                            transition={{ duration: 0.5 }}
-                          />
-                        </div>
+                        <div className="text-xs font-bold font-tech">{config.label}</div>
+                        <div className="text-[10px] opacity-70">~{config.defaultHours}h</div>
                       </motion.button>
                     ))}
                   </div>
                 </div>
 
-                {/* Sliders */}
-                <div className="grid grid-cols-2 gap-6 mb-6 bg-background/30 p-4 rounded-xl border border-border/30">
-                  <div>
-                    <label className="flex justify-between text-xs font-bold text-muted-foreground mb-2 uppercase">
-                      Scale / Weight{" "}
-                      <span className="text-secondary">{weight}g</span>
+                {/* Material Selection */}
+                <div className="mb-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                      Material
                     </label>
-                    <input
-                      type="range"
-                      min="10"
-                      max="500"
-                      value={weight}
-                      onChange={(e) => setWeight(parseInt(e.target.value))}
-                      className="w-full accent-secondary cursor-pointer"
-                    />
+                    <button
+                      onClick={() =>
+                        document.getElementById("materials")?.scrollIntoView({ behavior: "smooth" })
+                      }
+                      className="text-[10px] text-secondary hover:text-foreground transition-colors"
+                    >
+                      📖 Guide
+                    </button>
                   </div>
-                  <div>
-                    <label className="flex justify-between text-xs font-bold text-muted-foreground mb-2 uppercase">
-                      Quantity <span className="text-secondary">{qty}</span>
-                    </label>
-                    <input
-                      type="range"
-                      min="1"
-                      max="50"
-                      value={qty}
-                      onChange={(e) => setQty(parseInt(e.target.value))}
-                      className="w-full accent-secondary cursor-pointer"
-                    />
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {materials.map((mat) => (
+                      <motion.button
+                        key={mat.key}
+                        onClick={() => setMaterialType(mat.key)}
+                        className={`relative overflow-hidden p-2 rounded-lg text-left transition-all ${
+                          materialType === mat.key
+                            ? "bg-secondary/10 border border-secondary text-secondary"
+                            : "bg-background/30 border border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+                        }`}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <div className="text-xs font-bold font-tech">{mat.name}</div>
+                        <div className="text-[10px] opacity-70">{mat.tag}</div>
+                      </motion.button>
+                    ))}
                   </div>
                 </div>
 
+                {/* Color Selection */}
+                <div className="mb-4">
+                  <label className="text-xs font-bold text-muted-foreground mb-2 uppercase tracking-wide block">
+                    Color
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {COLOR_OPTIONS.map((c) => (
+                      <button
+                        key={c.value}
+                        onClick={() => setColor(c.value)}
+                        className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs transition-all ${
+                          color === c.value
+                            ? "bg-secondary/10 border border-secondary text-secondary"
+                            : "bg-background/30 border border-border text-muted-foreground hover:border-foreground/30"
+                        }`}
+                      >
+                        {c.hex && (
+                          <span 
+                            className="w-3 h-3 rounded-full border border-border/50" 
+                            style={{ backgroundColor: c.hex }}
+                          />
+                        )}
+                        {c.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Quantity with Quick Buttons */}
+                <div className="mb-4">
+                  <label className="flex justify-between text-xs font-bold text-muted-foreground mb-2 uppercase">
+                    Quantity <span className="text-secondary">{qty}</span>
+                  </label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {QUANTITY_QUICK_OPTIONS.map((q) => (
+                      <button
+                        key={q}
+                        onClick={() => setQty(q)}
+                        className={`px-3 py-1 rounded-lg text-xs font-mono transition-all ${
+                          qty === q
+                            ? "bg-secondary text-secondary-foreground"
+                            : "bg-background/30 border border-border text-muted-foreground hover:border-secondary"
+                        }`}
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    type="number"
+                    min="1"
+                    value={qty}
+                    onChange={(e) => setQty(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-full bg-background/50 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:border-secondary outline-none font-mono"
+                    placeholder="Custom quantity"
+                  />
+                </div>
+
+                {/* Weight + Time Inputs */}
+                <div className="mb-4 p-3 rounded-lg bg-background/30 border border-border/30">
+                  <div className="flex items-center gap-2 mb-3">
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                      Estimate Method
+                    </label>
+                    <div className="flex gap-1 ml-auto">
+                      {(['weight', 'time', 'both'] as InputMode[]).map((m) => (
+                        <button
+                          key={m}
+                          onClick={() => setInputMode(m)}
+                          className={`px-2 py-0.5 rounded text-[10px] font-mono transition-all ${
+                            inputMode === m
+                              ? "bg-secondary text-secondary-foreground"
+                              : "bg-muted/30 text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          {m === 'weight' ? 'Weight' : m === 'time' ? 'Time' : 'Both'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    {(inputMode === 'weight' || inputMode === 'both') && (
+                      <div>
+                        <label className="flex justify-between text-[10px] text-muted-foreground mb-1">
+                          Weight (g) <span className="text-secondary">{weight}g</span>
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={weight}
+                          onChange={(e) => setWeight(Math.max(1, parseInt(e.target.value) || 0))}
+                          className="w-full bg-background/50 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:border-secondary outline-none font-mono"
+                        />
+                      </div>
+                    )}
+                    {(inputMode === 'time' || inputMode === 'both') && (
+                      <div>
+                        <label className="flex justify-between text-[10px] text-muted-foreground mb-1">
+                          Print Time (h) 
+                          <span className="text-secondary">
+                            {hours !== null ? `${hours}h` : `~${effectiveHours.toFixed(1)}h (est.)`}
+                          </span>
+                        </label>
+                        <input
+                          type="number"
+                          min="0.5"
+                          step="0.5"
+                          value={hours ?? ''}
+                          onChange={(e) => setHours(e.target.value ? parseFloat(e.target.value) : null)}
+                          placeholder={`Default: ${JOB_SIZE_DEFAULTS[jobSize].defaultHours}h`}
+                          className="w-full bg-background/50 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:border-secondary outline-none font-mono"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {inputMode === 'time' && (
+                    <p className="text-[10px] text-warning flex items-center gap-1 mt-2">
+                      <AlertCircle className="w-3 h-3" />
+                      Weight needed for material pricing
+                    </p>
+                  )}
+                </div>
+
                 {/* Delivery Speed Selection */}
-                <div className="mb-6">
-                  <label className="text-sm font-bold text-foreground font-tech uppercase tracking-wider mb-3 block">
+                <div className="mb-4">
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2 block">
                     Delivery Speed
                   </label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2">
                     <motion.button
                       onClick={() => setDeliverySpeed("standard")}
-                      className={`p-3 rounded-xl text-left transition-all ${
+                      className={`p-2 rounded-lg text-left transition-all ${
                         deliverySpeed === "standard"
                           ? "bg-secondary/10 border border-secondary text-secondary"
                           : "bg-background/30 border border-border text-muted-foreground hover:border-foreground/30"
@@ -507,12 +667,12 @@ export const QuoteSection = () => {
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                     >
-                      <div className="text-xs font-bold font-tech mb-1">Standard</div>
-                      <div className="text-[10px] opacity-70">24-48 hours</div>
+                      <div className="text-xs font-bold font-tech mb-0.5">Standard</div>
+                      <div className="text-[10px] opacity-70">24-48h / 4-8 days (large)</div>
                     </motion.button>
                     <motion.button
                       onClick={() => setDeliverySpeed("emergency")}
-                      className={`p-3 rounded-xl text-left transition-all ${
+                      className={`p-2 rounded-lg text-left transition-all ${
                         deliverySpeed === "emergency"
                           ? "bg-primary/10 border border-primary text-primary"
                           : "bg-background/30 border border-border text-muted-foreground hover:border-foreground/30"
@@ -520,7 +680,7 @@ export const QuoteSection = () => {
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                     >
-                      <div className="text-xs font-bold font-tech mb-1 flex items-center gap-1">
+                      <div className="text-xs font-bold font-tech mb-0.5 flex items-center gap-1">
                         <Zap className="w-3 h-3" /> Emergency
                       </div>
                       <div className="text-[10px] opacity-70">&lt;24h (+15%)</div>
@@ -528,22 +688,137 @@ export const QuoteSection = () => {
                   </div>
                 </div>
 
+                {/* Optional Add-ons */}
+                <div className="mb-4 p-3 rounded-lg bg-background/30 border border-border/30">
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3 block">
+                    Optional Add-ons
+                  </label>
+                  
+                  {/* Post-processing */}
+                  <div className="mb-3">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={postProcessingEnabled}
+                        onChange={(e) => setPostProcessingEnabled(e.target.checked)}
+                        className="rounded border-border accent-secondary"
+                      />
+                      <span className="text-sm text-foreground flex items-center gap-1">
+                        <Wrench className="w-3 h-3" />
+                        Post-processing / cleanup
+                      </span>
+                    </label>
+                    
+                    {postProcessingEnabled && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-2 ml-5 space-y-2"
+                      >
+                        <div className="grid grid-cols-2 gap-2">
+                          {(Object.entries(POST_PROCESSING_RATES) as [PostProcessingTier, typeof POST_PROCESSING_RATES.standard][]).map(([tier, config]) => (
+                            <button
+                              key={tier}
+                              onClick={() => setPostProcessingTier(tier)}
+                              className={`px-2 py-1 rounded text-xs transition-all ${
+                                postProcessingTier === tier
+                                  ? "bg-secondary/10 border border-secondary text-secondary"
+                                  : "bg-muted/30 border border-border text-muted-foreground"
+                              }`}
+                            >
+                              {config.label}
+                            </button>
+                          ))}
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-muted-foreground">Time (minutes)</label>
+                          <div className="flex gap-1 mt-1">
+                            {[15, 30, 45, 60].map((m) => (
+                              <button
+                                key={m}
+                                onClick={() => setPostProcessingMinutes(m)}
+                                className={`px-2 py-0.5 rounded text-xs font-mono transition-all ${
+                                  postProcessingMinutes === m
+                                    ? "bg-secondary text-secondary-foreground"
+                                    : "bg-muted/30 text-muted-foreground"
+                                }`}
+                              >
+                                {m}m
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+                  
+                  {/* Hardware */}
+                  <div>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={hardwareEnabled}
+                        onChange={(e) => setHardwareEnabled(e.target.checked)}
+                        className="rounded border-border accent-secondary"
+                      />
+                      <span className="text-sm text-foreground">
+                        Hardware / inserts needed
+                      </span>
+                    </label>
+                    
+                    {hardwareEnabled && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-2 ml-5"
+                      >
+                        <input
+                          type="text"
+                          value={hardwareNotes}
+                          onChange={(e) => setHardwareNotes(e.target.value)}
+                          placeholder="List parts (e.g., M3 screws x4, brass inserts x2)"
+                          className="w-full bg-background/50 border border-border rounded-lg px-3 py-2 text-xs text-foreground focus:border-secondary outline-none"
+                        />
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          Parts priced separately. Labor via post-processing.
+                        </p>
+                      </motion.div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Validation Errors */}
+                {!validation.isValid && (
+                  <div className="mb-4 p-2 rounded-lg bg-destructive/10 border border-destructive/30">
+                    {validation.errors.map((err, i) => (
+                      <p key={i} className="text-xs text-destructive flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {err}
+                      </p>
+                    ))}
+                  </div>
+                )}
+
                 {/* Pricing Breakdown */}
-                <div className="border-t border-border/30 pt-6">
+                <div className="border-t border-border/30 pt-4">
                   <PricingBreakdown 
                     breakdown={quoteBreakdown} 
                     qty={qty} 
                     isMember={isMember}
                     returnToQuote={getReturnToQuoteUrl}
                     deliverySpeed={deliverySpeed}
+                    summary={quoteSummary}
                   />
                   
                   <NeonButton
                     variant="secondary"
                     size="xl"
-                    className="w-full bg-gradient-to-r from-secondary to-primary mt-6"
+                    className="w-full bg-gradient-to-r from-secondary to-primary mt-4"
                     icon={<span>→</span>}
                     iconPosition="right"
+                    disabled={!validation.isValid}
                   >
                     PROCEED TO ORDER
                   </NeonButton>
