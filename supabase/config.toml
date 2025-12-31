@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.claim-social-reward]
 verify_jwt = false
+
+[functions.printer-status]
+verify_jwt = true
