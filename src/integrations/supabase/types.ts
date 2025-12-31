@@ -277,6 +277,135 @@ export type Database = {
         }
         Relationships: []
       }
+      maker_filament: {
+        Row: {
+          brand: string | null
+          color: string
+          created_at: string
+          dry_status: Database["public"]["Enums"]["filament_dry_status"] | null
+          grams_remaining: number | null
+          id: string
+          maker_id: string
+          material: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          brand?: string | null
+          color: string
+          created_at?: string
+          dry_status?: Database["public"]["Enums"]["filament_dry_status"] | null
+          grams_remaining?: number | null
+          id?: string
+          maker_id: string
+          material: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          brand?: string | null
+          color?: string
+          created_at?: string
+          dry_status?: Database["public"]["Enums"]["filament_dry_status"] | null
+          grams_remaining?: number | null
+          id?: string
+          maker_id?: string
+          material?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      maker_printers: {
+        Row: {
+          api_key: string | null
+          connection_type:
+            | Database["public"]["Enums"]["printer_connection_type"]
+            | null
+          connection_url: string | null
+          created_at: string
+          id: string
+          job_size: string | null
+          last_seen_at: string | null
+          last_status: Json | null
+          maker_id: string
+          materials_supported: string[] | null
+          model: string
+          notes: string | null
+          nozzle_sizes: string[] | null
+          status: Database["public"]["Enums"]["printer_status"]
+          updated_at: string
+        }
+        Insert: {
+          api_key?: string | null
+          connection_type?:
+            | Database["public"]["Enums"]["printer_connection_type"]
+            | null
+          connection_url?: string | null
+          created_at?: string
+          id?: string
+          job_size?: string | null
+          last_seen_at?: string | null
+          last_status?: Json | null
+          maker_id: string
+          materials_supported?: string[] | null
+          model: string
+          notes?: string | null
+          nozzle_sizes?: string[] | null
+          status?: Database["public"]["Enums"]["printer_status"]
+          updated_at?: string
+        }
+        Update: {
+          api_key?: string | null
+          connection_type?:
+            | Database["public"]["Enums"]["printer_connection_type"]
+            | null
+          connection_url?: string | null
+          created_at?: string
+          id?: string
+          job_size?: string | null
+          last_seen_at?: string | null
+          last_status?: Json | null
+          maker_id?: string
+          materials_supported?: string[] | null
+          model?: string
+          notes?: string | null
+          nozzle_sizes?: string[] | null
+          status?: Database["public"]["Enums"]["printer_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payout_requests: {
+        Row: {
+          amount_estimate: number
+          created_at: string
+          id: string
+          maker_id: string
+          notes: string | null
+          processed_at: string | null
+          status: Database["public"]["Enums"]["payout_status"]
+        }
+        Insert: {
+          amount_estimate?: number
+          created_at?: string
+          id?: string
+          maker_id: string
+          notes?: string | null
+          processed_at?: string | null
+          status?: Database["public"]["Enums"]["payout_status"]
+        }
+        Update: {
+          amount_estimate?: number
+          created_at?: string
+          id?: string
+          maker_id?: string
+          notes?: string | null
+          processed_at?: string | null
+          status?: Database["public"]["Enums"]["payout_status"]
+        }
+        Relationships: []
+      }
       point_transactions: {
         Row: {
           activity_type: Database["public"]["Enums"]["point_activity_type"]
@@ -346,6 +475,89 @@ export type Database = {
           longest_streak_days?: number | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      print_jobs: {
+        Row: {
+          created_at: string
+          id: string
+          maker_id: string
+          notes: string | null
+          photos: Json | null
+          quality_checks: Json | null
+          request_id: string | null
+          sla_target_at: string | null
+          status: Database["public"]["Enums"]["print_job_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          maker_id: string
+          notes?: string | null
+          photos?: Json | null
+          quality_checks?: Json | null
+          request_id?: string | null
+          sla_target_at?: string | null
+          status?: Database["public"]["Enums"]["print_job_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          maker_id?: string
+          notes?: string | null
+          photos?: Json | null
+          quality_checks?: Json | null
+          request_id?: string | null
+          sla_target_at?: string | null
+          status?: Database["public"]["Enums"]["print_job_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "print_jobs_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "print_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      print_requests: {
+        Row: {
+          attribution: Json | null
+          created_at: string
+          id: string
+          maker_id: string | null
+          notes: string | null
+          specs: Json | null
+          status: Database["public"]["Enums"]["print_request_status"]
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          attribution?: Json | null
+          created_at?: string
+          id?: string
+          maker_id?: string | null
+          notes?: string | null
+          specs?: Json | null
+          status?: Database["public"]["Enums"]["print_request_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          attribution?: Json | null
+          created_at?: string
+          id?: string
+          maker_id?: string | null
+          notes?: string | null
+          specs?: Json | null
+          status?: Database["public"]["Enums"]["print_request_status"]
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -659,6 +871,8 @@ export type Database = {
         | "streak_7_day"
         | "streak_30_day"
         | "big_spender"
+      filament_dry_status: "dry" | "needs_drying" | "unknown"
+      payout_status: "pending" | "processing" | "completed" | "rejected"
       point_activity_type:
         | "signup_bonus"
         | "profile_completion"
@@ -671,6 +885,23 @@ export type Database = {
         | "review"
         | "streak_bonus"
         | "achievement_unlock"
+      print_job_status:
+        | "new"
+        | "printing"
+        | "post_processing"
+        | "ready"
+        | "shipped"
+        | "complete"
+        | "cancelled"
+      print_request_status:
+        | "pending"
+        | "claimed"
+        | "quoted"
+        | "accepted"
+        | "declined"
+        | "cancelled"
+      printer_connection_type: "none" | "octoprint" | "moonraker"
+      printer_status: "available" | "printing" | "maintenance" | "offline"
       subscription_tier: "free" | "maker" | "pro"
     }
     CompositeTypes: {
@@ -812,6 +1043,8 @@ export const Constants = {
         "streak_30_day",
         "big_spender",
       ],
+      filament_dry_status: ["dry", "needs_drying", "unknown"],
+      payout_status: ["pending", "processing", "completed", "rejected"],
       point_activity_type: [
         "signup_bonus",
         "profile_completion",
@@ -825,6 +1058,25 @@ export const Constants = {
         "streak_bonus",
         "achievement_unlock",
       ],
+      print_job_status: [
+        "new",
+        "printing",
+        "post_processing",
+        "ready",
+        "shipped",
+        "complete",
+        "cancelled",
+      ],
+      print_request_status: [
+        "pending",
+        "claimed",
+        "quoted",
+        "accepted",
+        "declined",
+        "cancelled",
+      ],
+      printer_connection_type: ["none", "octoprint", "moonraker"],
+      printer_status: ["available", "printing", "maintenance", "offline"],
       subscription_tier: ["free", "maker", "pro"],
     },
   },
