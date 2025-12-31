@@ -1,25 +1,87 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronUp, Info, DollarSign, Coins } from 'lucide-react';
-import { QuoteBreakdown, MINIMUM_ORDER_TOTAL } from '@/config/pricing';
+import { useNavigate } from 'react-router-dom';
+import { ChevronDown, ChevronUp, Info, DollarSign, Sparkles, UserPlus } from 'lucide-react';
+import { QuoteBreakdown, MINIMUM_ORDER_TOTAL, FREE_MEMBER_DISCOUNT_RATE } from '@/config/pricing';
 import { formatCad, formatCredits } from '@/config/credits';
 import { GlowCard } from './GlowCard';
+import NeonButton from './NeonButton';
 
 interface PricingBreakdownProps {
   breakdown: QuoteBreakdown;
   qty: number;
+  isMember?: boolean;
+  returnToQuote?: () => string; // Returns the URL to return to after signup
 }
 
-export const PricingBreakdown = ({ breakdown, qty }: PricingBreakdownProps) => {
+export const PricingBreakdown = ({ breakdown, qty, isMember = false, returnToQuote }: PricingBreakdownProps) => {
   const [showMakerPayout, setShowMakerPayout] = useState(false);
+  const navigate = useNavigate();
+
+  const displayTotal = isMember ? breakdown.memberTotal : breakdown.total;
+  const displayCredits = isMember ? breakdown.memberTotalCredits : breakdown.totalCredits;
+
+  const handleJoinFree = () => {
+    // Navigate to auth with return state
+    navigate('/auth', { 
+      state: { 
+        returnTo: returnToQuote ? returnToQuote() : '/#quote',
+        isSignup: true 
+      } 
+    });
+  };
 
   return (
     <div className="space-y-4">
+      {/* Member Savings Banner (for non-members) */}
+      {!isMember && breakdown.memberSavings > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-3 rounded-lg bg-secondary/10 border border-secondary/30"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-secondary" />
+              <div>
+                <p className="text-sm font-bold text-foreground">
+                  Save {formatCad(breakdown.memberSavings)} by becoming a free member
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {Math.round(FREE_MEMBER_DISCOUNT_RATE * 100)}% off bed rental, material & post-processing
+                </p>
+              </div>
+            </div>
+            <NeonButton 
+              variant="secondary" 
+              size="sm"
+              onClick={handleJoinFree}
+              className="shrink-0"
+            >
+              <UserPlus className="w-4 h-4 mr-1" />
+              Join Free
+            </NeonButton>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Member Pricing Applied Label */}
+      {isMember && breakdown.memberSavings > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-2 text-success text-sm"
+        >
+          <Sparkles className="w-4 h-4" />
+          <span>Member pricing applied — saving {formatCad(breakdown.memberSavings)}</span>
+        </motion.div>
+      )}
+
       {/* Total Display */}
       <div className="flex justify-between items-end">
         <div>
           <p className="text-xs text-muted-foreground uppercase tracking-wider">
-            Estimated Total
+            {isMember ? 'Member Total' : 'Estimated Total'}
           </p>
           <p className="text-[10px] text-success mt-1">
             ✓ Includes Designer Royalty
@@ -28,16 +90,21 @@ export const PricingBreakdown = ({ breakdown, qty }: PricingBreakdownProps) => {
         <div className="text-right">
           <motion.div
             className="text-4xl font-tech font-bold text-secondary"
-            key={breakdown.totalCredits}
+            key={displayCredits}
             initial={{ scale: 1.1 }}
             animate={{ scale: 1 }}
             transition={{ duration: 0.3 }}
           >
-            {formatCredits(breakdown.totalCredits)}
+            {formatCredits(displayCredits)}
           </motion.div>
           <div className="text-sm text-muted-foreground">
-            {formatCad(breakdown.total)}
+            {formatCad(displayTotal)}
           </div>
+          {!isMember && breakdown.memberSavings > 0 && (
+            <div className="text-xs text-secondary mt-1">
+              Member price: {formatCad(breakdown.memberTotal)}
+            </div>
+          )}
         </div>
       </div>
 

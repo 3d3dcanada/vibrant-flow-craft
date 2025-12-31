@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
@@ -25,15 +25,27 @@ const Auth = () => {
 
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
   const DEMO_PASSWORD = 'DemoPass123!';
 
+  // Get return URL from navigation state
+  const locationState = location.state as { returnTo?: string; isSignup?: boolean } | null;
+  const returnTo = locationState?.returnTo || '/dashboard';
+
+  useEffect(() => {
+    // If coming from quote with isSignup flag, switch to signup mode
+    if (locationState?.isSignup && isLogin) {
+      setIsLogin(false);
+    }
+  }, [locationState?.isSignup]);
+
   useEffect(() => {
     if (user) {
-      navigate('/dashboard');
+      navigate(returnTo);
     }
-  }, [user, navigate]);
+  }, [user, navigate, returnTo]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {};

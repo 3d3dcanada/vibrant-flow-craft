@@ -1,10 +1,11 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { Upload, Link as LinkIcon, Check, Leaf, Heart, CloudUpload, Trash2, Tag, X } from "lucide-react";
 import { GlowCard } from "../ui/GlowCard";
 import NeonButton from "../ui/NeonButton";
 import PricingBreakdown from "../ui/PricingBreakdown";
+import { useAuth } from "@/contexts/AuthContext";
 import { 
   MaterialType, 
   MATERIAL_RATES, 
@@ -31,6 +32,8 @@ const materials: { key: MaterialType; name: string; tag: string; level: number }
 ];
 
 export const QuoteSection = () => {
+  const { user } = useAuth();
+  const isMember = !!user;
   const location = useLocation();
   const [mode, setMode] = useState<Mode>("upload");
   const [material, setMaterial] = useState<MaterialType>("PLA");
@@ -72,6 +75,14 @@ export const QuoteSection = () => {
     setMaterial("PLA");
   };
 
+  // Build return URL for auth redirect
+  const getReturnToQuoteUrl = useCallback(() => {
+    if (promoQuote) {
+      return `/#quote?promo=${promoQuote.productId}`;
+    }
+    return '/#quote';
+  }, [promoQuote]);
+
   // Estimate print time based on weight (rough approximation: 1g ≈ 3-4 minutes)
   const estimatedPrintHours = useMemo(() => {
     if (promoQuote) {
@@ -88,7 +99,8 @@ export const QuoteSection = () => {
       weight,
       qty,
       estimatedPrintHours,
-      { id: 'none', hours: 0 } // No post-processing by default
+      { id: 'none', hours: 0 }, // No post-processing by default
+      isMember
     );
   }, [material, weight, qty, estimatedPrintHours]);
 
@@ -483,7 +495,12 @@ export const QuoteSection = () => {
 
                 {/* Pricing Breakdown */}
                 <div className="border-t border-border/30 pt-6">
-                  <PricingBreakdown breakdown={quoteBreakdown} qty={qty} />
+                  <PricingBreakdown 
+                    breakdown={quoteBreakdown} 
+                    qty={qty} 
+                    isMember={isMember}
+                    returnToQuote={getReturnToQuoteUrl}
+                  />
                   
                   <NeonButton
                     variant="secondary"
