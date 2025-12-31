@@ -22,7 +22,8 @@ import {
   PostProcessingTier,
   calculateQuoteBreakdown,
   estimatePrintTimeFromWeight,
-  RUSH_RATES
+  RUSH_RATES,
+  getMinimumGrams
 } from "@/config/pricing";
 
 type Mode = "upload" | "url";
@@ -63,10 +64,20 @@ export const QuoteSection = () => {
   const [materialType, setMaterialType] = useState<MaterialType>("PLA_STANDARD");
   const [color, setColor] = useState<ColorOption>("black");
   const [qty, setQty] = useState(1);
-  const [weight, setWeight] = useState(100);
+  const [weight, setWeight] = useState(() => getMinimumGrams("PLA_STANDARD"));
   const [hours, setHours] = useState<number | null>(null);
   const [inputMode, setInputMode] = useState<InputMode>("weight");
   const [deliverySpeed, setDeliverySpeed] = useState<DeliverySpeed>("standard");
+  
+  // Compute minimum grams for current material
+  const minGrams = useMemo(() => getMinimumGrams(materialType), [materialType]);
+  
+  // Auto-bump weight when material changes and current weight is below new minimum
+  useEffect(() => {
+    if (weight < minGrams) {
+      setWeight(minGrams);
+    }
+  }, [materialType, minGrams, weight]);
   
   // Post-processing
   const [postProcessingEnabled, setPostProcessingEnabled] = useState(false);
@@ -93,9 +104,15 @@ export const QuoteSection = () => {
         'TPU': 'TPU',
         'CARBON': 'PETG_CF',
       };
-      setMaterialType(materialMap[pq.material] || 'PLA_STANDARD');
+      const mappedMaterial = materialMap[pq.material] || 'PLA_STANDARD';
+      setMaterialType(mappedMaterial);
       setQty(pq.quantity);
-      setWeight(pq.gramsPerUnit * pq.quantity);
+      
+      // Ensure weight respects minimum for the material
+      const promoWeight = pq.gramsPerUnit * pq.quantity;
+      const promoMinGrams = getMinimumGrams(mappedMaterial);
+      setWeight(Math.max(promoWeight, promoMinGrams));
+      
       setHours((pq.minutesPerUnit * pq.quantity) / 60);
       setInputMode("both");
       setFile({ name: `${pq.productName}.stl` } as File);
@@ -116,7 +133,7 @@ export const QuoteSection = () => {
   const clearPromoQuote = () => {
     setPromoQuote(null);
     setFile(null);
-    setWeight(100);
+    setWeight(getMinimumGrams("PLA_STANDARD"));
     setHours(null);
     setQty(1);
     setMaterialType("PLA_STANDARD");
@@ -611,13 +628,13 @@ export const QuoteSection = () => {
                     {(inputMode === 'weight' || inputMode === 'both') && (
                       <div>
                         <label className="flex justify-between text-[10px] text-muted-foreground mb-1">
-                          Weight (g) <span className="text-secondary">{weight}g</span>
+                          Weight (g) <span className="text-secondary">{weight}g (min {minGrams}g)</span>
                         </label>
                         <input
                           type="number"
-                          min="1"
+                          min={minGrams}
                           value={weight}
-                          onChange={(e) => setWeight(Math.max(1, parseInt(e.target.value) || 0))}
+                          onChange={(e) => setWeight(Math.max(minGrams, parseInt(e.target.value) || minGrams))}
                           className="w-full bg-background/50 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:border-secondary outline-none font-mono"
                         />
                       </div>
