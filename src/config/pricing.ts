@@ -15,11 +15,11 @@ import { cadToCredits, formatCad } from './credits';
 
 // ============= Platform Fees =============
 export const ADMIN_FEE = 5.00; // 3D3D platform fee (includes designer royalty)
-export const BASE_FILAMENT_INCLUDED = 3.00; // Base filament included in minimum
+export const MINIMUM_FILAMENT_CAD = 3.00; // Filament minimum charge
 export const DESIGNER_ROYALTY_INCLUDED = 0.25; // Allocated from admin fee (display only)
 
 // ============= Minimum Order =============
-export const MINIMUM_ORDER_TOTAL = 18.00; // $5 admin + $10 bed + $3 base filament
+export const MINIMUM_ORDER_TOTAL = 18.00; // $5 admin + $10 bed + $3 min filament
 export const MINIMUM_BED_RENTAL = 10.00; // Bed rental NEVER below this
 
 // ============= Job Sizes (routing + default time estimates) =============
@@ -144,6 +144,12 @@ export function getMaterialCost(material: MaterialType, grams: number): { custom
   };
 }
 
+// Get minimum grams for a material (ensures filament total >= $3)
+export function getMinimumGrams(material: MaterialType): number {
+  const rate = MATERIAL_RATES[material].customerRate;
+  return Math.ceil(MINIMUM_FILAMENT_CAD / rate);
+}
+
 export function getPostProcessingCost(tier: PostProcessingTier | null, minutes: number): { customer: number; maker: number } {
   if (!tier || minutes <= 0) return { customer: 0, maker: 0 };
   const rates = POST_PROCESSING_RATES[tier];
@@ -251,41 +257,21 @@ export function calculateQuoteBreakdown(input: QuoteInput): QuoteBreakdown {
   rushEligibleSubtotal += bedRental.rate;
   eligibleSubtotal += bedRental.rate;
   
-  // 3. Base Filament (included): $3.00 - NOT eligible for rush
-  lineItems.push({
-    label: 'Base Filament (included)',
-    amount: BASE_FILAMENT_INCLUDED,
-    type: 'material',
-    eligibleForRush: false,
-  });
-  
-  // 4. Calculate material cost
+  // 3. Filament Total (single line) - calculated directly, min enforced by input
+  // Since grams minimum is enforced in UI, filament total will always be >= $3
   const materialCost = getMaterialCost(materialType, grams);
-  const additionalFilamentCad = Math.max(0, materialCost.customer - BASE_FILAMENT_INCLUDED);
+  const filamentTotalCad = materialCost.customer;
+  const materialName = MATERIAL_RATES[materialType].name;
   
-  // 5. Additional Filament: only if > 0 - ELIGIBLE for rush
-  if (additionalFilamentCad > 0) {
-    lineItems.push({
-      label: 'Additional Filament',
-      amount: additionalFilamentCad,
-      details: `${grams}g × ${formatCad(MATERIAL_RATES[materialType].customerRate)}/g − ${formatCad(BASE_FILAMENT_INCLUDED)} base`,
-      type: 'material',
-      eligibleForRush: true,
-    });
-    rushEligibleSubtotal += additionalFilamentCad;
-    eligibleSubtotal += additionalFilamentCad;
-  }
-  
-  // 6. Specialty Material indicator (rate already includes specialty pricing)
-  if (MATERIAL_RATES[materialType].isSpecialty) {
-    lineItems.push({
-      label: `Specialty Material (${MATERIAL_RATES[materialType].name})`,
-      amount: 0,
-      details: 'Rate includes specialty pricing',
-      type: 'info',
-      show: true,
-    });
-  }
+  lineItems.push({
+    label: `Filament Total (${materialName})`,
+    amount: filamentTotalCad,
+    details: `${grams}g × ${formatCad(MATERIAL_RATES[materialType].customerRate)}/g`,
+    type: 'material',
+    eligibleForRush: true,
+  });
+  rushEligibleSubtotal += filamentTotalCad;
+  eligibleSubtotal += filamentTotalCad;
   
   // 7. Post-Processing (if selected) - ELIGIBLE for rush
   if (postProcessingEnabled && postProcessingMinutes > 0) {

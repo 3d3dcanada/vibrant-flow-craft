@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown, ChevronUp, Info, DollarSign, Sparkles, UserPlus, Clock, Package } from 'lucide-react';
-import { QuoteBreakdown, MINIMUM_ORDER_TOTAL, FREE_MEMBER_DISCOUNT_RATE, SLA_TIMELINES } from '@/config/pricing';
+import { QuoteBreakdown, FREE_MEMBER_DISCOUNT_RATE, SLA_TIMELINES } from '@/config/pricing';
 import { formatCad, formatCredits } from '@/config/credits';
 import { GlowCard } from './GlowCard';
 import NeonButton from './NeonButton';
@@ -226,7 +226,7 @@ export const PricingBreakdown = ({
           </div>
           {breakdown.minimumAdjustment > 0 && (
             <div className="flex justify-between text-xs text-warning">
-              <span>Min. order: {formatCad(MINIMUM_ORDER_TOTAL)}</span>
+              <span>Min. order adjustment</span>
               <span>+{formatCad(breakdown.minimumAdjustment)}</span>
             </div>
           )}
