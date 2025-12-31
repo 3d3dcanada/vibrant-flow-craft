@@ -5,6 +5,7 @@ import { Menu, X, Database, Zap, User, LogIn } from "lucide-react";
 import AnimatedLogo from "./AnimatedLogo";
 import NeonButton from "./NeonButton";
 import { useAuth } from "@/contexts/AuthContext";
+import RepositoryDrawer from "@/components/repositories/RepositoryDrawer";
 
 const navLinks = [
   { label: "About Us", href: "#about" },
@@ -15,6 +16,7 @@ const navLinks = [
 export const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -60,9 +62,10 @@ export const Navbar = () => {
                 className="text-sm font-medium text-foreground hover:text-primary transition-colors flex items-center gap-2 group py-2 px-4 rounded-lg border border-border hover:bg-muted/50"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
+                onClick={() => setIsDrawerOpen(true)}
               >
                 <Database className="w-4 h-4 text-primary group-hover:animate-bounce" />
-                20+ Repositories
+                Find a Model
               </motion.button>
 
               <NeonButton
@@ -199,6 +202,9 @@ export const Navbar = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Repository Drawer */}
+      <RepositoryDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />
     </>
   );
 };

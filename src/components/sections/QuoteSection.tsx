@@ -26,6 +26,8 @@ import {
   getMinimumGrams
 } from "@/config/pricing";
 
+import { PrintRequestFormData, ModelSource } from "@/types/modelSource";
+
 type Mode = "upload" | "url";
 type InputMode = "weight" | "time" | "both";
 
@@ -90,10 +92,27 @@ export const QuoteSection = () => {
   
   // Promo quote state
   const [promoQuote, setPromoQuote] = useState<PromoQuoteState | null>(null);
+  
+  // Model print request state (from repository drawer)
+  const [modelRequest, setModelRequest] = useState<PrintRequestFormData | null>(null);
 
-  // Check for promo quote state from navigation
+  // Check for promo quote or model request state from navigation
   useEffect(() => {
-    const state = location.state as { promoQuote?: PromoQuoteState } | null;
+    const state = location.state as { promoQuote?: PromoQuoteState; modelPrintRequest?: PrintRequestFormData } | null;
+    
+    // Handle model print request from repository drawer
+    if (state?.modelPrintRequest) {
+      const req = state.modelPrintRequest;
+      setModelRequest(req);
+      setMaterialType(req.materialType as MaterialType);
+      setQty(req.quantity);
+      setJobSize(req.jobSize);
+      setUrl(req.modelUrl);
+      setMode("url");
+      window.history.replaceState({}, document.title);
+      return;
+    }
+    
     if (state?.promoQuote) {
       const pq = state.promoQuote;
       setPromoQuote(pq);
@@ -132,12 +151,15 @@ export const QuoteSection = () => {
 
   const clearPromoQuote = () => {
     setPromoQuote(null);
+    setModelRequest(null);
     setFile(null);
+    setUrl("");
     setWeight(getMinimumGrams("PLA_STANDARD"));
     setHours(null);
     setQty(1);
     setMaterialType("PLA_STANDARD");
     setInputMode("weight");
+    setMode("upload");
   };
 
   const getReturnToQuoteUrl = useCallback(() => {
@@ -351,6 +373,46 @@ export const QuoteSection = () => {
                     >
                       <X className="w-4 h-4" />
                     </button>
+                  </motion.div>
+                )}
+
+                {/* Model Link Attached Banner */}
+                {modelRequest && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-4 p-3 rounded-lg bg-primary/10 border border-primary/30"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <LinkIcon className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-bold text-foreground font-tech">Model Link Attached</span>
+                      </div>
+                      <button 
+                        onClick={clearPromoQuote}
+                        className="p-1 rounded hover:bg-background/50 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <a 
+                      href={modelRequest.modelUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary hover:underline break-all block mb-1"
+                    >
+                      {modelRequest.modelUrl}
+                    </a>
+                    {modelRequest.repositoryName && (
+                      <p className="text-[10px] text-muted-foreground">
+                        From: {modelRequest.repositoryName}
+                      </p>
+                    )}
+                    {modelRequest.notes && (
+                      <p className="text-xs text-muted-foreground mt-1 italic">
+                        "{modelRequest.notes}"
+                      </p>
+                    )}
                   </motion.div>
                 )}
 
