@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useMemo } from "react";
-import { Upload, Link as LinkIcon, Check, Leaf, Heart, CloudUpload, Trash2 } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import { Upload, Link as LinkIcon, Check, Leaf, Heart, CloudUpload, Trash2, Tag, X } from "lucide-react";
 import { GlowCard } from "../ui/GlowCard";
 import NeonButton from "../ui/NeonButton";
 import PricingBreakdown from "../ui/PricingBreakdown";
@@ -12,6 +13,16 @@ import {
 
 type Mode = "upload" | "url";
 
+interface PromoQuoteState {
+  productId: string;
+  productName: string;
+  quantity: number;
+  material: MaterialType;
+  gramsPerUnit: number;
+  minutesPerUnit: number;
+  logoTextMaxChars: number;
+}
+
 const materials: { key: MaterialType; name: string; tag: string; level: number }[] = [
   { key: "PLA", name: "PLA", tag: "Standard", level: 33 },
   { key: "PETG", name: "PETG", tag: "Durable", level: 66 },
@@ -20,6 +31,7 @@ const materials: { key: MaterialType; name: string; tag: string; level: number }
 ];
 
 export const QuoteSection = () => {
+  const location = useLocation();
   const [mode, setMode] = useState<Mode>("upload");
   const [material, setMaterial] = useState<MaterialType>("PLA");
   const [weight, setWeight] = useState(100);
@@ -27,11 +39,47 @@ export const QuoteSection = () => {
   const [file, setFile] = useState<File | null>(null);
   const [url, setUrl] = useState("");
   const [isScanning, setIsScanning] = useState(false);
+  const [promoQuote, setPromoQuote] = useState<PromoQuoteState | null>(null);
+
+  // Check for promo quote state from navigation
+  useEffect(() => {
+    const state = location.state as { promoQuote?: PromoQuoteState } | null;
+    if (state?.promoQuote) {
+      const pq = state.promoQuote;
+      setPromoQuote(pq);
+      setMaterial(pq.material);
+      setQty(pq.quantity);
+      // Calculate total weight: gramsPerUnit * quantity
+      setWeight(pq.gramsPerUnit * pq.quantity);
+      // Set a pseudo-file to indicate model is preset
+      setFile({ name: `${pq.productName}.stl` } as File);
+      
+      // Scroll to quote section
+      setTimeout(() => {
+        document.getElementById("quote")?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+      
+      // Clear the state to prevent re-triggering
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+
+  const clearPromoQuote = () => {
+    setPromoQuote(null);
+    setFile(null);
+    setWeight(100);
+    setQty(1);
+    setMaterial("PLA");
+  };
 
   // Estimate print time based on weight (rough approximation: 1g ≈ 3-4 minutes)
   const estimatedPrintHours = useMemo(() => {
+    if (promoQuote) {
+      // Use preset minutes for promo items
+      return (promoQuote.minutesPerUnit * qty) / 60;
+    }
     return Math.max(0.5, (weight * 3.5) / 60); // 3.5 min per gram average
-  }, [weight]);
+  }, [weight, promoQuote, qty]);
 
   // Calculate quote breakdown using pricing config
   const quoteBreakdown = useMemo(() => {
@@ -178,6 +226,33 @@ export const QuoteSection = () => {
               </div>
 
               <div className="pt-8">
+                {/* Promo Quote Banner */}
+                {promoQuote && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-4 p-3 rounded-lg bg-secondary/10 border border-secondary/30 flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Tag className="w-5 h-5 text-secondary" />
+                      <div>
+                        <p className="text-sm font-bold text-foreground font-tech">
+                          Promo Product Quote: {promoQuote.productName}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          MOQ: {promoQuote.quantity} units • Customize: logo text (max {promoQuote.logoTextMaxChars} chars)
+                        </p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={clearPromoQuote}
+                      className="p-1 rounded hover:bg-background/50 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </motion.div>
+                )}
+
                 {/* Tabs */}
                 <div className="flex gap-4 mb-6 border-b border-border/50">
                   <button
