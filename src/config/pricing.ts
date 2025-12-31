@@ -22,13 +22,20 @@ export const DESIGNER_ROYALTY_INCLUDED = 0.25; // Allocated from admin fee (disp
 export const MINIMUM_ORDER_TOTAL = 18.00; // $5 admin + $10 bed + $3 base filament
 export const MINIMUM_BED_RENTAL = 10.00; // Bed rental NEVER below this
 
+// ============= Job Sizes (routing + default time estimates) =============
+export type JobSize = 'small' | 'medium' | 'large';
+export const JOB_SIZE_DEFAULTS: Record<JobSize, { label: string; defaultHours: number }> = {
+  small: { label: 'Small', defaultHours: 2 },
+  medium: { label: 'Medium', defaultHours: 6 },
+  large: { label: 'Large', defaultHours: 12 },
+};
+
 // ============= Bed Rental Tiers (Maker Payment) =============
 // Based on estimated print time, but NEVER < $10
 export const BED_RENTAL_TIERS = [
-  { maxHours: 3, rate: 10.00, label: '0-3 hours' },
-  { maxHours: 10, rate: 14.00, label: '3-10 hours' },
-  { maxHours: 24, rate: 18.00, label: '10-24 hours' },
-  { maxHours: Infinity, rate: 18.00, label: '24+ hours (base)' }, // Base for 24+, surcharge added separately
+  { maxHours: 6, rate: 10.00, label: '0-6 hours' },
+  { maxHours: 24, rate: 14.00, label: '6-24 hours' },
+  { maxHours: Infinity, rate: 18.00, label: '24+ hours (base)' },
 ];
 
 // Extended time surcharge (for prints > 24h)
@@ -44,30 +51,53 @@ export const RUSH_RATES = {
 };
 
 // ============= Material Pricing (per gram) =============
-export type MaterialType = 'PLA' | 'PETG' | 'TPU' | 'CARBON';
+export type MaterialType = 
+  | 'PLA_STANDARD' 
+  | 'PLA_SPECIALTY' 
+  | 'PETG' 
+  | 'PETG_CF' 
+  | 'TPU' 
+  | 'ABS_ASA';
 
-export const MATERIAL_RATES: Record<MaterialType, { customerRate: number; makerRate: number; name: string; isSpecialty: boolean }> = {
-  PLA: { customerRate: 0.09, makerRate: 0.06, name: 'PLA Standard', isSpecialty: false },
-  PETG: { customerRate: 0.11, makerRate: 0.07, name: 'PETG Durable', isSpecialty: false },
-  TPU: { customerRate: 0.18, makerRate: 0.12, name: 'TPU Flexible', isSpecialty: true },
-  CARBON: { customerRate: 0.35, makerRate: 0.25, name: 'Carbon Fiber', isSpecialty: true },
+export const MATERIAL_RATES: Record<MaterialType, { 
+  customerRate: number; 
+  makerRate: number; 
+  name: string; 
+  isSpecialty: boolean;
+  category: string;
+}> = {
+  PLA_STANDARD: { customerRate: 0.09, makerRate: 0.06, name: 'PLA Standard', isSpecialty: false, category: 'Standard' },
+  PLA_SPECIALTY: { customerRate: 0.14, makerRate: 0.09, name: 'PLA Specialty (Glow/Wood/etc)', isSpecialty: true, category: 'Specialty' },
+  PETG: { customerRate: 0.11, makerRate: 0.07, name: 'PETG', isSpecialty: false, category: 'Standard' },
+  PETG_CF: { customerRate: 0.35, makerRate: 0.25, name: 'PETG-CF (Carbon Fiber)', isSpecialty: true, category: 'Engineering' },
+  TPU: { customerRate: 0.18, makerRate: 0.12, name: 'TPU (Flexible)', isSpecialty: true, category: 'Specialty' },
+  ABS_ASA: { customerRate: 0.13, makerRate: 0.08, name: 'ABS/ASA', isSpecialty: false, category: 'Engineering' },
 };
 
-// Specialty material upcharge (added on top of base rate)
-export const SPECIALTY_UPCHARGE: Record<MaterialType, number> = {
-  PLA: 0,
-  PETG: 0,
-  TPU: 0, // Rate already includes specialty pricing
-  CARBON: 0, // Rate already includes specialty pricing
-};
+// ============= Color Options =============
+export type ColorOption = 'black' | 'white' | 'gray' | 'red' | 'blue' | 'green' | 'yellow' | 'orange' | 'purple' | 'custom';
+export const COLOR_OPTIONS: { value: ColorOption; label: string; hex?: string }[] = [
+  { value: 'black', label: 'Black', hex: '#1a1a1a' },
+  { value: 'white', label: 'White', hex: '#f5f5f5' },
+  { value: 'gray', label: 'Gray', hex: '#808080' },
+  { value: 'red', label: 'Red', hex: '#e53935' },
+  { value: 'blue', label: 'Blue', hex: '#1e88e5' },
+  { value: 'green', label: 'Green', hex: '#43a047' },
+  { value: 'yellow', label: 'Yellow', hex: '#fdd835' },
+  { value: 'orange', label: 'Orange', hex: '#fb8c00' },
+  { value: 'purple', label: 'Purple', hex: '#8e24aa' },
+  { value: 'custom', label: 'Custom / TBD' },
+];
+
+// ============= Quantity Quick Buttons =============
+export const QUANTITY_QUICK_OPTIONS = [1, 2, 5, 10, 25, 50, 100];
 
 // ============= Post-Processing Rates =============
-export const POST_PROCESSING_OPTIONS = [
-  { id: 'none', label: 'None', ratePerHour: 0, makerRatePerHour: 0 },
-  { id: 'sanding', label: 'Sanding & Smoothing', ratePerHour: 15.00, makerRatePerHour: 12.00 },
-  { id: 'painting', label: 'Painting (Basic)', ratePerHour: 20.00, makerRatePerHour: 15.00 },
-  { id: 'assembly', label: 'Assembly', ratePerHour: 18.00, makerRatePerHour: 14.00 },
-];
+export type PostProcessingTier = 'standard' | 'advanced';
+export const POST_PROCESSING_RATES: Record<PostProcessingTier, { ratePerHour: number; makerRate: number; label: string }> = {
+  standard: { ratePerHour: 25.00, makerRate: 20.00, label: 'Standard ($25/hr)' },
+  advanced: { ratePerHour: 35.00, makerRate: 28.00, label: 'Advanced ($35/hr)' },
+};
 
 // ============= Quantity Discounts =============
 export const QUANTITY_DISCOUNTS = [
@@ -114,13 +144,19 @@ export function getMaterialCost(material: MaterialType, grams: number): { custom
   };
 }
 
-export function getPostProcessingCost(optionId: string, hours: number): { customer: number; maker: number } {
-  const option = POST_PROCESSING_OPTIONS.find(o => o.id === optionId);
-  if (!option || option.id === 'none') return { customer: 0, maker: 0 };
+export function getPostProcessingCost(tier: PostProcessingTier | null, minutes: number): { customer: number; maker: number } {
+  if (!tier || minutes <= 0) return { customer: 0, maker: 0 };
+  const rates = POST_PROCESSING_RATES[tier];
+  const hours = minutes / 60;
   return {
-    customer: hours * option.ratePerHour,
-    maker: hours * option.makerRatePerHour,
+    customer: hours * rates.ratePerHour,
+    maker: hours * rates.makerRate,
   };
+}
+
+// Estimate print time from weight (rough heuristic: ~3.5 min per gram)
+export function estimatePrintTimeFromWeight(grams: number): number {
+  return Math.max(0.5, (grams * 3.5) / 60);
 }
 
 // ============= Quote Breakdown Types =============
@@ -129,8 +165,8 @@ export interface QuoteLineItem {
   amount: number;
   details?: string;
   type: 'fee' | 'material' | 'labor' | 'adjustment' | 'discount' | 'rush' | 'info';
-  eligibleForRush?: boolean; // Whether this line contributes to rush surcharge base
-  show?: boolean; // Whether to display (default true)
+  eligibleForRush?: boolean;
+  show?: boolean;
 }
 
 export interface QuoteBreakdown {
@@ -159,29 +195,41 @@ export interface QuoteBreakdown {
 }
 
 export interface QuoteInput {
-  material: MaterialType;
-  weightGrams: number;
+  materialType: MaterialType;
+  grams: number;
   qty: number;
-  printTimeHours?: number;
-  postProcessing?: { id: string; hours: number };
-  deliverySpeed?: DeliverySpeed;
-  rushRate?: number; // Override rush rate (0.15 or 0.25)
-  isMember?: boolean;
+  hours?: number;
+  jobSize: JobSize;
+  deliverySpeed: DeliverySpeed;
+  rushRate?: number;
+  postProcessingEnabled: boolean;
+  postProcessingTier: PostProcessingTier;
+  postProcessingMinutes: number;
+  isMember: boolean;
+  color?: ColorOption;
 }
 
-export function calculateQuoteBreakdown(
-  material: MaterialType,
-  weightGrams: number,
-  qty: number,
-  printTimeHours: number = 4,
-  postProcessing: { id: string; hours: number } = { id: 'none', hours: 0 },
-  isMember: boolean = false,
-  deliverySpeed: DeliverySpeed = 'standard',
-  rushRate: number = RUSH_RATES.emergency
-): QuoteBreakdown {
+export function calculateQuoteBreakdown(input: QuoteInput): QuoteBreakdown {
+  const {
+    materialType,
+    grams,
+    qty,
+    hours,
+    jobSize,
+    deliverySpeed,
+    rushRate = RUSH_RATES.emergency,
+    postProcessingEnabled,
+    postProcessingTier,
+    postProcessingMinutes,
+    isMember,
+  } = input;
+
+  // Use provided hours or estimate from jobSize defaults
+  const printTimeHours = hours ?? JOB_SIZE_DEFAULTS[jobSize].defaultHours;
+  
   const lineItems: QuoteLineItem[] = [];
-  let rushEligibleSubtotal = 0; // Eligible for rush surcharge
-  let eligibleSubtotal = 0; // Eligible for member discount
+  let rushEligibleSubtotal = 0;
+  let eligibleSubtotal = 0;
   
   // 1. Platform/Admin Fee (3D3D): $5.00 - NOT eligible for rush or member discount
   lineItems.push({
@@ -212,7 +260,7 @@ export function calculateQuoteBreakdown(
   });
   
   // 4. Calculate material cost
-  const materialCost = getMaterialCost(material, weightGrams);
+  const materialCost = getMaterialCost(materialType, grams);
   const additionalFilamentCad = Math.max(0, materialCost.customer - BASE_FILAMENT_INCLUDED);
   
   // 5. Additional Filament: only if > 0 - ELIGIBLE for rush
@@ -220,7 +268,7 @@ export function calculateQuoteBreakdown(
     lineItems.push({
       label: 'Additional Filament',
       amount: additionalFilamentCad,
-      details: `${weightGrams}g × ${formatCad(MATERIAL_RATES[material].customerRate)}/g − ${formatCad(BASE_FILAMENT_INCLUDED)} base`,
+      details: `${grams}g × ${formatCad(MATERIAL_RATES[materialType].customerRate)}/g − ${formatCad(BASE_FILAMENT_INCLUDED)} base`,
       type: 'material',
       eligibleForRush: true,
     });
@@ -228,33 +276,32 @@ export function calculateQuoteBreakdown(
     eligibleSubtotal += additionalFilamentCad;
   }
   
-  // 6. Specialty Material Upcharge (if applicable) - ELIGIBLE for rush
-  const specialtyUpcharge = SPECIALTY_UPCHARGE[material];
-  if (specialtyUpcharge > 0) {
-    const upchargeAmount = specialtyUpcharge * weightGrams;
+  // 6. Specialty Material indicator (rate already includes specialty pricing)
+  if (MATERIAL_RATES[materialType].isSpecialty) {
     lineItems.push({
-      label: `Specialty Material (${MATERIAL_RATES[material].name})`,
-      amount: upchargeAmount,
-      type: 'material',
-      eligibleForRush: true,
+      label: `Specialty Material (${MATERIAL_RATES[materialType].name})`,
+      amount: 0,
+      details: 'Rate includes specialty pricing',
+      type: 'info',
+      show: true,
     });
-    rushEligibleSubtotal += upchargeAmount;
-    eligibleSubtotal += upchargeAmount;
   }
   
   // 7. Post-Processing (if selected) - ELIGIBLE for rush
-  const ppCost = getPostProcessingCost(postProcessing.id, postProcessing.hours);
-  if (ppCost.customer > 0) {
-    const ppOption = POST_PROCESSING_OPTIONS.find(o => o.id === postProcessing.id);
-    lineItems.push({
-      label: `Post-Processing (${ppOption?.label})`,
-      amount: ppCost.customer,
-      details: `${postProcessing.hours}h × ${formatCad(ppOption?.ratePerHour || 0)}/h`,
-      type: 'labor',
-      eligibleForRush: true,
-    });
-    rushEligibleSubtotal += ppCost.customer;
-    eligibleSubtotal += ppCost.customer;
+  if (postProcessingEnabled && postProcessingMinutes > 0) {
+    const ppCost = getPostProcessingCost(postProcessingTier, postProcessingMinutes);
+    if (ppCost.customer > 0) {
+      const ppHours = (postProcessingMinutes / 60).toFixed(2);
+      lineItems.push({
+        label: `Post-Processing (${POST_PROCESSING_RATES[postProcessingTier].label})`,
+        amount: ppCost.customer,
+        details: `${ppHours}h @ ${formatCad(POST_PROCESSING_RATES[postProcessingTier].ratePerHour)}/hr`,
+        type: 'labor',
+        eligibleForRush: true,
+      });
+      rushEligibleSubtotal += ppCost.customer;
+      eligibleSubtotal += ppCost.customer;
+    }
   }
   
   // 8. Extended Time Surcharge (24h+ only) - ELIGIBLE for rush
@@ -272,7 +319,9 @@ export function calculateQuoteBreakdown(
   }
   
   // Calculate subtotal before multiplying by qty
-  const unitSubtotal = lineItems.reduce((sum, item) => sum + item.amount, 0);
+  const unitSubtotal = lineItems.reduce((sum, item) => 
+    item.type !== 'info' ? sum + item.amount : sum, 0
+  );
   
   // Apply quantity multiplier
   let subtotal = unitSubtotal * qty;
@@ -293,7 +342,6 @@ export function calculateQuoteBreakdown(
       eligibleForRush: false,
     });
     subtotal -= quantityDiscount;
-    // Reduce rush eligible proportionally
     rushEligibleSubtotal = rushEligibleSubtotal * (1 - discountRate);
     eligibleSubtotal = eligibleSubtotal * (1 - discountRate);
   }
@@ -318,7 +366,7 @@ export function calculateQuoteBreakdown(
     amount: 0,
     details: `${formatCad(DESIGNER_ROYALTY_INCLUDED)} allocated from admin fee`,
     type: 'info',
-    show: false, // Hidden by default, can be shown optionally
+    show: false,
   });
   
   // Minimum order adjustment
@@ -336,16 +384,20 @@ export function calculateQuoteBreakdown(
   
   const total = subtotal + minimumAdjustment;
   
-  // Calculate member discount (only on eligible subtotal - bed rental, material, post-processing)
+  // Calculate member discount (only on eligible subtotal)
   const memberDiscount = eligibleSubtotal * FREE_MEMBER_DISCOUNT_RATE;
   const memberTotal = Math.max(MINIMUM_ORDER_TOTAL, total - memberDiscount);
   const memberSavings = total - memberTotal;
   
   // Maker payout calculation
+  const ppCost = getPostProcessingCost(
+    postProcessingEnabled ? postProcessingTier : null, 
+    postProcessingMinutes
+  );
   const makerPayout = {
     bedRental: bedRental.rate * qty,
     materialShare: materialCost.maker * qty,
-    postProcessingShare: ppCost.maker * postProcessing.hours * qty,
+    postProcessingShare: ppCost.maker * qty,
     total: 0,
   };
   makerPayout.total = makerPayout.bedRental + makerPayout.materialShare + makerPayout.postProcessingShare;

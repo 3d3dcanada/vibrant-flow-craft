@@ -1,11 +1,19 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, ChevronUp, Info, DollarSign, Sparkles, UserPlus, Clock } from 'lucide-react';
+import { ChevronDown, ChevronUp, Info, DollarSign, Sparkles, UserPlus, Clock, Package } from 'lucide-react';
 import { QuoteBreakdown, MINIMUM_ORDER_TOTAL, FREE_MEMBER_DISCOUNT_RATE, SLA_TIMELINES } from '@/config/pricing';
 import { formatCad, formatCredits } from '@/config/credits';
 import { GlowCard } from './GlowCard';
 import NeonButton from './NeonButton';
+
+interface QuoteSummary {
+  jobSize: string;
+  material: string;
+  color: string;
+  quantity: number;
+  deliverySpeed: string;
+}
 
 interface PricingBreakdownProps {
   breakdown: QuoteBreakdown;
@@ -13,9 +21,17 @@ interface PricingBreakdownProps {
   isMember?: boolean;
   returnToQuote?: () => string;
   deliverySpeed?: 'standard' | 'emergency';
+  summary?: QuoteSummary;
 }
 
-export const PricingBreakdown = ({ breakdown, qty, isMember = false, returnToQuote, deliverySpeed = 'standard' }: PricingBreakdownProps) => {
+export const PricingBreakdown = ({ 
+  breakdown, 
+  qty, 
+  isMember = false, 
+  returnToQuote, 
+  deliverySpeed = 'standard',
+  summary 
+}: PricingBreakdownProps) => {
   const [showMakerPayout, setShowMakerPayout] = useState(false);
   const navigate = useNavigate();
 
@@ -38,6 +54,42 @@ export const PricingBreakdown = ({ breakdown, qty, isMember = false, returnToQuo
 
   return (
     <div className="space-y-4">
+      {/* Quote Summary Row */}
+      {summary && (
+        <div className="p-3 rounded-lg bg-muted/20 border border-border/30">
+          <div className="flex items-center gap-2 mb-2">
+            <Package className="w-4 h-4 text-secondary" />
+            <span className="text-xs font-bold text-foreground uppercase tracking-wider">
+              Quote Summary
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Job Size:</span>
+              <span className="text-foreground font-medium">{summary.jobSize}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Material:</span>
+              <span className="text-foreground font-medium">{summary.material}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Color:</span>
+              <span className="text-foreground font-medium">{summary.color}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Quantity:</span>
+              <span className="text-foreground font-medium">{summary.quantity}</span>
+            </div>
+            <div className="flex justify-between col-span-2">
+              <span className="text-muted-foreground">Delivery:</span>
+              <span className={`font-medium ${deliverySpeed === 'emergency' ? 'text-primary' : 'text-foreground'}`}>
+                {summary.deliverySpeed}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Member Savings Banner (for non-members) */}
       {!isMember && breakdown.memberSavings > 0 && (
         <motion.div
