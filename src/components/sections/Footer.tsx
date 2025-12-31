@@ -1,25 +1,26 @@
 import { motion } from "framer-motion";
 import { Github, Twitter, Mail, MapPin } from "lucide-react";
+import { Link } from "react-router-dom";
 import AnimatedLogo from "../ui/AnimatedLogo";
 
 const footerLinks = {
   platform: [
-    { label: "How It Works", href: "#how-it-works" },
-    { label: "Materials Wiki", href: "#materials" },
-    { label: "Get a Quote", href: "#quote" },
-    { label: "Repository Hub", href: "#" },
+    { label: "How It Works", href: "#how-it-works", isRoute: false },
+    { label: "Materials Wiki", href: "#materials", isRoute: false },
+    { label: "Get a Quote", href: "#quote", isRoute: false },
+    { label: "Repository Hub", href: "#", isRoute: false },
   ],
   company: [
-    { label: "About Us", href: "#about" },
-    { label: "Become a Maker", href: "#" },
-    { label: "Designer Royalties", href: "#" },
-    { label: "Press Kit", href: "#" },
+    { label: "About Us", href: "#about", isRoute: false },
+    { label: "Become a Maker", href: "#", isRoute: false },
+    { label: "Designer Royalties", href: "#", isRoute: false },
+    { label: "Press Kit", href: "#", isRoute: false },
   ],
   support: [
-    { label: "FAQ", href: "#" },
-    { label: "Contact", href: "#" },
-    { label: "Privacy Policy", href: "#" },
-    { label: "Terms of Service", href: "#" },
+    { label: "FAQ", href: "#", isRoute: false },
+    { label: "Contact", href: "mailto:hello@3d3d.ca", isRoute: false },
+    { label: "Privacy Policy", href: "/privacy", isRoute: true },
+    { label: "Terms of Service", href: "/terms", isRoute: true },
   ],
 };
 
@@ -94,12 +95,21 @@ export const Footer = () => {
               <ul className="space-y-3">
                 {links.map((link) => (
                   <li key={link.label}>
-                    <a
-                      href={link.href}
-                      className="text-sm text-muted-foreground hover:text-secondary transition-colors animated-underline"
-                    >
-                      {link.label}
-                    </a>
+                    {link.isRoute ? (
+                      <Link
+                        to={link.href}
+                        className="text-sm text-muted-foreground hover:text-secondary transition-colors animated-underline"
+                      >
+                        {link.label}
+                      </Link>
+                    ) : (
+                      <a
+                        href={link.href}
+                        className="text-sm text-muted-foreground hover:text-secondary transition-colors animated-underline"
+                      >
+                        {link.label}
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>
