@@ -35,13 +35,22 @@ const communityNav: NavItem[] = [
 ];
 
 const makerNav: NavItem[] = [
-  { label: 'My Models', icon: Scale, href: '/dashboard/my-models', makerOnly: true },
-  { label: 'Earnings', icon: Coins, href: '/dashboard/earnings', makerOnly: true },
+  { label: 'Overview', icon: LayoutDashboard, href: '/dashboard/maker', makerOnly: true },
+  { label: 'Requests', icon: Package, href: '/dashboard/maker/requests', makerOnly: true },
+  { label: 'Jobs Queue', icon: Zap, href: '/dashboard/maker/jobs', makerOnly: true },
+  { label: 'Printers', icon: Wrench, href: '/dashboard/maker/printers', makerOnly: true },
+  { label: 'Filament', icon: Recycle, href: '/dashboard/maker/filament', makerOnly: true },
+  { label: 'Earnings', icon: Coins, href: '/dashboard/maker/earnings', makerOnly: true },
+  { label: 'Profile', icon: Settings, href: '/dashboard/maker/profile', makerOnly: true },
 ];
 
 type UserRole = 'customer' | 'maker' | null;
 
-const DashboardLayout = () => {
+interface DashboardLayoutProps {
+  children?: React.ReactNode;
+}
+
+const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
@@ -298,7 +307,7 @@ const DashboardLayout = () => {
 
       {/* Main Content */}
       <main className="flex-1 relative z-10 lg:pt-0 pt-16 min-w-0">
-        <Outlet />
+        {children || <Outlet />}
       </main>
     </div>
   );

@@ -16,6 +16,8 @@ import {
   User, AlertTriangle, CheckCircle, Loader2, Shield, 
   Wrench, Cpu, Droplets, Clock
 } from 'lucide-react';
+import DashboardLayout from '@/components/layouts/DashboardLayout';
+import MakerGuard from '@/components/guards/MakerGuard';
 
 const MakerProfile = () => {
   const { toast } = useToast();
@@ -77,7 +79,9 @@ const MakerProfile = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <DashboardLayout>
+      <MakerGuard>
+        <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-tech font-bold text-foreground">Maker Profile</h1>
         <p className="text-muted-foreground">Configure your capabilities and availability</p>
@@ -257,7 +261,9 @@ const MakerProfile = () => {
           Save Changes
         </NeonButton>
       </div>
-    </div>
+        </div>
+      </MakerGuard>
+    </DashboardLayout>
   );
 };
 

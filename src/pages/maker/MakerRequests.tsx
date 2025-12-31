@@ -20,6 +20,8 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import DashboardLayout from '@/components/layouts/DashboardLayout';
+import MakerGuard from '@/components/guards/MakerGuard';
 
 const MakerRequests = () => {
   const { toast } = useToast();
@@ -191,7 +193,9 @@ const MakerRequests = () => {
   );
 
   return (
-    <div className="p-6 space-y-6">
+    <DashboardLayout>
+      <MakerGuard>
+        <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-tech font-bold text-foreground">Requests & Quotes</h1>
         <p className="text-muted-foreground">Manage incoming print requests</p>
@@ -288,7 +292,9 @@ const MakerRequests = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+        </div>
+      </MakerGuard>
+    </DashboardLayout>
   );
 };
 

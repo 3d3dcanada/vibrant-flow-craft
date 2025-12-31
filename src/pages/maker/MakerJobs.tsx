@@ -19,6 +19,8 @@ import {
 } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import DashboardLayout from '@/components/layouts/DashboardLayout';
+import MakerGuard from '@/components/guards/MakerGuard';
 
 const statusOrder: PrintJob['status'][] = ['new', 'printing', 'post_processing', 'ready', 'shipped', 'complete'];
 const statusLabels: Record<PrintJob['status'], string> = {
@@ -195,7 +197,9 @@ const MakerJobs = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <DashboardLayout>
+      <MakerGuard>
+        <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-tech font-bold text-foreground">Jobs Queue</h1>
         <p className="text-muted-foreground">Track and manage your print jobs</p>
@@ -295,7 +299,9 @@ const MakerJobs = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+        </div>
+      </MakerGuard>
+    </DashboardLayout>
   );
 };
 
