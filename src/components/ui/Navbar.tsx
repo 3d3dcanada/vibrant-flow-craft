@@ -12,6 +12,7 @@ const navLinks = [
   { label: "About", href: "/about", isRoute: true },
   { label: "How It Works", href: "#how-it-works", isRoute: false },
   { label: "Materials", href: "#materials", isRoute: false },
+  { label: "Recycle & Buyback", href: "/recycle-buyback", isRoute: true },
   { label: "Schedule", href: "/schedule", isRoute: true },
 ];
 

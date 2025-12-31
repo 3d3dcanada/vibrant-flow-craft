@@ -26,6 +26,7 @@ const AdminOverview = () => {
     { label: 'Credit Packages', icon: CreditCard, href: '/dashboard/admin/packages', desc: 'Manage packages' },
     { label: 'Maker Manager', icon: Users, href: '/dashboard/admin/makers', desc: 'Verify makers' },
     { label: 'Operations', icon: Settings, href: '/dashboard/admin/ops', desc: 'Requests & payouts' },
+    { label: 'Buyback Requests', icon: Package, href: '/dashboard/admin/buyback', desc: 'Printer & filament quotes' },
   ];
 
   return (
