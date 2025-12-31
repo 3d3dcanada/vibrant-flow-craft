@@ -21,38 +21,14 @@ export const AnimatedLogo = ({ size = "md", showText = true, className }: Animat
       whileHover={{ scale: 1.02 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
     >
-      {/* Animated Logo Container */}
-      <motion.div 
-        className={`relative ${sizeStyles[size].logo} flex items-center justify-center`}
-        animate={{ 
-          filter: ["drop-shadow(0 0 8px hsl(177, 100%, 50%))", "drop-shadow(0 0 20px hsl(300, 100%, 50%))", "drop-shadow(0 0 8px hsl(177, 100%, 50%))"]
-        }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-      >
-        {/* Rotating glow ring */}
-        <motion.div
-          className="absolute inset-[-4px] rounded-lg opacity-60"
-          style={{
-            background: "conic-gradient(from 0deg, hsl(177, 100%, 50%), hsl(300, 100%, 50%), hsl(177, 100%, 50%))",
-          }}
-          animate={{ rotate: 360 }}
-          transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-        />
-        
-        {/* Inner glow */}
-        <motion.div
-          className="absolute inset-0 rounded-lg bg-gradient-to-br from-secondary/30 to-primary/30"
-          animate={{ opacity: [0.3, 0.6, 0.3] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-        />
-        
-        {/* Logo image */}
+      {/* Clean Logo Container */}
+      <div className={`relative ${sizeStyles[size].logo} flex items-center justify-center`}>
         <img 
           src={logo} 
           alt="3D3D.ca Logo" 
-          className={`relative z-10 ${sizeStyles[size].logo} object-contain`}
+          className={`${sizeStyles[size].logo} object-contain`}
         />
-      </motion.div>
+      </div>
 
       {/* Text */}
       {showText && (

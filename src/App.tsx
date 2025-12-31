@@ -24,6 +24,12 @@ import PromoProducts from "./pages/PromoProducts";
 import BusinessSubscription from "./pages/BusinessSubscription";
 import NotFound from "./pages/NotFound";
 
+// New pages
+import Mission from "./pages/Mission";
+import About from "./pages/About";
+import Refunds from "./pages/Refunds";
+import CommunityPolicy from "./pages/CommunityPolicy";
+
 // Maker Dashboard pages
 import MakerOverview from "./pages/maker/MakerOverview";
 import MakerRequests from "./pages/maker/MakerRequests";
@@ -32,6 +38,14 @@ import MakerPrinters from "./pages/maker/MakerPrinters";
 import MakerFilament from "./pages/maker/MakerFilament";
 import MakerEarnings from "./pages/maker/MakerEarnings";
 import MakerProfile from "./pages/maker/MakerProfile";
+
+// Admin Dashboard pages
+import AdminOverview from "./pages/admin/AdminOverview";
+import AdminContentPromos from "./pages/admin/AdminContentPromos";
+import AdminStoreManager from "./pages/admin/AdminStoreManager";
+import AdminCreditPackages from "./pages/admin/AdminCreditPackages";
+import AdminMakerManager from "./pages/admin/AdminMakerManager";
+import AdminOperations from "./pages/admin/AdminOperations";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +65,12 @@ const App = () => (
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/promo-products" element={<PromoProducts />} />
             <Route path="/business-subscription" element={<BusinessSubscription />} />
+            
+            {/* New public pages */}
+            <Route path="/mission" element={<Mission />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/refunds" element={<Refunds />} />
+            <Route path="/community-policy" element={<CommunityPolicy />} />
             
             {/* Dashboard routes */}
             <Route path="/dashboard" element={<Dashboard />} />
@@ -73,6 +93,14 @@ const App = () => (
             <Route path="/dashboard/maker/filament" element={<MakerFilament />} />
             <Route path="/dashboard/maker/earnings" element={<MakerEarnings />} />
             <Route path="/dashboard/maker/profile" element={<MakerProfile />} />
+            
+            {/* Admin Dashboard routes */}
+            <Route path="/dashboard/admin" element={<AdminOverview />} />
+            <Route path="/dashboard/admin/content" element={<AdminContentPromos />} />
+            <Route path="/dashboard/admin/store" element={<AdminStoreManager />} />
+            <Route path="/dashboard/admin/packages" element={<AdminCreditPackages />} />
+            <Route path="/dashboard/admin/makers" element={<AdminMakerManager />} />
+            <Route path="/dashboard/admin/ops" element={<AdminOperations />} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

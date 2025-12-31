@@ -1098,6 +1098,13 @@ export const QuoteSection = () => {
                     {isSubmitting ? 'SUBMITTING...' : 'SUBMIT REQUEST'}
                   </NeonButton>
 
+                  {/* Legal Summary Callout */}
+                  <div className="mt-4 p-3 rounded-lg bg-muted/30 border border-border/50 text-[10px] text-muted-foreground space-y-1">
+                    <p>• Quotes are requests until accepted by a maker</p>
+                    <p>• No prohibited items (weapons, illegal content)</p>
+                    <p>• Estimated turnaround is not a guarantee</p>
+                  </div>
+
                   <p className="text-center text-[10px] text-muted-foreground mt-3">
                     Quote valid for 48 hours. A maker will review and confirm your request.
                   </p>
