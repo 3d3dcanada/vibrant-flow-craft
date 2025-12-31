@@ -126,10 +126,49 @@ export const HeroSection = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 1 }}
         >
-          <StatsCounter value="24-48h" label="Avg Turnaround" suffix="" delay={0} />
-          <StatsCounter value="20+" label="Vetted Makers" delay={200} />
-          <StatsCounter value="$0.25+" label="Designer Royalties" delay={400} />
-          <StatsCounter value="97.3%" label="Satisfaction Guarantee" delay={600} />
+          <motion.div 
+            className="group hover:bg-muted/30 p-4 rounded-xl transition-all duration-300"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            whileHover={{ scale: 1.05 }}
+          >
+            <div className="text-3xl font-tech font-bold text-foreground group-hover:text-secondary transition-colors">24-48h</div>
+            <div className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Avg Turnaround</div>
+          </motion.div>
+          <motion.div 
+            className="group hover:bg-muted/30 p-4 rounded-xl transition-all duration-300"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            whileHover={{ scale: 1.05 }}
+          >
+            <div className="text-3xl font-tech font-bold text-foreground group-hover:text-secondary transition-colors">20+</div>
+            <div className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Vetted Makers</div>
+          </motion.div>
+          <motion.div 
+            className="group hover:bg-muted/30 p-4 rounded-xl transition-all duration-300"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            whileHover={{ scale: 1.05 }}
+          >
+            <div className="text-3xl font-tech font-bold text-foreground group-hover:text-secondary transition-colors">$0.25+</div>
+            <div className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Designer Royalties</div>
+          </motion.div>
+          <motion.div 
+            className="group hover:bg-muted/30 p-4 rounded-xl transition-all duration-300"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.3 }}
+            whileHover={{ scale: 1.05 }}
+          >
+            <div className="text-3xl font-tech font-bold text-foreground group-hover:text-secondary transition-colors">97.3%</div>
+            <div className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Satisfaction Guarantee</div>
+          </motion.div>
         </motion.div>
       </div>
 
