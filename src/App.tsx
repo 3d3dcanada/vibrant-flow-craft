@@ -24,6 +24,15 @@ import PromoProducts from "./pages/PromoProducts";
 import BusinessSubscription from "./pages/BusinessSubscription";
 import NotFound from "./pages/NotFound";
 
+// Maker Dashboard pages
+import MakerOverview from "./pages/maker/MakerOverview";
+import MakerRequests from "./pages/maker/MakerRequests";
+import MakerJobs from "./pages/maker/MakerJobs";
+import MakerPrinters from "./pages/maker/MakerPrinters";
+import MakerFilament from "./pages/maker/MakerFilament";
+import MakerEarnings from "./pages/maker/MakerEarnings";
+import MakerProfile from "./pages/maker/MakerProfile";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -55,6 +64,15 @@ const App = () => (
             <Route path="/dashboard/community-cleanup" element={<CommunityCleanup />} />
             <Route path="/dashboard/recycling" element={<Recycling />} />
             <Route path="/dashboard/gift-cards" element={<GiftCards />} />
+            
+            {/* Maker Dashboard routes */}
+            <Route path="/dashboard/maker" element={<MakerOverview />} />
+            <Route path="/dashboard/maker/requests" element={<MakerRequests />} />
+            <Route path="/dashboard/maker/jobs" element={<MakerJobs />} />
+            <Route path="/dashboard/maker/printers" element={<MakerPrinters />} />
+            <Route path="/dashboard/maker/filament" element={<MakerFilament />} />
+            <Route path="/dashboard/maker/earnings" element={<MakerEarnings />} />
+            <Route path="/dashboard/maker/profile" element={<MakerProfile />} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

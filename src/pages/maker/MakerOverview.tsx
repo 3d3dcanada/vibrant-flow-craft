@@ -9,6 +9,8 @@ import {
   CheckCircle, Clock, Wifi, WifiOff, Droplets, TrendingUp, Zap
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import DashboardLayout from '@/components/layouts/DashboardLayout';
+import MakerGuard from '@/components/guards/MakerGuard';
 
 const MakerOverview = () => {
   const { data: profile } = useProfile();
@@ -52,7 +54,9 @@ const MakerOverview = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <DashboardLayout>
+      <MakerGuard>
+        <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-tech font-bold text-foreground">Creator Studio</h1>
@@ -227,7 +231,9 @@ const MakerOverview = () => {
           </div>
         </GlowCard>
       </div>
-    </div>
+        </div>
+      </MakerGuard>
+    </DashboardLayout>
   );
 };
 

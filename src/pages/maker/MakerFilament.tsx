@@ -27,6 +27,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import DashboardLayout from '@/components/layouts/DashboardLayout';
+import MakerGuard from '@/components/guards/MakerGuard';
 
 const dryStatusColors: Record<MakerFilamentType['dry_status'], string> = {
   dry: 'bg-green-500',
@@ -129,7 +131,9 @@ const MakerFilament = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <DashboardLayout>
+      <MakerGuard>
+        <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-tech font-bold text-foreground">Filament Inventory</h1>
@@ -339,7 +343,9 @@ const MakerFilament = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+        </div>
+      </MakerGuard>
+    </DashboardLayout>
   );
 };
 

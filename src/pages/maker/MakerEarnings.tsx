@@ -19,6 +19,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import DashboardLayout from '@/components/layouts/DashboardLayout';
+import MakerGuard from '@/components/guards/MakerGuard';
 
 const MakerEarnings = () => {
   const { toast } = useToast();
@@ -77,7 +79,9 @@ const MakerEarnings = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <DashboardLayout>
+      <MakerGuard>
+        <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-tech font-bold text-foreground">Earnings & Payouts</h1>
@@ -257,7 +261,9 @@ const MakerEarnings = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+        </div>
+      </MakerGuard>
+    </DashboardLayout>
   );
 };
 
