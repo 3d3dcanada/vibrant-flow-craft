@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useLocation } from "react-router-dom";
-import { Upload, Link as LinkIcon, Check, Leaf, Heart, CloudUpload, Trash2, Tag, X } from "lucide-react";
+import { Upload, Link as LinkIcon, Check, Leaf, Heart, CloudUpload, Trash2, Tag, X, Zap } from "lucide-react";
 import { GlowCard } from "../ui/GlowCard";
 import NeonButton from "../ui/NeonButton";
 import PricingBreakdown from "../ui/PricingBreakdown";
@@ -9,7 +9,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { 
   MaterialType, 
   MATERIAL_RATES, 
-  calculateQuoteBreakdown 
+  DeliverySpeed,
+  calculateQuoteBreakdown,
+  RUSH_RATES
 } from "@/config/pricing";
 
 type Mode = "upload" | "url";
@@ -43,6 +45,7 @@ export const QuoteSection = () => {
   const [url, setUrl] = useState("");
   const [isScanning, setIsScanning] = useState(false);
   const [promoQuote, setPromoQuote] = useState<PromoQuoteState | null>(null);
+  const [deliverySpeed, setDeliverySpeed] = useState<DeliverySpeed>("standard");
 
   // Check for promo quote state from navigation
   useEffect(() => {
@@ -52,17 +55,13 @@ export const QuoteSection = () => {
       setPromoQuote(pq);
       setMaterial(pq.material);
       setQty(pq.quantity);
-      // Calculate total weight: gramsPerUnit * quantity
       setWeight(pq.gramsPerUnit * pq.quantity);
-      // Set a pseudo-file to indicate model is preset
       setFile({ name: `${pq.productName}.stl` } as File);
       
-      // Scroll to quote section
       setTimeout(() => {
         document.getElementById("quote")?.scrollIntoView({ behavior: "smooth" });
       }, 100);
       
-      // Clear the state to prevent re-triggering
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
@@ -75,7 +74,6 @@ export const QuoteSection = () => {
     setMaterial("PLA");
   };
 
-  // Build return URL for auth redirect
   const getReturnToQuoteUrl = useCallback(() => {
     if (promoQuote) {
       return `/#quote?promo=${promoQuote.productId}`;
@@ -86,10 +84,9 @@ export const QuoteSection = () => {
   // Estimate print time based on weight (rough approximation: 1g ≈ 3-4 minutes)
   const estimatedPrintHours = useMemo(() => {
     if (promoQuote) {
-      // Use preset minutes for promo items
       return (promoQuote.minutesPerUnit * qty) / 60;
     }
-    return Math.max(0.5, (weight * 3.5) / 60); // 3.5 min per gram average
+    return Math.max(0.5, (weight * 3.5) / 60);
   }, [weight, promoQuote, qty]);
 
   // Calculate quote breakdown using pricing config
@@ -99,10 +96,12 @@ export const QuoteSection = () => {
       weight,
       qty,
       estimatedPrintHours,
-      { id: 'none', hours: 0 }, // No post-processing by default
-      isMember
+      { id: 'none', hours: 0 },
+      isMember,
+      deliverySpeed,
+      RUSH_RATES.emergency // Use 15% default
     );
-  }, [material, weight, qty, estimatedPrintHours]);
+  }, [material, weight, qty, estimatedPrintHours, isMember, deliverySpeed]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -327,7 +326,6 @@ export const QuoteSection = () => {
                               ⟳
                             </motion.div>
                             <p className="text-sm text-secondary font-mono">Analyzing geometry...</p>
-                            {/* Scan line */}
                             <motion.div
                               className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-secondary to-transparent"
                               style={{ boxShadow: "0 0 10px hsl(var(--secondary))" }}
@@ -417,7 +415,7 @@ export const QuoteSection = () => {
                 </AnimatePresence>
 
                 {/* Material Selection */}
-                <div className="mb-8">
+                <div className="mb-6">
                   <div className="flex justify-between items-center mb-4">
                     <label className="text-sm font-bold text-foreground font-tech uppercase tracking-wider">
                       Material Selection
@@ -463,7 +461,7 @@ export const QuoteSection = () => {
                 </div>
 
                 {/* Sliders */}
-                <div className="grid grid-cols-2 gap-6 mb-8 bg-background/30 p-4 rounded-xl border border-border/30">
+                <div className="grid grid-cols-2 gap-6 mb-6 bg-background/30 p-4 rounded-xl border border-border/30">
                   <div>
                     <label className="flex justify-between text-xs font-bold text-muted-foreground mb-2 uppercase">
                       Scale / Weight{" "}
@@ -493,6 +491,43 @@ export const QuoteSection = () => {
                   </div>
                 </div>
 
+                {/* Delivery Speed Selection */}
+                <div className="mb-6">
+                  <label className="text-sm font-bold text-foreground font-tech uppercase tracking-wider mb-3 block">
+                    Delivery Speed
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <motion.button
+                      onClick={() => setDeliverySpeed("standard")}
+                      className={`p-3 rounded-xl text-left transition-all ${
+                        deliverySpeed === "standard"
+                          ? "bg-secondary/10 border border-secondary text-secondary"
+                          : "bg-background/30 border border-border text-muted-foreground hover:border-foreground/30"
+                      }`}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <div className="text-xs font-bold font-tech mb-1">Standard</div>
+                      <div className="text-[10px] opacity-70">24-48 hours</div>
+                    </motion.button>
+                    <motion.button
+                      onClick={() => setDeliverySpeed("emergency")}
+                      className={`p-3 rounded-xl text-left transition-all ${
+                        deliverySpeed === "emergency"
+                          ? "bg-primary/10 border border-primary text-primary"
+                          : "bg-background/30 border border-border text-muted-foreground hover:border-foreground/30"
+                      }`}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <div className="text-xs font-bold font-tech mb-1 flex items-center gap-1">
+                        <Zap className="w-3 h-3" /> Emergency
+                      </div>
+                      <div className="text-[10px] opacity-70">&lt;24h (+15%)</div>
+                    </motion.button>
+                  </div>
+                </div>
+
                 {/* Pricing Breakdown */}
                 <div className="border-t border-border/30 pt-6">
                   <PricingBreakdown 
@@ -500,6 +535,7 @@ export const QuoteSection = () => {
                     qty={qty} 
                     isMember={isMember}
                     returnToQuote={getReturnToQuoteUrl}
+                    deliverySpeed={deliverySpeed}
                   />
                   
                   <NeonButton

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, ChevronUp, Info, DollarSign, Sparkles, UserPlus } from 'lucide-react';
-import { QuoteBreakdown, MINIMUM_ORDER_TOTAL, FREE_MEMBER_DISCOUNT_RATE } from '@/config/pricing';
+import { ChevronDown, ChevronUp, Info, DollarSign, Sparkles, UserPlus, Clock } from 'lucide-react';
+import { QuoteBreakdown, MINIMUM_ORDER_TOTAL, FREE_MEMBER_DISCOUNT_RATE, SLA_TIMELINES } from '@/config/pricing';
 import { formatCad, formatCredits } from '@/config/credits';
 import { GlowCard } from './GlowCard';
 import NeonButton from './NeonButton';
@@ -11,10 +11,11 @@ interface PricingBreakdownProps {
   breakdown: QuoteBreakdown;
   qty: number;
   isMember?: boolean;
-  returnToQuote?: () => string; // Returns the URL to return to after signup
+  returnToQuote?: () => string;
+  deliverySpeed?: 'standard' | 'emergency';
 }
 
-export const PricingBreakdown = ({ breakdown, qty, isMember = false, returnToQuote }: PricingBreakdownProps) => {
+export const PricingBreakdown = ({ breakdown, qty, isMember = false, returnToQuote, deliverySpeed = 'standard' }: PricingBreakdownProps) => {
   const [showMakerPayout, setShowMakerPayout] = useState(false);
   const navigate = useNavigate();
 
@@ -22,7 +23,6 @@ export const PricingBreakdown = ({ breakdown, qty, isMember = false, returnToQuo
   const displayCredits = isMember ? breakdown.memberTotalCredits : breakdown.totalCredits;
 
   const handleJoinFree = () => {
-    // Navigate to auth with return state
     navigate('/auth', { 
       state: { 
         returnTo: returnToQuote ? returnToQuote() : '/#quote',
@@ -30,6 +30,11 @@ export const PricingBreakdown = ({ breakdown, qty, isMember = false, returnToQuo
       } 
     });
   };
+
+  // Filter visible line items (hide info type with show: false)
+  const visibleLineItems = breakdown.lineItems.filter(item => 
+    item.type !== 'info' || item.show !== false
+  );
 
   return (
     <div className="space-y-4">
@@ -84,7 +89,7 @@ export const PricingBreakdown = ({ breakdown, qty, isMember = false, returnToQuo
             {isMember ? 'Member Total' : 'Estimated Total'}
           </p>
           <p className="text-[10px] text-success mt-1">
-            ✓ Includes Designer Royalty
+            ✓ Designer Royalty included
           </p>
         </div>
         <div className="text-right">
@@ -118,20 +123,25 @@ export const PricingBreakdown = ({ breakdown, qty, isMember = false, returnToQuo
         </div>
 
         <div className="space-y-2">
-          {breakdown.lineItems.map((item, index) => (
+          {visibleLineItems.map((item, index) => (
             <motion.div
               key={`${item.label}-${index}`}
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.05 }}
+              transition={{ delay: index * 0.03 }}
               className={`flex justify-between items-start text-sm ${
                 item.type === 'discount' ? 'text-success' : 
                 item.type === 'adjustment' ? 'text-warning' : 
+                item.type === 'rush' ? 'text-primary' :
+                item.type === 'info' ? 'text-muted-foreground/70 italic' :
                 'text-muted-foreground'
               }`}
             >
               <div className="flex-1">
-                <span className={item.type === 'discount' || item.type === 'adjustment' ? 'font-medium' : ''}>
+                <span className={
+                  item.type === 'discount' || item.type === 'adjustment' || item.type === 'rush' 
+                    ? 'font-medium' : ''
+                }>
                   {item.label}
                 </span>
                 {item.details && (
@@ -143,9 +153,14 @@ export const PricingBreakdown = ({ breakdown, qty, isMember = false, returnToQuo
               <span className={`font-mono ${
                 item.type === 'discount' ? 'text-success' : 
                 item.type === 'adjustment' ? 'text-warning' : 
+                item.type === 'rush' ? 'text-primary' :
+                item.type === 'info' ? 'text-muted-foreground/50' :
                 'text-foreground'
               }`}>
-                {item.amount < 0 ? '-' : ''}{formatCad(Math.abs(item.amount))}
+                {item.amount === 0 && item.type === 'info' 
+                  ? '—' 
+                  : `${item.amount < 0 ? '-' : ''}${formatCad(Math.abs(item.amount))}`
+                }
               </span>
             </motion.div>
           ))}
@@ -174,6 +189,32 @@ export const PricingBreakdown = ({ breakdown, qty, isMember = false, returnToQuo
           </div>
         </div>
       </GlowCard>
+
+      {/* Estimated Turnaround (SLA) */}
+      <div className="p-3 rounded-lg bg-muted/20 border border-border/30">
+        <div className="flex items-center gap-2 mb-2">
+          <Clock className="w-4 h-4 text-secondary" />
+          <span className="text-xs font-bold text-foreground uppercase tracking-wider">
+            Estimated Turnaround
+          </span>
+        </div>
+        <div className="text-xs text-muted-foreground space-y-1">
+          <p>
+            <span className="text-foreground font-medium">Standard prints:</span> {SLA_TIMELINES.standard}
+          </p>
+          <p>
+            <span className="text-foreground font-medium">Large jobs:</span> {SLA_TIMELINES.largeJobs}
+          </p>
+          <p>
+            <span className={deliverySpeed === 'emergency' ? 'text-primary font-medium' : 'text-foreground font-medium'}>
+              Emergency (&lt;24h):
+            </span>{' '}
+            <span className={deliverySpeed === 'emergency' ? 'text-primary' : ''}>
+              {SLA_TIMELINES.emergency}
+            </span>
+          </p>
+        </div>
+      </div>
 
       {/* Maker Payout (Collapsible) */}
       <div className="border border-border/30 rounded-lg overflow-hidden">
