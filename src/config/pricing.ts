@@ -87,12 +87,16 @@ export function getPostProcessingCost(optionId: string, hours: number): { custom
   };
 }
 
+// ============= Membership Discounts =============
+export const FREE_MEMBER_DISCOUNT_RATE = 0.03; // 3% off eligible subtotal
+
 // ============= Quote Breakdown Types =============
 export interface QuoteLineItem {
   label: string;
   amount: number;
   details?: string;
   type: 'fee' | 'material' | 'labor' | 'adjustment' | 'discount';
+  eligibleForMemberDiscount?: boolean;
 }
 
 export interface QuoteBreakdown {
@@ -102,6 +106,12 @@ export interface QuoteBreakdown {
   quantityDiscount: number;
   total: number;
   totalCredits: number;
+  // Membership pricing
+  eligibleSubtotal: number; // Amount eligible for member discount
+  memberDiscount: number;
+  memberTotal: number;
+  memberTotalCredits: number;
+  memberSavings: number;
   makerPayout: {
     bedRental: number;
     materialShare: number;
@@ -115,43 +125,51 @@ export function calculateQuoteBreakdown(
   weightGrams: number,
   qty: number,
   printTimeHours: number = 4, // default estimate
-  postProcessing: { id: string; hours: number } = { id: 'none', hours: 0 }
+  postProcessing: { id: string; hours: number } = { id: 'none', hours: 0 },
+  isMember: boolean = false
 ): QuoteBreakdown {
   const lineItems: QuoteLineItem[] = [];
+  let eligibleSubtotal = 0; // Track subtotal eligible for member discount
   
-  // Platform fee
+  // Platform fee - NOT eligible for discount
   lineItems.push({
     label: 'Platform Fee (3D3D)',
     amount: PLATFORM_FEE,
     type: 'fee',
+    eligibleForMemberDiscount: false,
   });
   
-  // Bed rental (maker payment)
+  // Bed rental (maker payment) - ELIGIBLE for discount
   const bedRental = getBedRentalRate(printTimeHours);
   lineItems.push({
     label: 'Bed Rental (Maker)',
     amount: bedRental.rate,
     details: bedRental.label,
     type: 'fee',
+    eligibleForMemberDiscount: true,
   });
+  eligibleSubtotal += bedRental.rate;
   
-  // Base handling/QC
+  // Base handling/QC - NOT eligible for discount
   lineItems.push({
     label: 'Handling & QC',
     amount: BASE_HANDLING_FEE,
     type: 'fee',
+    eligibleForMemberDiscount: false,
   });
   
-  // Material cost
+  // Material cost - ELIGIBLE for discount
   const materialCost = getMaterialCost(material, weightGrams);
   lineItems.push({
     label: `Material (${MATERIAL_RATES[material].name})`,
     amount: materialCost.customer,
     details: `${weightGrams}g × ${formatCad(MATERIAL_RATES[material].customerRate)}/g`,
     type: 'material',
+    eligibleForMemberDiscount: true,
   });
+  eligibleSubtotal += materialCost.customer;
   
-  // Extended time surcharge
+  // Extended time surcharge - NOT eligible for discount
   const extendedSurcharge = getExtendedTimeSurcharge(printTimeHours);
   if (extendedSurcharge > 0) {
     const extraHours = printTimeHours - EXTENDED_TIME_THRESHOLD_HOURS;
@@ -160,10 +178,11 @@ export function calculateQuoteBreakdown(
       amount: extendedSurcharge,
       details: `${extraHours.toFixed(1)}h × ${formatCad(EXTENDED_TIME_SURCHARGE_PER_HOUR)}/h`,
       type: 'labor',
+      eligibleForMemberDiscount: false,
     });
   }
   
-  // Post-processing
+  // Post-processing - ELIGIBLE for discount
   const ppCost = getPostProcessingCost(postProcessing.id, postProcessing.hours);
   if (ppCost.customer > 0) {
     const ppOption = POST_PROCESSING_OPTIONS.find(o => o.id === postProcessing.id);
@@ -172,14 +191,17 @@ export function calculateQuoteBreakdown(
       amount: ppCost.customer,
       details: `${postProcessing.hours}h × ${formatCad(ppOption?.ratePerHour || 0)}/h`,
       type: 'labor',
+      eligibleForMemberDiscount: true,
     });
+    eligibleSubtotal += ppCost.customer;
   }
   
-  // Designer royalty
+  // Designer royalty - NOT eligible for discount
   lineItems.push({
     label: 'Designer Royalty',
     amount: DESIGNER_ROYALTY,
     type: 'fee',
+    eligibleForMemberDiscount: false,
   });
   
   // Calculate subtotal for single unit
@@ -187,6 +209,7 @@ export function calculateQuoteBreakdown(
   
   // Apply quantity multiplier
   let subtotal = unitSubtotal * qty;
+  eligibleSubtotal = eligibleSubtotal * qty;
   
   // Quantity discount
   const discountRate = getQuantityDiscount(qty);
@@ -199,12 +222,15 @@ export function calculateQuoteBreakdown(
       amount: -quantityDiscount,
       details: `${qty} units`,
       type: 'discount',
+      eligibleForMemberDiscount: false,
     });
+    // Also reduce eligible subtotal proportionally
+    eligibleSubtotal = eligibleSubtotal * (1 - discountRate);
   }
   
   subtotal -= quantityDiscount;
   
-  // Minimum order adjustment
+  // Minimum order adjustment - NOT eligible for discount
   let minimumAdjustment = 0;
   if (subtotal < MINIMUM_ORDER_TOTAL) {
     minimumAdjustment = MINIMUM_ORDER_TOTAL - subtotal;
@@ -213,10 +239,16 @@ export function calculateQuoteBreakdown(
       amount: minimumAdjustment,
       details: `Min. ${formatCad(MINIMUM_ORDER_TOTAL)}`,
       type: 'adjustment',
+      eligibleForMemberDiscount: false,
     });
   }
   
   const total = subtotal + minimumAdjustment;
+  
+  // Calculate member discount (only on eligible subtotal)
+  const memberDiscount = eligibleSubtotal * FREE_MEMBER_DISCOUNT_RATE;
+  const memberTotal = Math.max(MINIMUM_ORDER_TOTAL, total - memberDiscount);
+  const memberSavings = total - memberTotal;
   
   // Maker payout calculation
   const makerPayout = {
@@ -234,6 +266,11 @@ export function calculateQuoteBreakdown(
     quantityDiscount,
     total,
     totalCredits: cadToCredits(total),
+    eligibleSubtotal,
+    memberDiscount,
+    memberTotal,
+    memberTotalCredits: cadToCredits(memberTotal),
+    memberSavings,
     makerPayout,
   };
 }
