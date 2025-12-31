@@ -180,6 +180,21 @@ export const Navbar = () => {
                 )
               ))}
 
+              {/* STL Repositories - Mobile */}
+              <motion.button
+                className="text-2xl font-tech font-bold text-primary hover:text-secondary transition-colors flex items-center justify-center gap-3"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setIsDrawerOpen(true);
+                }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: navLinks.length * 0.1 }}
+              >
+                <Database className="w-6 h-6" />
+                STL Repositories
+              </motion.button>
+
               <motion.div
                 className="pt-8 space-y-4"
                 initial={{ opacity: 0, y: 20 }}
