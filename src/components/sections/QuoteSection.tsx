@@ -3,7 +3,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { 
   Upload, Link as LinkIcon, Check, Leaf, Heart, CloudUpload, Trash2, Tag, X, Zap, 
-  AlertCircle, Clock, Wrench, Package
+  AlertCircle, Clock, Wrench, Package, User, ChevronDown, ChevronUp, ExternalLink
 } from "lucide-react";
 import { GlowCard } from "../ui/GlowCard";
 import NeonButton from "../ui/NeonButton";
@@ -26,7 +26,7 @@ import {
   getMinimumGrams
 } from "@/config/pricing";
 
-import { PrintRequestFormData, ModelSource } from "@/types/modelSource";
+import { PrintRequestFormData, ModelAttribution, createAttribution } from "@/types/modelSource";
 
 type Mode = "upload" | "url";
 type InputMode = "weight" | "time" | "both";
@@ -95,6 +95,13 @@ export const QuoteSection = () => {
   
   // Model print request state (from repository drawer)
   const [modelRequest, setModelRequest] = useState<PrintRequestFormData | null>(null);
+  
+  // File upload attribution state (for direct uploads)
+  const [fileAttribution, setFileAttribution] = useState<ModelAttribution | null>(null);
+  const [showFileAttribution, setShowFileAttribution] = useState(false);
+  const [fileCreatorName, setFileCreatorName] = useState("");
+  const [fileSourceUrl, setFileSourceUrl] = useState("");
+  const [fileLicenseNote, setFileLicenseNote] = useState("");
 
   // Check for promo quote or model request state from navigation
   useEffect(() => {
@@ -152,6 +159,11 @@ export const QuoteSection = () => {
   const clearPromoQuote = () => {
     setPromoQuote(null);
     setModelRequest(null);
+    setFileAttribution(null);
+    setFileCreatorName("");
+    setFileSourceUrl("");
+    setFileLicenseNote("");
+    setShowFileAttribution(false);
     setFile(null);
     setUrl("");
     setWeight(getMinimumGrams("PLA_STANDARD"));
@@ -160,6 +172,18 @@ export const QuoteSection = () => {
     setMaterialType("PLA_STANDARD");
     setInputMode("weight");
     setMode("upload");
+  };
+  
+  // Save file attribution when provided
+  const saveFileAttribution = () => {
+    if (fileCreatorName.trim() || fileSourceUrl.trim() || fileLicenseNote.trim()) {
+      setFileAttribution(createAttribution({
+        designer_name: fileCreatorName.trim() || undefined,
+        designer_profile_url: fileSourceUrl.trim() || undefined,
+        license_note: fileLicenseNote.trim() || undefined,
+        source_platform: "Direct Upload",
+      }));
+    }
   };
 
   const getReturnToQuoteUrl = useCallback(() => {
@@ -376,7 +400,7 @@ export const QuoteSection = () => {
                   </motion.div>
                 )}
 
-                {/* Model Link Attached Banner */}
+                {/* Model Link Attached Banner with Attribution */}
                 {modelRequest && (
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
@@ -399,17 +423,54 @@ export const QuoteSection = () => {
                       href={modelRequest.modelUrl} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-xs text-primary hover:underline break-all block mb-1"
+                      className="text-xs text-primary hover:underline break-all block mb-1 flex items-center gap-1"
                     >
                       {modelRequest.modelUrl}
+                      <ExternalLink className="w-3 h-3 shrink-0" />
                     </a>
                     {modelRequest.repositoryName && (
                       <p className="text-[10px] text-muted-foreground">
-                        From: {modelRequest.repositoryName}
+                        Platform: {modelRequest.repositoryName}
                       </p>
                     )}
+                    
+                    {/* Attribution Details (collapsible) */}
+                    {modelRequest.attribution && (
+                      <details className="mt-2 text-[10px]">
+                        <summary className="cursor-pointer text-muted-foreground hover:text-foreground flex items-center gap-1">
+                          <User className="w-3 h-3" />
+                          Model Attribution (optional)
+                        </summary>
+                        <div className="mt-2 p-2 rounded bg-background/30 space-y-1">
+                          {modelRequest.attribution.designer_name && (
+                            <p className="text-muted-foreground">
+                              Designer: <span className="text-foreground">{modelRequest.attribution.designer_name}</span>
+                            </p>
+                          )}
+                          {modelRequest.attribution.designer_profile_url && (
+                            <a 
+                              href={modelRequest.attribution.designer_profile_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline flex items-center gap-1"
+                            >
+                              Profile <ExternalLink className="w-2.5 h-2.5" />
+                            </a>
+                          )}
+                          {modelRequest.attribution.license_note && (
+                            <p className="text-muted-foreground">
+                              License: {modelRequest.attribution.license_note}
+                            </p>
+                          )}
+                          <p className="text-muted-foreground/70 italic mt-1">
+                            Creators may claim attribution or request removal within 12 months.
+                          </p>
+                        </div>
+                      </details>
+                    )}
+                    
                     {modelRequest.notes && (
-                      <p className="text-xs text-muted-foreground mt-1 italic">
+                      <p className="text-xs text-muted-foreground mt-2 italic">
                         "{modelRequest.notes}"
                       </p>
                     )}
@@ -509,6 +570,64 @@ export const QuoteSection = () => {
                           </div>
                         )}
                       </div>
+                      
+                      {/* File Upload Attribution Panel (optional) */}
+                      {file && !promoQuote && (
+                        <div className="mt-3 border border-border/50 rounded-lg overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => setShowFileAttribution(!showFileAttribution)}
+                            className="w-full px-3 py-2 flex items-center justify-between bg-muted/20 hover:bg-muted/40 transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              <User className="w-3 h-3 text-muted-foreground" />
+                              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">
+                                Creator Attribution (optional)
+                              </span>
+                            </div>
+                            {showFileAttribution ? (
+                              <ChevronUp className="w-3 h-3 text-muted-foreground" />
+                            ) : (
+                              <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                            )}
+                          </button>
+                          
+                          {showFileAttribution && (
+                            <div className="p-3 space-y-2 border-t border-border/50">
+                              <p className="text-[9px] text-muted-foreground leading-relaxed">
+                                We track this only for attribution and creator goodwill. No fees are enforced.
+                              </p>
+                              
+                              <input
+                                type="text"
+                                value={fileCreatorName}
+                                onChange={(e) => setFileCreatorName(e.target.value)}
+                                onBlur={saveFileAttribution}
+                                placeholder="Creator name (optional)"
+                                className="w-full bg-background/50 border border-border rounded px-3 py-1.5 text-xs text-foreground focus:border-secondary outline-none"
+                              />
+                              
+                              <input
+                                type="url"
+                                value={fileSourceUrl}
+                                onChange={(e) => setFileSourceUrl(e.target.value)}
+                                onBlur={saveFileAttribution}
+                                placeholder="Source or profile link (optional)"
+                                className="w-full bg-background/50 border border-border rounded px-3 py-1.5 text-xs text-foreground focus:border-secondary outline-none font-mono"
+                              />
+                              
+                              <input
+                                type="text"
+                                value={fileLicenseNote}
+                                onChange={(e) => setFileLicenseNote(e.target.value)}
+                                onBlur={saveFileAttribution}
+                                placeholder="License note (optional)"
+                                className="w-full bg-background/50 border border-border rounded px-3 py-1.5 text-xs text-foreground focus:border-secondary outline-none"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </motion.div>
                   )}
 
