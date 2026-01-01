@@ -1067,15 +1067,49 @@ export const QuoteSection = () => {
                           } : {}
                         );
 
-                        await submitRequestMutation.mutateAsync({
+                        const insertedRequest = await submitRequestMutation.mutateAsync({
                           specs,
                           attribution,
                           notes: promoQuote ? `Promo Product: ${promoQuote.productName}` : undefined
                         });
 
+                        // Send Formspree email notification
+                        try {
+                          const formspreePayload = {
+                            request_id: insertedRequest.id,
+                            user_email: user?.email || 'Guest',
+                            material: MATERIAL_RATES[materialType].name,
+                            color: COLOR_OPTIONS.find(c => c.value === color)?.label || color,
+                            weight_grams: weight,
+                            print_hours: effectiveHours.toFixed(1),
+                            quantity: qty,
+                            delivery_speed: deliverySpeed === 'emergency' ? 'Emergency (<24h)' : 'Standard',
+                            estimated_total_cad: quoteBreakdown.total.toFixed(2),
+                            file_url: url || (file?.name ? `Uploaded: ${file.name}` : 'N/A'),
+                            notes: promoQuote ? `Promo Product: ${promoQuote.productName}` : '',
+                            created_at: new Date().toISOString()
+                          };
+
+                          await fetch('https://formspree.io/f/mldlydbl', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(formspreePayload)
+                          });
+                        } catch (emailError) {
+                          // Email failed but DB record saved - show partial success
+                          console.error('Formspree email failed:', emailError);
+                          toast({
+                            title: "Request Saved",
+                            description: "Your request was saved but email notification pending. We'll still process it.",
+                          });
+                          clearPromoQuote();
+                          setIsSubmitting(false);
+                          return;
+                        }
+
                         toast({
                           title: "Request Submitted!",
-                          description: "Your print request has been sent to our makers. We'll be in touch soon.",
+                          description: "Your print request has been sent. We'll email you and a maker will pick it up.",
                         });
 
                         // Clear form after successful submission

@@ -95,7 +95,7 @@ const Mission = () => {
             <Lightbulb className="w-10 h-10 text-secondary" />
           </div>
           <h1 className="text-4xl md:text-5xl font-tech font-bold text-foreground mb-4">
-            Start the Innovation Revolution
+            Making 3D Printing Practical and Local Across Canada
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
             We're building Canada's first distributed manufacturing network — connecting 

@@ -20,6 +20,7 @@ interface NavItem {
   makerOnly?: boolean;
 }
 
+// Customer-only navigation (NOT shown to makers)
 const customerNav: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
   { label: 'Credits Store', icon: CreditCard, href: '/dashboard/credits' },
@@ -28,6 +29,7 @@ const customerNav: NavItem[] = [
   { label: 'Gift Cards', icon: Gift, href: '/dashboard/gift-cards' },
 ];
 
+// Community nav - shown to customers only (recycling rewards are customer perks)
 const communityNav: NavItem[] = [
   { label: 'Recycling', icon: Recycle, href: '/dashboard/recycling' },
   { label: 'Community Cleanup', icon: TreePine, href: '/dashboard/community-cleanup' },
@@ -185,32 +187,35 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
       {/* Navigation */}
       <div className="flex-1 overflow-y-auto py-4">
-        <NavSection title="Main" items={customerNav} />
-        <NavSection title="Community" items={communityNav} />
-        
-        {/* Maker Section - Always show but with access control */}
+        {/* Makers see only maker nav, customers see customer + community nav */}
         {isMaker ? (
           <NavSection title="Creator Studio" items={makerNav} />
         ) : (
-          <div className="mb-6 px-4">
-            {!collapsed && (
-              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                Creator Studio
-              </div>
-            )}
-            <Link
-              to="/onboarding"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-all"
-            >
-              <Wrench className="w-5 h-5 shrink-0" />
+          <>
+            <NavSection title="Main" items={customerNav} />
+            <NavSection title="Community" items={communityNav} />
+            
+            {/* Become a Maker CTA for customers */}
+            <div className="mb-6 px-4">
               {!collapsed && (
-                <div>
-                  <span className="font-medium text-sm">Become a Maker</span>
-                  <span className="block text-[10px] opacity-70">Earn money printing</span>
+                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                  Creator Studio
                 </div>
               )}
-            </Link>
-          </div>
+              <Link
+                to="/onboarding"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-all"
+              >
+                <Wrench className="w-5 h-5 shrink-0" />
+                {!collapsed && (
+                  <div>
+                    <span className="font-medium text-sm">Become a Maker</span>
+                    <span className="block text-[10px] opacity-70">Earn money printing</span>
+                  </div>
+                )}
+              </Link>
+            </div>
+          </>
         )}
       </div>
 

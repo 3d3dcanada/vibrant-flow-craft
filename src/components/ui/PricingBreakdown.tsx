@@ -1,7 +1,6 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, ChevronUp, Info, DollarSign, Sparkles, UserPlus, Clock, Package } from 'lucide-react';
+import { Info, Sparkles, UserPlus, Clock, Package } from 'lucide-react';
 import { QuoteBreakdown, FREE_MEMBER_DISCOUNT_RATE, SLA_TIMELINES } from '@/config/pricing';
 import { formatCad, formatCredits } from '@/config/credits';
 import { GlowCard } from './GlowCard';
@@ -32,7 +31,6 @@ export const PricingBreakdown = ({
   deliverySpeed = 'standard',
   summary 
 }: PricingBreakdownProps) => {
-  const [showMakerPayout, setShowMakerPayout] = useState(false);
   const navigate = useNavigate();
 
   const displayTotal = isMember ? breakdown.memberTotal : breakdown.total;
@@ -268,67 +266,7 @@ export const PricingBreakdown = ({
         </div>
       </div>
 
-      {/* Maker Payout (Collapsible) */}
-      <div className="border border-border/30 rounded-lg overflow-hidden">
-        <button
-          onClick={() => setShowMakerPayout(!showMakerPayout)}
-          className="w-full px-4 py-3 flex items-center justify-between text-sm hover:bg-muted/30 transition-colors"
-        >
-          <span className="flex items-center gap-2 text-muted-foreground">
-            <DollarSign className="w-4 h-4" />
-            Show Maker Payout Estimate
-          </span>
-          {showMakerPayout ? (
-            <ChevronUp className="w-4 h-4 text-muted-foreground" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-muted-foreground" />
-          )}
-        </button>
-        
-        <AnimatePresence>
-          {showMakerPayout && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="overflow-hidden"
-            >
-              <div className="px-4 pb-4 pt-2 space-y-2 border-t border-border/30 bg-muted/10">
-                <p className="text-[10px] text-muted-foreground mb-3">
-                  Estimated payout to the local maker for this order:
-                </p>
-                
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Bed Rental</span>
-                  <span className="font-mono text-foreground">{formatCad(breakdown.makerPayout.bedRental)}</span>
-                </div>
-                
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Material Share</span>
-                  <span className="font-mono text-foreground">{formatCad(breakdown.makerPayout.materialShare)}</span>
-                </div>
-                
-                {breakdown.makerPayout.postProcessingShare > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Post-Processing</span>
-                    <span className="font-mono text-foreground">{formatCad(breakdown.makerPayout.postProcessingShare)}</span>
-                  </div>
-                )}
-                
-                <div className="flex justify-between text-sm font-bold pt-2 border-t border-border/30">
-                  <span className="text-foreground">Maker Total</span>
-                  <span className="text-secondary">{formatCad(breakdown.makerPayout.total)}</span>
-                </div>
-                
-                <p className="text-[10px] text-muted-foreground/70 mt-2">
-                  💡 This is an estimate. Actual payout depends on maker tier and print complexity.
-                </p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+      {/* Removed Maker Payout section - customer-facing UI should not show maker earnings */}
     </div>
   );
 };
