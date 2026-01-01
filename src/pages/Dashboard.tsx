@@ -1,35 +1,37 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
-import { useProfile, useSubscription, useCreditWallet, usePointWallet, useReferralCode, useUserAchievements, usePointTransactions } from '@/hooks/useUserData';
+import { useProfile, useSubscription, useCreditWallet, usePointWallet, useReferralCode, usePointTransactions } from '@/hooks/useUserData';
+import { useUserPrintRequests } from '@/hooks/useCustomerData';
 import { ParticleBackground } from '@/components/ui/ParticleBackground';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 import { NeonButton } from '@/components/ui/NeonButton';
 import { GlowCard } from '@/components/ui/GlowCard';
-import { Progress } from '@/components/ui/progress';
+import { RepositoryDrawer } from '@/components/repositories/RepositoryDrawer';
 import { 
-  Coins, Trophy, Recycle, Share2, Gift, Users, Settings, LogOut, 
-  Sparkles, TrendingUp, Crown, Flame, Copy, Check, ExternalLink,
-  CreditCard, Star, Zap, Package
+  Coins, Recycle, Gift, Settings, LogOut, 
+  Sparkles, Crown, Zap, Star, Package, FileText, Search,
+  CreditCard, Lightbulb, Box, Layers, Target, Shield, Copy, Check,
+  Loader2, AlertTriangle, RefreshCw
 } from 'lucide-react';
-import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { creditsToCad, formatCad, CAD_PER_CREDIT, cadToCredits } from '@/config/credits';
+import { formatCad, CAD_PER_CREDIT } from '@/config/credits';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading, signOut } = useAuth();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
+  const [repositoryOpen, setRepositoryOpen] = useState(false);
 
-  const { data: profile, isLoading: profileLoading } = useProfile();
+  const { data: profile, isLoading: profileLoading, isError, refetch } = useProfile();
   const { data: subscription } = useSubscription();
   const { data: creditWallet } = useCreditWallet();
   const { data: pointWallet } = usePointWallet();
   const { data: referralCode } = useReferralCode();
-  const { data: userAchievements } = useUserAchievements();
   const { data: recentActivity } = usePointTransactions(5);
+  const { data: printRequests, isLoading: requestsLoading } = useUserPrintRequests();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -61,12 +63,35 @@ const Dashboard = () => {
     }
   };
 
+  // Loading state
   if (authLoading || profileLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse">
-          <AnimatedLogo size="lg" />
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-secondary mx-auto mb-4" />
+          <p className="text-muted-foreground text-sm">Loading dashboard...</p>
         </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (isError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <GlowCard className="max-w-md p-8 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-destructive/20 flex items-center justify-center">
+            <AlertTriangle className="w-8 h-8 text-destructive" />
+          </div>
+          <h2 className="text-xl font-tech font-bold mb-2 text-foreground">Failed to Load Dashboard</h2>
+          <p className="text-muted-foreground mb-6">
+            We couldn't load your profile data. Please try again.
+          </p>
+          <NeonButton onClick={() => refetch()} className="w-full">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Retry
+          </NeonButton>
+        </GlowCard>
       </div>
     );
   }
@@ -82,6 +107,19 @@ const Dashboard = () => {
     maker: <Zap className="w-5 h-5" />,
     pro: <Crown className="w-5 h-5" />
   };
+
+  const activeRequests = printRequests?.filter(r => 
+    ['pending', 'claimed', 'quoted', 'accepted'].includes(r.status)
+  )?.length || 0;
+  
+  const completedPrints = printRequests?.filter(r => r.status === 'accepted')?.length || 0;
+
+  const beginnerGuides = [
+    { icon: Box, title: "Material Choice", tip: "PLA for beginners, PETG for durability, TPU for flex" },
+    { icon: Layers, title: "Infill", tip: "20% for decor, 50%+ for functional parts" },
+    { icon: Target, title: "Supports", tip: "Overhangs > 45° need supports" },
+    { icon: Shield, title: "Tolerance", tip: "Add 0.2-0.4mm for moving parts" },
+  ];
 
   return (
     <div className="min-h-screen bg-background relative">
@@ -121,10 +159,10 @@ const Dashboard = () => {
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
                 <h1 className="text-3xl font-tech font-bold text-foreground">
-                  Welcome back, {profile?.full_name || 'Maker'}!
+                  Welcome back, {profile?.full_name || 'there'}!
                 </h1>
                 <p className="text-muted-foreground mt-1">
-                  Your 3D printing journey continues
+                  Your 3D printing dashboard
                 </p>
               </div>
               
@@ -137,336 +175,227 @@ const Dashboard = () => {
             </div>
           </motion.div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {/* Credits */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <GlowCard className="p-6 h-full" variant="teal">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 rounded-xl bg-secondary/20">
-                    <Coins className="w-6 h-6 text-secondary" />
-                  </div>
-                  <span className="text-xs text-muted-foreground">{formatCad(CAD_PER_CREDIT)}/credit</span>
+          {/* Top KPIs */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+              <GlowCard className="p-5" variant="teal">
+                <div className="flex items-center justify-between mb-2">
+                  <Coins className="w-6 h-6 text-secondary" />
+                  <span className="text-[10px] text-muted-foreground">{formatCad(CAD_PER_CREDIT)}/cr</span>
                 </div>
-                <div className="text-3xl font-tech font-bold text-foreground">
-                  {creditWallet?.balance?.toLocaleString() || 0}
-                </div>
-                <div className="text-sm text-muted-foreground">Print Credits</div>
-                <Link to="/dashboard/credits">
-                  <NeonButton size="sm" className="w-full mt-4">
-                    Buy Credits
-                  </NeonButton>
-                </Link>
+                <div className="text-2xl font-tech font-bold text-foreground">{creditWallet?.balance?.toLocaleString() || 0}</div>
+                <div className="text-xs text-muted-foreground">Credits Balance</div>
               </GlowCard>
             </motion.div>
 
-            {/* Points */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <GlowCard className="p-6 h-full" variant="magenta">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 rounded-xl bg-primary/20">
-                    <Sparkles className="w-6 h-6 text-primary" />
-                  </div>
-                  <div className="flex items-center gap-1 text-orange-400">
-                    <Flame className="w-4 h-4" />
-                    <span className="text-xs font-semibold">{pointWallet?.current_streak_days || 0} day streak</span>
-                  </div>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+              <GlowCard className="p-5" variant="magenta">
+                <div className="flex items-center justify-between mb-2">
+                  <Sparkles className="w-6 h-6 text-primary" />
                 </div>
-                <div className="text-3xl font-tech font-bold text-foreground">
-                  {pointWallet?.balance?.toLocaleString() || 0}
-                </div>
-                <div className="text-sm text-muted-foreground">Reward Points</div>
-                <div className="mt-4 text-xs text-muted-foreground">
-                  Lifetime: {pointWallet?.lifetime_earned?.toLocaleString() || 0} earned
-                </div>
+                <div className="text-2xl font-tech font-bold text-foreground">{pointWallet?.balance?.toLocaleString() || 0}</div>
+                <div className="text-xs text-muted-foreground">Reward Points</div>
               </GlowCard>
             </motion.div>
 
-            {/* Achievements */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <GlowCard className="p-6 h-full" variant="magenta">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 rounded-xl bg-yellow-500/20">
-                    <Trophy className="w-6 h-6 text-yellow-500" />
-                  </div>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+              <GlowCard className="p-5">
+                <div className="flex items-center justify-between mb-2">
+                  <FileText className="w-6 h-6 text-warning" />
                 </div>
-                <div className="text-3xl font-tech font-bold text-foreground">
-                  {userAchievements?.length || 0}/11
-                </div>
-                <div className="text-sm text-muted-foreground">Achievements</div>
-                <Link to="/dashboard/achievements">
-                  <button className="mt-4 text-sm text-secondary hover:underline flex items-center gap-1">
-                    View All <ExternalLink className="w-3 h-3" />
-                  </button>
-                </Link>
+                <div className="text-2xl font-tech font-bold text-foreground">{activeRequests}</div>
+                <div className="text-xs text-muted-foreground">Active Requests</div>
               </GlowCard>
             </motion.div>
 
-            {/* Profile Completion */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <GlowCard className="p-6 h-full" variant="teal">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 rounded-xl bg-green-500/20">
-                    <TrendingUp className="w-6 h-6 text-green-500" />
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+              <GlowCard className="p-5">
+                <div className="flex items-center justify-between mb-2">
+                  <Package className="w-6 h-6 text-success" />
+                </div>
+                <div className="text-2xl font-tech font-bold text-foreground">{completedPrints}</div>
+                <div className="text-xs text-muted-foreground">Completed Prints</div>
+              </GlowCard>
+            </motion.div>
+          </div>
+
+          {/* Quick Actions */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mb-8">
+            <h2 className="text-lg font-tech font-bold text-foreground mb-4 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-secondary" />
+              Quick Actions
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Link to="/#quote">
+                <GlowCard className="p-4 hover:border-secondary/50 transition-colors cursor-pointer h-full">
+                  <FileText className="w-8 h-8 text-secondary mb-2" />
+                  <div className="font-medium text-foreground">Get a Quote</div>
+                  <div className="text-xs text-muted-foreground">Upload & price your model</div>
+                </GlowCard>
+              </Link>
+              
+              <GlowCard 
+                className="p-4 hover:border-secondary/50 transition-colors cursor-pointer h-full"
+                onClick={() => setRepositoryOpen(true)}
+              >
+                <Search className="w-8 h-8 text-primary mb-2" />
+                <div className="font-medium text-foreground">Find a Model</div>
+                <div className="text-xs text-muted-foreground">Browse repositories</div>
+              </GlowCard>
+              
+              <Link to="/dashboard/credits">
+                <GlowCard className="p-4 hover:border-secondary/50 transition-colors cursor-pointer h-full">
+                  <CreditCard className="w-8 h-8 text-secondary mb-2" />
+                  <div className="font-medium text-foreground">Buy Credits</div>
+                  <div className="text-xs text-muted-foreground">Top up your balance</div>
+                </GlowCard>
+              </Link>
+              
+              <Link to="/dashboard/gift-cards">
+                <GlowCard className="p-4 hover:border-secondary/50 transition-colors cursor-pointer h-full">
+                  <Gift className="w-8 h-8 text-purple-500 mb-2" />
+                  <div className="font-medium text-foreground">Redeem Code</div>
+                  <div className="text-xs text-muted-foreground">Gift cards & coupons</div>
+                </GlowCard>
+              </Link>
+            </div>
+          </motion.div>
+
+          {/* Two Column Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* My Requests */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+              <GlowCard className="p-6 h-full">
+                <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-secondary" />
+                  My Print Requests
+                </h3>
+                
+                {requestsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-secondary" />
                   </div>
-                </div>
-                <div className="text-3xl font-tech font-bold text-foreground">
-                  {profile?.profile_completion_percent || 0}%
-                </div>
-                <div className="text-sm text-muted-foreground mb-3">Profile Complete</div>
-                <Progress value={profile?.profile_completion_percent || 0} className="h-2" />
-                {(profile?.profile_completion_percent || 0) < 100 && (
-                  <p className="mt-2 text-xs text-secondary">Complete for bonus points!</p>
+                ) : printRequests && printRequests.length > 0 ? (
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {printRequests.slice(0, 5).map((request: any) => (
+                      <div 
+                        key={request.id} 
+                        className="flex items-center justify-between p-3 rounded-lg bg-background/50 border border-primary/10"
+                      >
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-foreground truncate">
+                            {request.specs?.material || 'Print Request'}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(request.created_at).toLocaleDateString('en-CA')}
+                          </div>
+                        </div>
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                          request.status === 'pending' ? 'bg-warning/20 text-warning' :
+                          request.status === 'claimed' ? 'bg-secondary/20 text-secondary' :
+                          request.status === 'accepted' ? 'bg-success/20 text-success' :
+                          'bg-muted/20 text-muted-foreground'
+                        }`}>
+                          {request.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p>No requests yet</p>
+                    <Link to="/#quote" className="text-secondary text-sm hover:underline">
+                      Submit your first quote
+                    </Link>
+                  </div>
                 )}
               </GlowCard>
             </motion.div>
-          </div>
 
-          {/* Action Cards */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            {/* Referral Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-            >
+            {/* Rewards & Recycling */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
               <GlowCard className="p-6 h-full">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 rounded-xl bg-primary/20">
-                    <Users className="w-6 h-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground">Refer Friends</h3>
-                    <p className="text-xs text-muted-foreground">Earn 500 points per referral</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-background/50 border border-primary/20">
-                  <code className="flex-1 font-mono text-secondary text-lg">
-                    {referralCode?.code || 'LOADING...'}
-                  </code>
-                  <button
-                    onClick={copyReferralCode}
-                    className="p-2 hover:bg-primary/20 rounded-lg transition-colors"
-                  >
-                    {copied ? <Check className="w-5 h-5 text-green-500" /> : <Copy className="w-5 h-5 text-muted-foreground" />}
-                  </button>
-                </div>
-                
-                <div className="mt-4 flex gap-2">
-                  <button className="flex-1 p-2 rounded-lg bg-[#1DA1F2]/20 hover:bg-[#1DA1F2]/30 transition-colors">
-                    <Share2 className="w-4 h-4 text-[#1DA1F2] mx-auto" />
-                  </button>
-                  <button className="flex-1 p-2 rounded-lg bg-[#4267B2]/20 hover:bg-[#4267B2]/30 transition-colors">
-                    <Share2 className="w-4 h-4 text-[#4267B2] mx-auto" />
-                  </button>
-                  <button className="flex-1 p-2 rounded-lg bg-[#E4405F]/20 hover:bg-[#E4405F]/30 transition-colors">
-                    <Share2 className="w-4 h-4 text-[#E4405F] mx-auto" />
-                  </button>
-                </div>
-              </GlowCard>
-            </motion.div>
-
-            {/* Recycling Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-            >
-              <GlowCard className="p-6 h-full">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 rounded-xl bg-green-500/20">
-                    <Recycle className="w-6 h-6 text-green-500" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground">Recycle Prints</h3>
-                    <p className="text-xs text-muted-foreground">1 point per gram recycled</p>
-                  </div>
-                </div>
-                
-                <p className="text-sm text-muted-foreground mb-4">
-                  Drop off old prints at any partner location. We recycle and reward you!
-                </p>
-                
-                <Link to="/dashboard/recycling">
-                  <NeonButton variant="secondary" className="w-full">
-                    Log Recycling Drop
-                  </NeonButton>
-                </Link>
-              </GlowCard>
-            </motion.div>
-
-            {/* Gift Cards */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7 }}
-            >
-              <GlowCard className="p-6 h-full">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 rounded-xl bg-purple-500/20">
-                    <Gift className="w-6 h-6 text-purple-500" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground">Gift Cards</h3>
-                    <p className="text-xs text-muted-foreground">Give the gift of 3D printing</p>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-3 gap-2 mb-4">
-                  <div className="p-2 rounded-lg bg-background/50 border border-primary/20 text-center">
-                    <div className="text-sm font-bold text-foreground">$25</div>
-                    <div className="text-xs text-muted-foreground">{cadToCredits(25)} credits</div>
-                  </div>
-                  <div className="p-2 rounded-lg bg-background/50 border border-secondary/20 text-center">
-                    <div className="text-sm font-bold text-foreground">$50</div>
-                    <div className="text-xs text-muted-foreground">{cadToCredits(50)} credits</div>
-                  </div>
-                  <div className="p-2 rounded-lg bg-background/50 border border-primary/20 text-center">
-                    <div className="text-sm font-bold text-foreground">$100</div>
-                    <div className="text-xs text-muted-foreground">{cadToCredits(100)} credits</div>
-                  </div>
-                </div>
-                
-                <Link to="/dashboard/gift-cards">
-                  <NeonButton variant="secondary" className="w-full">
-                    Purchase Gift Card
-                  </NeonButton>
-                </Link>
-              </GlowCard>
-            </motion.div>
-          </div>
-
-          {/* Recent Activity & Quick Actions */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Recent Activity */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 }}
-            >
-              <GlowCard className="p-6">
                 <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-secondary" />
-                  Recent Points Activity
+                  <Recycle className="w-5 h-5 text-green-500" />
+                  Rewards & Recycling
                 </h3>
                 
-                <div className="space-y-3">
-                  {recentActivity && recentActivity.length > 0 ? (
-                    recentActivity.map((activity: any, index: number) => (
-                      <div key={activity.id} className="flex items-center justify-between p-3 rounded-lg bg-background/50 border border-primary/10">
+                <div className="space-y-4">
+                  {/* Referral Code */}
+                  <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-medium text-foreground">Your Referral Code</span>
+                      <span className="text-[10px] text-muted-foreground">500 pts per referral</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 font-mono text-secondary text-lg bg-background/50 px-3 py-2 rounded">
+                        {referralCode?.code || 'LOADING...'}
+                      </code>
+                      <button
+                        onClick={copyReferralCode}
+                        className="p-2 hover:bg-primary/20 rounded-lg transition-colors"
+                      >
+                        {copied ? <Check className="w-5 h-5 text-green-500" /> : <Copy className="w-5 h-5 text-muted-foreground" />}
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Recycling CTA */}
+                  <Link to="/dashboard/recycling">
+                    <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 hover:bg-green-500/20 transition-colors cursor-pointer">
+                      <div className="flex items-center gap-3">
+                        <Recycle className="w-6 h-6 text-green-500" />
                         <div>
-                          <div className="text-sm font-medium text-foreground">{activity.description}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {new Date(activity.created_at).toLocaleDateString('en-CA')}
-                          </div>
-                        </div>
-                        <div className={`text-sm font-bold ${activity.points > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                          {activity.points > 0 ? '+' : ''}{activity.points}
+                          <div className="font-medium text-foreground">Recycle Prints</div>
+                          <div className="text-xs text-muted-foreground">1 point per gram recycled</div>
                         </div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p>Start earning points today!</p>
+                    </div>
+                  </Link>
+
+                  {/* Recent Points Activity */}
+                  {recentActivity && recentActivity.length > 0 && (
+                    <div>
+                      <div className="text-xs font-medium text-muted-foreground mb-2">Recent Activity</div>
+                      <div className="space-y-1">
+                        {recentActivity.slice(0, 3).map((activity: any) => (
+                          <div key={activity.id} className="flex justify-between text-xs">
+                            <span className="text-muted-foreground truncate">{activity.description}</span>
+                            <span className={activity.points > 0 ? 'text-green-500' : 'text-red-500'}>
+                              {activity.points > 0 ? '+' : ''}{activity.points}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
               </GlowCard>
             </motion.div>
-
-            {/* Quick Actions */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.9 }}
-            >
-              <GlowCard className="p-6">
-                <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-primary" />
-                  Quick Actions
-                </h3>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <Link to="/" className="block">
-                    <button className="w-full p-4 rounded-xl bg-primary/10 hover:bg-primary/20 border border-primary/20 transition-all group">
-                      <Package className="w-6 h-6 text-primary mx-auto mb-2 group-hover:scale-110 transition-transform" />
-                      <div className="text-sm font-medium text-foreground">Get Quote</div>
-                    </button>
-                  </Link>
-                  
-                  <Link to="/dashboard/orders" className="block">
-                    <button className="w-full p-4 rounded-xl bg-secondary/10 hover:bg-secondary/20 border border-secondary/20 transition-all group">
-                      <Package className="w-6 h-6 text-secondary mx-auto mb-2 group-hover:scale-110 transition-transform" />
-                      <div className="text-sm font-medium text-foreground">My Orders</div>
-                    </button>
-                  </Link>
-                  
-                  <Link to="/dashboard/subscription" className="block">
-                    <button className="w-full p-4 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 transition-all group">
-                      <Crown className="w-6 h-6 text-purple-500 mx-auto mb-2 group-hover:scale-110 transition-transform" />
-                      <div className="text-sm font-medium text-foreground">Upgrade Plan</div>
-                    </button>
-                  </Link>
-                  
-                  <Link to="/dashboard/models" className="block">
-                    <button className="w-full p-4 rounded-xl bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 transition-all group">
-                      <Star className="w-6 h-6 text-orange-500 mx-auto mb-2 group-hover:scale-110 transition-transform" />
-                      <div className="text-sm font-medium text-foreground">Submit Model</div>
-                    </button>
-                  </Link>
-                </div>
-              </GlowCard>
-            </motion.div>
           </div>
 
-          {/* Subscription Upgrade Banner */}
-          {subscription?.tier === 'free' && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1 }}
-              className="mt-8"
-            >
-              <div className="p-6 rounded-2xl bg-gradient-to-r from-primary/20 via-secondary/20 to-primary/20 border border-primary/30">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                  <div>
-                    <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
-                      <Crown className="w-6 h-6 text-primary" />
-                      Upgrade to Save Up to 25%
-                    </h3>
-                    <p className="text-muted-foreground mt-1">
-                      Maker plan includes credits per print. Pro plan waives half admin & bed rental fees.
-                    </p>
-                  </div>
-                  <Link to="/dashboard/subscription">
-                    <NeonButton className="whitespace-nowrap">
-                      View Plans
-                    </NeonButton>
-                  </Link>
-                </div>
-              </div>
-            </motion.div>
-          )}
+          {/* Beginner Guidance */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
+            <h2 className="text-lg font-tech font-bold text-foreground mb-4 flex items-center gap-2">
+              <Lightbulb className="w-5 h-5 text-warning" />
+              New to 3D Printing?
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {beginnerGuides.map((guide, index) => (
+                <GlowCard key={index} className="p-4">
+                  <guide.icon className="w-6 h-6 text-secondary mb-2" />
+                  <div className="font-medium text-foreground text-sm">{guide.title}</div>
+                  <div className="text-xs text-muted-foreground mt-1">{guide.tip}</div>
+                </GlowCard>
+              ))}
+            </div>
+          </motion.div>
         </main>
       </div>
+
+      {/* Repository Drawer */}
+      <RepositoryDrawer isOpen={repositoryOpen} onClose={() => setRepositoryOpen(false)} />
     </div>
   );
 };

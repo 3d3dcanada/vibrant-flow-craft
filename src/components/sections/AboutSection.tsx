@@ -21,7 +21,7 @@ export const AboutSection = () => {
               Our Mission
             </span>
             <h2 className="text-4xl md:text-5xl font-tech font-bold text-foreground mb-6">
-              Democratizing Manufacturing in Atlantic Canada
+              Making 3D Printing Practical and Local in Atlantic Canada
             </h2>
             <p className="text-muted-foreground text-lg mb-6 leading-relaxed">
               3D3D.ca is more than a website; it's a{" "}
