@@ -32,6 +32,7 @@ import AdminBuybackRequests from "./pages/admin/AdminBuybackRequests";
 import Refunds from "./pages/Refunds";
 import CommunityPolicy from "./pages/CommunityPolicy";
 import Schedule from "./pages/Schedule";
+import CustomerDashboard from "./pages/CustomerDashboard";
 
 // Maker Dashboard pages
 import MakerOverview from "./pages/maker/MakerOverview";
@@ -79,6 +80,7 @@ const App = () => (
             
             {/* Dashboard routes */}
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard/customer" element={<CustomerDashboard />} />
             <Route path="/dashboard/subscription" element={<Subscription />} />
             <Route path="/dashboard/achievements" element={<Achievements />} />
             <Route path="/dashboard/settings" element={<ProfileSettings />} />

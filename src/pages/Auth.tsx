@@ -67,15 +67,8 @@ const Auth = () => {
             return;
           }
           
-          // Route based on role from database - single source of truth
-          const role = data?.role || 'customer';
-          if (role === 'admin') {
-            navigate('/dashboard/admin');
-          } else if (role === 'maker') {
-            navigate('/dashboard/maker');
-          } else {
-            navigate('/dashboard');
-          }
+          // Always redirect to /dashboard - it will handle role-based routing
+          navigate('/dashboard');
         });
     }
   }, [user, navigate]);
