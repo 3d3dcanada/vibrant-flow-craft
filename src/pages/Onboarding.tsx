@@ -91,7 +91,8 @@ const Onboarding = () => {
     setLoading(true);
 
     try {
-      const profileData: Record<string, unknown> = {
+      // Build profile update data
+      const baseData = {
         id: user.id,
         email: user.email,
         role,
@@ -99,20 +100,20 @@ const Onboarding = () => {
         onboarding_completed: true,
       };
 
-      if (role === 'maker') {
-        profileData.dry_box_required_ack = dryBoxAck;
-        profileData.printer_models = printerModels.trim();
-        profileData.nozzle_sizes = nozzleSizes.trim();
-        profileData.materials_supported = materialsSupported.join(', ');
-        profileData.post_processing_capable = postProcessingCapable;
-        profileData.hardware_inserts_capable = hardwareInsertsCapable;
-        profileData.availability_status = 'available';
-      }
+      const makerData = role === 'maker' ? {
+        dry_box_required_ack: dryBoxAck,
+        printer_models: printerModels.trim(),
+        nozzle_sizes: nozzleSizes.trim(),
+        materials_supported: materialsSupported.join(', '),
+        post_processing_capable: postProcessingCapable,
+        hardware_inserts_capable: hardwareInsertsCapable,
+        availability_status: 'available',
+      } : {};
 
       // Use upsert to handle both new profiles and existing ones
       const { error } = await supabase
         .from('profiles')
-        .upsert(profileData, { onConflict: 'id' });
+        .upsert({ ...baseData, ...makerData }, { onConflict: 'id' });
 
       if (error) throw error;
 
