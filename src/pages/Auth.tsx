@@ -49,7 +49,7 @@ const Auth = () => {
   // Check if user is logged in and redirect based on role from DB
   useEffect(() => {
     if (user) {
-      // Fetch profile to check role and onboarding status
+      // Fetch profile to check role and onboarding status - always get fresh data
       supabase
         .from('profiles')
         .select('role, onboarding_completed')
@@ -58,17 +58,33 @@ const Auth = () => {
         .then(({ data, error }) => {
           if (error) {
             console.error('Error fetching profile:', error);
+            // On error, still try dashboard
             navigate('/dashboard');
             return;
           }
-          
-          if (data?.onboarding_completed === false) {
+
+          // If no profile exists, go to onboarding to create one
+          if (!data) {
+            console.warn('No profile found for user, redirecting to onboarding');
             navigate('/onboarding');
             return;
           }
-          
-          // Always redirect to /dashboard - it will handle role-based routing
-          navigate('/dashboard');
+
+          // If onboarding not completed, go there
+          if (data.onboarding_completed === false) {
+            navigate('/onboarding');
+            return;
+          }
+
+          // Redirect directly based on role - skip the Dashboard redirect controller
+          const role = data.role || 'customer';
+          if (role === 'admin') {
+            navigate('/dashboard/admin', { replace: true });
+          } else if (role === 'maker') {
+            navigate('/dashboard/maker', { replace: true });
+          } else {
+            navigate('/dashboard/customer', { replace: true });
+          }
         });
     }
   }, [user, navigate]);
