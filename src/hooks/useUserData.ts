@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export const useProfile = () => {
   const { user } = useAuth();
-  
+
   return useQuery({
     queryKey: ['profile', user?.id],
     queryFn: async () => {
@@ -17,7 +17,10 @@ export const useProfile = () => {
       if (error) throw error;
       return data;
     },
-    enabled: !!user
+    enabled: !!user,
+    staleTime: 0, // Always refetch - profile data is critical
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true
   });
 };
 

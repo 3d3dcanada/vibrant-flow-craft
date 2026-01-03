@@ -34,7 +34,7 @@ const Dashboard = () => {
     // If profile loaded successfully, redirect based on role
     if (profile) {
       const role = profile.role || 'customer';
-      
+
       if (role === 'admin') {
         navigate('/dashboard/admin', { replace: true });
       } else if (role === 'maker') {
@@ -42,12 +42,21 @@ const Dashboard = () => {
       } else {
         navigate('/dashboard/customer', { replace: true });
       }
+    } else if (!isError) {
+      // Profile is null but no error - user needs onboarding
+      console.warn('Profile is null, redirecting to onboarding');
+      navigate('/onboarding');
     }
-  }, [user, authLoading, profileLoading, profile, navigate]);
+  }, [user, authLoading, profileLoading, profile, isError, navigate]);
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
+    try {
+      await signOut();
+    } catch (err) {
+      console.error('Sign out error:', err);
+    }
+    // Always navigate to home, even if signOut had issues
+    window.location.href = '/';
   };
 
   // Loading state while auth or profile is loading
