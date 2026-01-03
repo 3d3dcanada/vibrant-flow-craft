@@ -46,7 +46,17 @@ const makerNav: NavItem[] = [
   { label: 'Profile', icon: Settings, href: '/dashboard/maker/profile', makerOnly: true },
 ];
 
-type UserRole = 'customer' | 'maker' | null;
+const adminNav: NavItem[] = [
+  { label: 'Overview', icon: LayoutDashboard, href: '/dashboard/admin' },
+  { label: 'Operations', icon: Scale, href: '/dashboard/admin/ops' },
+  { label: 'Maker Manager', icon: Wrench, href: '/dashboard/admin/makers' },
+  { label: 'Buyback Requests', icon: Recycle, href: '/dashboard/admin/buyback' },
+  { label: 'Content & Promos', icon: Star, href: '/dashboard/admin/content' },
+  { label: 'Store Manager', icon: Package, href: '/dashboard/admin/store' },
+  { label: 'Credit Packages', icon: CreditCard, href: '/dashboard/admin/packages' },
+];
+
+type UserRole = 'customer' | 'maker' | 'admin' | null;
 
 interface DashboardLayoutProps {
   children?: React.ReactNode;
@@ -66,6 +76,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   const userRole: UserRole = (profile?.role as UserRole) || 'customer';
   const isMaker = userRole === 'maker';
+  const isAdmin = userRole === 'admin';
 
   // Redirect to auth if not logged in
   useEffect(() => {
@@ -187,8 +198,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
       {/* Navigation */}
       <div className="flex-1 overflow-y-auto py-4">
-        {/* Makers see only maker nav, customers see customer + community nav */}
-        {isMaker ? (
+        {/* Role-based navigation */}
+        {isAdmin ? (
+          <NavSection title="Admin Panel" items={adminNav} />
+        ) : isMaker ? (
           <NavSection title="Creator Studio" items={makerNav} />
         ) : (
           <>
