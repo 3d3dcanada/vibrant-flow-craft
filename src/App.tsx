@@ -2,9 +2,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
-import AppLayout from "@/components/layout/AppLayout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
@@ -54,12 +53,6 @@ import AdminOperations from "./pages/admin/AdminOperations";
 
 const queryClient = new QueryClient();
 
-const ProtectedLayout = () => (
-  <AppLayout>
-    <Outlet />
-  </AppLayout>
-);
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -86,38 +79,36 @@ const App = () => (
             <Route path="/recycle-buyback" element={<RecycleBuyback />} />
             
             {/* Dashboard routes */}
-            <Route element={<ProtectedLayout />}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/dashboard/customer" element={<CustomerDashboard />} />
-              <Route path="/dashboard/subscription" element={<Subscription />} />
-              <Route path="/dashboard/achievements" element={<Achievements />} />
-              <Route path="/dashboard/settings" element={<ProfileSettings />} />
-              <Route path="/dashboard/rewards" element={<RewardsCenter />} />
-              <Route path="/dashboard/credits" element={<CreditsStore />} />
-              <Route path="/dashboard/credits/checkout" element={<ETransferCheckout />} />
-              <Route path="/dashboard/community" element={<CommunityModels />} />
-              <Route path="/dashboard/community-cleanup" element={<CommunityCleanup />} />
-              <Route path="/dashboard/recycling" element={<Recycling />} />
-              <Route path="/dashboard/gift-cards" element={<GiftCards />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard/customer" element={<CustomerDashboard />} />
+            <Route path="/dashboard/subscription" element={<Subscription />} />
+            <Route path="/dashboard/achievements" element={<Achievements />} />
+            <Route path="/dashboard/settings" element={<ProfileSettings />} />
+            <Route path="/dashboard/rewards" element={<RewardsCenter />} />
+            <Route path="/dashboard/credits" element={<CreditsStore />} />
+            <Route path="/dashboard/credits/checkout" element={<ETransferCheckout />} />
+            <Route path="/dashboard/community" element={<CommunityModels />} />
+            <Route path="/dashboard/community-cleanup" element={<CommunityCleanup />} />
+            <Route path="/dashboard/recycling" element={<Recycling />} />
+            <Route path="/dashboard/gift-cards" element={<GiftCards />} />
 
-              {/* Maker Dashboard routes */}
-              <Route path="/dashboard/maker" element={<MakerOverview />} />
-              <Route path="/dashboard/maker/requests" element={<MakerRequests />} />
-              <Route path="/dashboard/maker/jobs" element={<MakerJobs />} />
-              <Route path="/dashboard/maker/printers" element={<MakerPrinters />} />
-              <Route path="/dashboard/maker/filament" element={<MakerFilament />} />
-              <Route path="/dashboard/maker/earnings" element={<MakerEarnings />} />
-              <Route path="/dashboard/maker/profile" element={<MakerProfile />} />
+            {/* Maker Dashboard routes */}
+            <Route path="/dashboard/maker" element={<MakerOverview />} />
+            <Route path="/dashboard/maker/requests" element={<MakerRequests />} />
+            <Route path="/dashboard/maker/jobs" element={<MakerJobs />} />
+            <Route path="/dashboard/maker/printers" element={<MakerPrinters />} />
+            <Route path="/dashboard/maker/filament" element={<MakerFilament />} />
+            <Route path="/dashboard/maker/earnings" element={<MakerEarnings />} />
+            <Route path="/dashboard/maker/profile" element={<MakerProfile />} />
 
-              {/* Admin Dashboard routes */}
-              <Route path="/dashboard/admin" element={<AdminOverview />} />
-              <Route path="/dashboard/admin/content" element={<AdminContentPromos />} />
-              <Route path="/dashboard/admin/store" element={<AdminStoreManager />} />
-              <Route path="/dashboard/admin/packages" element={<AdminCreditPackages />} />
-              <Route path="/dashboard/admin/makers" element={<AdminMakerManager />} />
-              <Route path="/dashboard/admin/ops" element={<AdminOperations />} />
-              <Route path="/dashboard/admin/buyback" element={<AdminBuybackRequests />} />
-            </Route>
+            {/* Admin Dashboard routes */}
+            <Route path="/dashboard/admin" element={<AdminOverview />} />
+            <Route path="/dashboard/admin/content" element={<AdminContentPromos />} />
+            <Route path="/dashboard/admin/store" element={<AdminStoreManager />} />
+            <Route path="/dashboard/admin/packages" element={<AdminCreditPackages />} />
+            <Route path="/dashboard/admin/makers" element={<AdminMakerManager />} />
+            <Route path="/dashboard/admin/ops" element={<AdminOperations />} />
+            <Route path="/dashboard/admin/buyback" element={<AdminBuybackRequests />} />
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
