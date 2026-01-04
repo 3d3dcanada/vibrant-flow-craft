@@ -677,7 +677,6 @@ export type Database = {
           printer_models: string | null
           profile_completion_percent: number | null
           province: string | null
-          role: string | null
           updated_at: string
         }
         Insert: {
@@ -705,7 +704,6 @@ export type Database = {
           printer_models?: string | null
           profile_completion_percent?: number | null
           province?: string | null
-          role?: string | null
           updated_at?: string
         }
         Update: {
@@ -733,7 +731,6 @@ export type Database = {
           printer_models?: string | null
           profile_completion_percent?: number | null
           province?: string | null
-          role?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -1067,11 +1064,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_maker: { Args: { _user_id: string }; Returns: boolean }
       redeem_gift_card: { Args: { p_code: string }; Returns: Json }
@@ -1089,6 +1114,7 @@ export type Database = {
         | "streak_7_day"
         | "streak_30_day"
         | "big_spender"
+      app_role: "admin" | "maker" | "customer"
       buyback_item_type: "printer" | "filament" | "electronics" | "donation"
       buyback_status:
         | "new"
@@ -1269,6 +1295,7 @@ export const Constants = {
         "streak_30_day",
         "big_spender",
       ],
+      app_role: ["admin", "maker", "customer"],
       buyback_item_type: ["printer", "filament", "electronics", "donation"],
       buyback_status: [
         "new",

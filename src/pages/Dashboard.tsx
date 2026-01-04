@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useUserData';
+import { usePrimaryRole } from '@/hooks/useUserRoles';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { NeonButton } from '@/components/ui/NeonButton';
 import { Loader2, AlertTriangle, RefreshCw, LogOut } from 'lucide-react';
@@ -9,14 +10,15 @@ import { Loader2, AlertTriangle, RefreshCw, LogOut } from 'lucide-react';
 /**
  * Dashboard.tsx - Pure Redirect Controller
  * This component NEVER renders UI. It only:
- * 1. Fetches the authenticated user's profile
- * 2. Redirects based on role from database
+ * 1. Fetches the authenticated user's role from user_roles table
+ * 2. Redirects based on role
  * 3. Shows loading/error states during the process
  */
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading, signOut } = useAuth();
-  const { data: profile, isLoading: profileLoading, isError, refetch } = useProfile();
+  const { data: profile, isLoading: profileLoading, isError: profileError, refetch: refetchProfile } = useProfile();
+  const { primaryRole, isLoading: roleLoading, isError: roleError } = usePrimaryRole();
 
   useEffect(() => {
     // Wait for auth to complete
@@ -28,26 +30,33 @@ const Dashboard = () => {
       return;
     }
 
-    // Wait for profile to load
-    if (profileLoading) return;
+    // Wait for profile and role to load
+    if (profileLoading || roleLoading) return;
 
-    // If profile loaded successfully, redirect based on role
+    // If no profile exists, go to onboarding
+    if (!profile && !profileError) {
+      navigate('/onboarding');
+      return;
+    }
+
+    // If profile exists, check onboarding status and redirect based on role
     if (profile) {
-      const role = profile.role || 'customer';
+      // If onboarding not completed, go there first
+      if (profile.onboarding_completed === false) {
+        navigate('/onboarding');
+        return;
+      }
 
-      if (role === 'admin') {
+      // Redirect based on role from user_roles table
+      if (primaryRole === 'admin') {
         navigate('/dashboard/admin', { replace: true });
-      } else if (role === 'maker') {
+      } else if (primaryRole === 'maker') {
         navigate('/dashboard/maker', { replace: true });
       } else {
         navigate('/dashboard/customer', { replace: true });
       }
-    } else if (!isError) {
-      // Profile is null but no error - user needs onboarding
-      console.warn('Profile is null, redirecting to onboarding');
-      navigate('/onboarding');
     }
-  }, [user, authLoading, profileLoading, profile, isError, navigate]);
+  }, [user, authLoading, profileLoading, roleLoading, profile, primaryRole, profileError, navigate]);
 
   const handleSignOut = async () => {
     try {
@@ -55,12 +64,11 @@ const Dashboard = () => {
     } catch (err) {
       console.error('Sign out error:', err);
     }
-    // Always navigate to home, even if signOut had issues
     window.location.href = '/';
   };
 
-  // Loading state while auth or profile is loading
-  if (authLoading || profileLoading) {
+  // Loading state while auth, profile, or role is loading
+  if (authLoading || profileLoading || roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -71,8 +79,8 @@ const Dashboard = () => {
     );
   }
 
-  // Error state if profile fetch failed
-  if (isError) {
+  // Error state if profile or role fetch failed
+  if (profileError || roleError) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <GlowCard className="max-w-md p-8 text-center">
@@ -84,7 +92,7 @@ const Dashboard = () => {
             We couldn't load your profile data. Please try again or sign out.
           </p>
           <div className="space-y-3">
-            <NeonButton onClick={() => refetch()} className="w-full">
+            <NeonButton onClick={() => refetchProfile()} className="w-full">
               <RefreshCw className="w-4 h-4 mr-2" />
               Retry
             </NeonButton>
@@ -98,7 +106,7 @@ const Dashboard = () => {
     );
   }
 
-  // This should never be reached as we redirect above, but show loading as fallback
+  // Fallback loading state
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-center">

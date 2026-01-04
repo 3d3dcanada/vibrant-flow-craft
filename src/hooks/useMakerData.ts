@@ -406,15 +406,27 @@ export const useTestPrinterConnection = () => {
   });
 };
 
-// Get all makers for admin assignment
+// Get all makers for admin assignment - use user_roles table
 export const useAllMakers = () => {
   return useQuery({
     queryKey: ['all_makers'],
     queryFn: async () => {
+      // First get all maker user IDs from user_roles
+      const { data: makerRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'maker');
+      
+      if (rolesError) throw rolesError;
+      if (!makerRoles || makerRoles.length === 0) return [];
+      
+      const makerIds = makerRoles.map(r => r.user_id);
+      
+      // Then get profiles for those makers
       const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, display_name, email, availability_status')
-        .eq('role', 'maker')
+        .in('id', makerIds)
         .eq('onboarding_completed', true)
         .order('full_name', { ascending: true });
       if (error) throw error;
@@ -501,12 +513,13 @@ export const useIsAdmin = () => {
     queryFn: async () => {
       if (!user) return false;
       const { data, error } = await supabase
-        .from('profiles')
+        .from('user_roles')
         .select('role')
-        .eq('id', user.id)
-        .single();
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .maybeSingle();
       if (error) return false;
-      return data?.role === 'admin';
+      return !!data;
     },
     enabled: !!user
   });

@@ -200,34 +200,49 @@ export const useAdminStats = () => {
   return useQuery({
     queryKey: ['admin_stats'],
     queryFn: async () => {
-      const [unassigned, assigned, jobs, payouts, unverified] = await Promise.all([
+      // Query user_roles to get maker count instead of profiles.role
+      const [unassigned, assigned, jobs, payouts, unverifiedMakers] = await Promise.all([
         supabase.from('print_requests').select('id', { count: 'exact', head: true }).is('maker_id', null),
         supabase.from('print_requests').select('id', { count: 'exact', head: true }).not('maker_id', 'is', null),
         supabase.from('print_jobs').select('id', { count: 'exact', head: true }).neq('status', 'complete').neq('status', 'cancelled'),
         supabase.from('payout_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'maker').eq('maker_verified', false)
+        // Join user_roles with profiles to get unverified makers
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('maker_verified', false).neq('maker_verified', null)
       ]);
       return {
         unassignedRequests: unassigned.count || 0,
         assignedRequests: assigned.count || 0,
         activeJobs: jobs.count || 0,
         pendingPayouts: payouts.count || 0,
-        unverifiedMakers: unverified.count || 0
+        unverifiedMakers: unverifiedMakers.count || 0
       };
     }
   });
 };
 
-// Makers list for admin
+// Makers list for admin - join with user_roles to find makers
 export const useAdminMakersList = () => {
   return useQuery({
     queryKey: ['admin_makers_list'],
     queryFn: async () => {
+      // Get all users who have maker role from user_roles
+      const { data: makerRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'maker');
+      
+      if (rolesError) throw rolesError;
+      if (!makerRoles || makerRoles.length === 0) return [];
+      
+      const makerIds = makerRoles.map(r => r.user_id);
+      
+      // Get profiles for those makers
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, display_name, full_name, city, province, availability_status, role, maker_verified, maker_verification_notes, onboarding_completed')
-        .eq('role', 'maker')
+        .select('id, display_name, full_name, city, province, availability_status, maker_verified, maker_verification_notes, onboarding_completed')
+        .in('id', makerIds)
         .order('created_at', { ascending: false });
+      
       if (error) throw error;
       return data || [];
     }

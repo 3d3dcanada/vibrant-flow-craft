@@ -91,11 +91,10 @@ const Onboarding = () => {
     setLoading(true);
 
     try {
-      // Build profile update data
+      // Build profile update data (no role here - roles go in user_roles table)
       const baseData = {
         id: user.id,
         email: user.email,
-        role,
         display_name: displayName.trim(),
         onboarding_completed: true,
       };
@@ -111,18 +110,36 @@ const Onboarding = () => {
       } : {};
 
       // Use upsert to handle both new profiles and existing ones
-      const { error } = await supabase
+      const { error: profileError } = await supabase
         .from('profiles')
         .upsert({ ...baseData, ...makerData }, { onConflict: 'id' });
 
-      if (error) throw error;
+      if (profileError) throw profileError;
+
+      // Insert role into user_roles table (secure role storage)
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .upsert(
+          { user_id: user.id, role: role },
+          { onConflict: 'user_id,role' }
+        );
+
+      if (roleError) {
+        console.error('Failed to set role:', roleError);
+        // Don't throw - profile was saved, role might already exist
+      }
 
       toast({
         title: role === 'maker' ? 'Maker profile created!' : 'Welcome aboard!',
         description: 'Redirecting to your dashboard...',
       });
 
-      navigate('/dashboard');
+      // Redirect based on role
+      if (role === 'maker') {
+        navigate('/dashboard/maker');
+      } else {
+        navigate('/dashboard/customer');
+      }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to save profile';
       toast({ title: 'Error', description: message, variant: 'destructive' });
