@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useIsMaker } from '@/hooks/useUserRoles';
 import { useProfile } from '@/hooks/useUserData';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { NeonButton } from '@/components/ui/NeonButton';
@@ -12,10 +13,11 @@ interface MakerGuardProps {
 const MakerGuard = ({ children }: MakerGuardProps) => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { data: profile, isLoading: profileLoading, isError, refetch } = useProfile();
+  const { hasRole: isMaker, isLoading: roleLoading, isError: roleError } = useIsMaker();
+  const { data: profile, isLoading: profileLoading } = useProfile();
 
-  // Show loading while checking auth/profile
-  if (authLoading || profileLoading) {
+  // Show loading while auth or role is loading
+  if (authLoading || roleLoading || profileLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -32,20 +34,20 @@ const MakerGuard = ({ children }: MakerGuardProps) => {
     return null;
   }
 
-  // Show error state with retry button if profile fetch failed
-  if (isError) {
+  // Show error state with retry button if role fetch failed
+  if (roleError) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <GlowCard className="max-w-md p-8 text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-destructive/20 flex items-center justify-center">
             <AlertTriangle className="w-8 h-8 text-destructive" />
           </div>
-          <h2 className="text-xl font-tech font-bold mb-2 text-foreground">Failed to Load Profile</h2>
+          <h2 className="text-xl font-tech font-bold mb-2 text-foreground">Failed to Load Permissions</h2>
           <p className="text-muted-foreground mb-6">
             We couldn't verify your maker access. Please try again.
           </p>
           <div className="space-y-3">
-            <NeonButton onClick={() => refetch()} className="w-full">
+            <NeonButton onClick={() => window.location.reload()} className="w-full">
               <RefreshCw className="w-4 h-4 mr-2" />
               Retry
             </NeonButton>
@@ -58,8 +60,11 @@ const MakerGuard = ({ children }: MakerGuardProps) => {
     );
   }
 
-  // Check role from database - single source of truth
-  const isMaker = profile?.role === 'maker';
+  // Check if user hasn't completed onboarding as maker
+  if (!isMaker && profile && !profile.onboarding_completed) {
+    navigate('/onboarding');
+    return null;
+  }
 
   if (!isMaker) {
     return (

@@ -3,7 +3,7 @@ import { Mail, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import AnimatedLogo from "../ui/AnimatedLogo";
 import { useAuth } from "@/contexts/AuthContext";
-import { useProfile } from "@/hooks/useUserData";
+import { usePrimaryRole } from "@/hooks/useUserRoles";
 
 // Social icons as simple SVGs for reliability
 const YouTubeIcon = () => (
@@ -84,11 +84,10 @@ const locations = [
 
 export const Footer = () => {
   const { user } = useAuth();
-  const { data: profile } = useProfile();
+  const { primaryRole } = usePrimaryRole();
   
-  const userRole = profile?.role;
-  const isMakerOrAdmin = userRole === 'maker' || userRole === 'admin';
-  const isAdmin = userRole === 'admin';
+  const isMakerOrAdmin = primaryRole === 'maker' || primaryRole === 'admin';
+  const isAdmin = primaryRole === 'admin';
 
   return (
     <footer className="relative bg-card border-t border-border overflow-hidden">

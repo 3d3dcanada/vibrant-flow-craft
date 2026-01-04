@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useProfile } from '@/hooks/useUserData';
+import { useIsAdmin } from '@/hooks/useUserRoles';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { NeonButton } from '@/components/ui/NeonButton';
 import { Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
@@ -12,10 +12,10 @@ interface AdminGuardProps {
 const AdminGuard = ({ children }: AdminGuardProps) => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { data: profile, isLoading: profileLoading, isError, refetch } = useProfile();
+  const { hasRole: isAdmin, isLoading: roleLoading, isError } = useIsAdmin();
 
-  // Show loading while auth or profile is loading
-  if (authLoading || profileLoading) {
+  // Show loading while auth or role is loading
+  if (authLoading || roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -32,7 +32,7 @@ const AdminGuard = ({ children }: AdminGuardProps) => {
     return null;
   }
 
-  // Show error state with retry button if profile fetch failed
+  // Show error state with retry button if role fetch failed
   if (isError) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -40,12 +40,12 @@ const AdminGuard = ({ children }: AdminGuardProps) => {
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-destructive/20 flex items-center justify-center">
             <AlertTriangle className="w-8 h-8 text-destructive" />
           </div>
-          <h2 className="text-xl font-tech font-bold mb-2 text-foreground">Failed to Load Profile</h2>
+          <h2 className="text-xl font-tech font-bold mb-2 text-foreground">Failed to Load Permissions</h2>
           <p className="text-muted-foreground mb-6">
             We couldn't verify your admin access. Please try again.
           </p>
           <div className="space-y-3">
-            <NeonButton onClick={() => refetch()} className="w-full">
+            <NeonButton onClick={() => window.location.reload()} className="w-full">
               <RefreshCw className="w-4 h-4 mr-2" />
               Retry
             </NeonButton>
@@ -57,9 +57,6 @@ const AdminGuard = ({ children }: AdminGuardProps) => {
       </div>
     );
   }
-
-  // Check role from database - single source of truth
-  const isAdmin = profile?.role === 'admin';
 
   if (!isAdmin) {
     return (

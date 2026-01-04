@@ -3,12 +3,13 @@ import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile, useSubscription, useCreditWallet, usePointWallet } from '@/hooks/useUserData';
+import { usePrimaryRole } from '@/hooks/useUserRoles';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 import { ParticleBackground } from '@/components/ui/ParticleBackground';
 import { 
   LayoutDashboard, Coins, Sparkles, Recycle, Gift, Settings, 
   LogOut, ChevronLeft, ChevronRight, Crown, Zap, Star, Package,
-  TreePine, Scale, Trophy, CreditCard, Menu, X, Wrench, AlertTriangle
+  TreePine, Scale, Trophy, CreditCard, Menu, X, Wrench
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -73,10 +74,11 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { data: subscription } = useSubscription();
   const { data: creditWallet } = useCreditWallet();
   const { data: pointWallet } = usePointWallet();
-
-  const userRole: UserRole = (profile?.role as UserRole) || 'customer';
-  const isMaker = userRole === 'maker';
-  const isAdmin = userRole === 'admin';
+  
+  // Use the secure user_roles table for role determination
+  const { primaryRole, isLoading: roleLoading } = usePrimaryRole();
+  const isMaker = primaryRole === 'maker';
+  const isAdmin = primaryRole === 'admin';
 
   // Redirect to auth if not logged in
   useEffect(() => {

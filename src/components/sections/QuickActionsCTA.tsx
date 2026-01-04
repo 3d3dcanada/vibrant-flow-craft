@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Database, FileUp, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useProfile } from "@/hooks/useUserData";
+import { usePrimaryRole } from "@/hooks/useUserRoles";
 import NeonButton from "../ui/NeonButton";
 import { useState } from "react";
 import RepositoryDrawer from "@/components/repositories/RepositoryDrawer";
@@ -10,7 +10,7 @@ import RepositoryDrawer from "@/components/repositories/RepositoryDrawer";
 export const QuickActionsCTA = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const { data: profile } = useProfile();
+  const { primaryRole } = usePrimaryRole();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const handleAccountClick = () => {
@@ -19,11 +19,10 @@ export const QuickActionsCTA = () => {
       return;
     }
     
-    // Route based on role from database
-    const role = profile?.role || 'customer';
-    if (role === 'admin') {
+    // Route based on role from user_roles table
+    if (primaryRole === 'admin') {
       navigate('/dashboard/admin');
-    } else if (role === 'maker') {
+    } else if (primaryRole === 'maker') {
       navigate('/dashboard/maker');
     } else {
       navigate('/dashboard');

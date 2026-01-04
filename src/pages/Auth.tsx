@@ -46,46 +46,64 @@ const Auth = () => {
     }
   }, [locationState?.isSignup]);
 
-  // Check if user is logged in and redirect based on role from DB
+  // Check if user is logged in and redirect based on role from user_roles table
   useEffect(() => {
     if (user) {
-      // Fetch profile to check role and onboarding status - always get fresh data
-      supabase
-        .from('profiles')
-        .select('role, onboarding_completed')
-        .eq('id', user.id)
-        .maybeSingle()
-        .then(({ data, error }) => {
-          if (error) {
-            console.error('Error fetching profile:', error);
-            // On error, still try dashboard
+      const fetchAndRedirect = async () => {
+        try {
+          // First check profile for onboarding status
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('onboarding_completed')
+            .eq('id', user.id)
+            .maybeSingle();
+
+          if (profileError) {
+            console.error('Error fetching profile:', profileError);
             navigate('/dashboard');
             return;
           }
 
-          // If no profile exists, go to onboarding to create one
-          if (!data) {
-            console.warn('No profile found for user, redirecting to onboarding');
+          // If no profile exists, go to onboarding
+          if (!profileData) {
             navigate('/onboarding');
             return;
           }
 
           // If onboarding not completed, go there
-          if (data.onboarding_completed === false) {
+          if (profileData.onboarding_completed === false) {
             navigate('/onboarding');
             return;
           }
 
-          // Redirect directly based on role - skip the Dashboard redirect controller
-          const role = data.role || 'customer';
-          if (role === 'admin') {
+          // Now check user_roles for actual role
+          const { data: rolesData, error: rolesError } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', user.id);
+
+          if (rolesError) {
+            console.error('Error fetching roles:', rolesError);
+            navigate('/dashboard/customer', { replace: true });
+            return;
+          }
+
+          // Determine primary role: admin > maker > customer
+          const roles = rolesData?.map(r => r.role) || [];
+          if (roles.includes('admin')) {
             navigate('/dashboard/admin', { replace: true });
-          } else if (role === 'maker') {
+          } else if (roles.includes('maker')) {
             navigate('/dashboard/maker', { replace: true });
           } else {
             navigate('/dashboard/customer', { replace: true });
           }
-        });
+        } catch (err) {
+          console.error('Redirect error:', err);
+          navigate('/dashboard');
+        }
+      };
+
+      fetchAndRedirect();
     }
   }, [user, navigate]);
 
