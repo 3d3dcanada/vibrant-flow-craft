@@ -91,7 +91,7 @@ const App = () => (
             <Route path="/dashboard/community-cleanup" element={<CommunityCleanup />} />
             <Route path="/dashboard/recycling" element={<Recycling />} />
             <Route path="/dashboard/gift-cards" element={<GiftCards />} />
-            
+
             {/* Maker Dashboard routes */}
             <Route path="/dashboard/maker" element={<MakerOverview />} />
             <Route path="/dashboard/maker/requests" element={<MakerRequests />} />
@@ -100,7 +100,7 @@ const App = () => (
             <Route path="/dashboard/maker/filament" element={<MakerFilament />} />
             <Route path="/dashboard/maker/earnings" element={<MakerEarnings />} />
             <Route path="/dashboard/maker/profile" element={<MakerProfile />} />
-            
+
             {/* Admin Dashboard routes */}
             <Route path="/dashboard/admin" element={<AdminOverview />} />
             <Route path="/dashboard/admin/content" element={<AdminContentPromos />} />
@@ -109,7 +109,7 @@ const App = () => (
             <Route path="/dashboard/admin/makers" element={<AdminMakerManager />} />
             <Route path="/dashboard/admin/ops" element={<AdminOperations />} />
             <Route path="/dashboard/admin/buyback" element={<AdminBuybackRequests />} />
-            
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
