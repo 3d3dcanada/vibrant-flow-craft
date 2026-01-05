@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -32,10 +31,10 @@ export const MaterialCard = ({
   const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <motion.div
+    <div
       className={cn(
         "glass-panel p-6 rounded-xl cursor-pointer relative overflow-hidden",
-        "transition-all duration-500"
+        "transition-all duration-500 hover:-translate-y-1"
       )}
       style={{
         borderColor: isHovered ? tagColor : undefined,
@@ -43,12 +42,10 @@ export const MaterialCard = ({
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      whileHover={{ y: -4 }}
-      layout
     >
       {/* Background glow */}
-      <motion.div
-        className="absolute inset-0 opacity-0 transition-opacity duration-500"
+      <div
+        className="absolute inset-0 transition-opacity duration-500"
         style={{
           background: `radial-gradient(circle at center, ${tagColor}10 0%, transparent 70%)`,
           opacity: isHovered ? 1 : 0,
@@ -57,12 +54,12 @@ export const MaterialCard = ({
 
       {/* Header */}
       <div className="flex justify-between items-start mb-4 relative z-10">
-        <motion.h3 
-          className="text-2xl font-bold text-foreground font-tech"
-          animate={{ color: isHovered ? tagColor : undefined }}
+        <h3 
+          className="text-2xl font-bold font-tech transition-colors duration-300"
+          style={{ color: isHovered ? tagColor : undefined }}
         >
           {name}
-        </motion.h3>
+        </h3>
         <span 
           className="text-xs px-2 py-1 rounded"
           style={{ 
@@ -88,13 +85,12 @@ export const MaterialCard = ({
               <span>{stat.value}/10</span>
             </div>
             <div className="w-full bg-muted/30 h-1.5 rounded-full overflow-hidden">
-              <motion.div
-                className="h-1.5 rounded-full"
-                style={{ backgroundColor: stat.color }}
-                initial={{ width: 0 }}
-                whileInView={{ width: `${stat.value * 10}%` }}
-                viewport={{ once: true }}
-                transition={{ duration: 1, delay: 0.2 }}
+              <div
+                className="h-1.5 rounded-full transition-all duration-1000 animate-expand-width"
+                style={{ 
+                  backgroundColor: stat.color,
+                  width: `${stat.value * 10}%`,
+                }}
               />
             </div>
           </div>
@@ -102,14 +98,11 @@ export const MaterialCard = ({
       </div>
 
       {/* Expanded content on hover */}
-      <motion.div
-        initial={{ height: 0, opacity: 0 }}
-        animate={{ 
-          height: isHovered ? "auto" : 0,
-          opacity: isHovered ? 1 : 0,
-        }}
-        transition={{ duration: 0.3 }}
-        className="overflow-hidden relative z-10"
+      <div
+        className={cn(
+          "overflow-hidden relative z-10 transition-all duration-300",
+          isHovered ? "max-h-[200px] opacity-100" : "max-h-0 opacity-0"
+        )}
       >
         <div className="pt-4 mt-4 border-t border-border/30">
           <p className="text-xs text-muted-foreground mb-3">{details}</p>
@@ -130,22 +123,8 @@ export const MaterialCard = ({
             <span className="font-tech font-bold" style={{ color: tagColor }}>{pricePerGram}</span>
           </div>
         </div>
-      </motion.div>
-
-      {/* Scan line effect */}
-      {isHovered && (
-        <motion.div
-          className="absolute left-0 right-0 h-[2px] z-20"
-          style={{
-            background: `linear-gradient(90deg, transparent, ${tagColor}, transparent)`,
-            boxShadow: `0 0 10px ${tagColor}`,
-          }}
-          initial={{ top: "0%" }}
-          animate={{ top: "100%" }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-        />
-      )}
-    </motion.div>
+      </div>
+    </div>
   );
 };
 

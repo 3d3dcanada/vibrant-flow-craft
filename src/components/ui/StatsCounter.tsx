@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
 interface StatsCounterProps {
@@ -10,6 +9,7 @@ interface StatsCounterProps {
 
 export const StatsCounter = ({ value, label, suffix = "", delay = 0 }: StatsCounterProps) => {
   const [displayValue, setDisplayValue] = useState("0");
+  const [isVisible, setIsVisible] = useState(false);
   const numericValue = parseInt(value.replace(/\D/g, "")) || 0;
   const prefix = value.replace(/[\d]+.*/, "");
 
@@ -17,6 +17,8 @@ export const StatsCounter = ({ value, label, suffix = "", delay = 0 }: StatsCoun
     const duration = 2000;
     const startTime = Date.now();
     const startDelay = delay;
+
+    const visibilityTimer = setTimeout(() => setIsVisible(true), delay);
 
     const timer = setTimeout(() => {
       const animate = () => {
@@ -39,27 +41,23 @@ export const StatsCounter = ({ value, label, suffix = "", delay = 0 }: StatsCoun
       requestAnimationFrame(animate);
     }, startDelay);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(visibilityTimer);
+    };
   }, [numericValue, delay]);
 
   return (
-    <motion.div
-      className="group hover:bg-muted/30 p-4 rounded-xl transition-all duration-300 cursor-default"
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay: delay / 1000, duration: 0.5 }}
-      whileHover={{ scale: 1.05 }}
+    <div
+      className={`group hover:bg-muted/30 p-4 rounded-xl transition-all duration-500 cursor-default hover:scale-105 ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'
+      }`}
     >
-      <motion.div 
-        className="text-3xl font-tech font-bold text-foreground group-hover:text-secondary transition-colors"
-        animate={{ textShadow: ["0 0 0px transparent", "0 0 10px hsl(177, 100%, 50%)", "0 0 0px transparent"] }}
-        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-      >
+      <div className="text-3xl font-tech font-bold text-foreground group-hover:text-secondary transition-colors">
         {prefix}{displayValue}{suffix}
-      </motion.div>
+      </div>
       <div className="text-xs text-muted-foreground uppercase tracking-wider mt-1">{label}</div>
-    </motion.div>
+    </div>
   );
 };
 

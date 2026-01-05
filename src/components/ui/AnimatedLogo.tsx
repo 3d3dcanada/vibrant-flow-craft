@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import logo from "@/assets/3D3D_Canada_Logo.png";
 
 interface AnimatedLogoProps {
@@ -16,10 +15,8 @@ export const AnimatedLogo = ({ size = "md", showText = true, className }: Animat
   };
 
   return (
-    <motion.div 
-      className={`flex items-center gap-3 cursor-pointer group ${className}`}
-      whileHover={{ scale: 1.02 }}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+    <div 
+      className={`flex items-center gap-3 cursor-pointer group transition-transform duration-300 hover:scale-[1.02] ${className}`}
     >
       {/* Clean Logo Container */}
       <div className={`relative ${sizeStyles[size].logo} flex items-center justify-center`}>
@@ -33,19 +30,19 @@ export const AnimatedLogo = ({ size = "md", showText = true, className }: Animat
       {/* Text */}
       {showText && (
         <div className="flex flex-col leading-none">
-          <motion.span 
+          <span 
             className={`font-tech font-bold ${sizeStyles[size].text} tracking-wide text-foreground group-hover:text-secondary transition-colors`}
           >
             3D3D<span className="text-secondary">.ca</span>
-          </motion.span>
-          <motion.span 
+          </span>
+          <span 
             className={`${sizeStyles[size].sub} text-muted-foreground uppercase tracking-[0.2em] group-hover:text-primary transition-colors`}
           >
             Distributed Mfg.
-          </motion.span>
+          </span>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 };
 

@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { GlowCard } from '../ui/GlowCard';
 import NeonButton from '../ui/NeonButton';
@@ -36,12 +35,7 @@ const BuybackPromoSection = () => {
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-card/20 to-transparent" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-12"
-        >
+        <div className="text-center mb-12 animate-fade-in">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-success/10 border border-success/30 text-success text-sm font-medium mb-6">
             <Recycle className="w-4 h-4" />
             CIRCULAR ECONOMY
@@ -53,16 +47,14 @@ const BuybackPromoSection = () => {
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Fair prices, Atlantic roots, and a commitment to keeping good machines out of landfills.
           </p>
-        </motion.div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {cards.map((card, i) => (
-            <motion.div
+            <div
               key={card.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
+              className="animate-fade-in"
+              style={{ animationDelay: `${i * 100}ms` }}
             >
               <GlowCard 
                 variant={card.color as 'teal' | 'magenta' | undefined}
@@ -72,7 +64,7 @@ const BuybackPromoSection = () => {
               >
                 <div className="flex items-start gap-4">
                   <div 
-                    className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 border`}
+                    className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 border"
                     style={{
                       backgroundColor: `hsl(var(--${card.color}) / 0.1)`,
                       borderColor: `hsl(var(--${card.color}) / 0.3)`,
@@ -95,7 +87,7 @@ const BuybackPromoSection = () => {
                   </div>
                 </div>
               </GlowCard>
-            </motion.div>
+            </div>
           ))}
         </div>
 

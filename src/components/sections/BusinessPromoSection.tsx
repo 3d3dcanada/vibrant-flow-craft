@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { GlowCard } from "../ui/GlowCard";
 import NeonButton from "../ui/NeonButton";
@@ -35,12 +34,7 @@ export const BusinessPromoSection = () => {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
+        <div className="text-center mb-16 animate-fade-in">
           <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/30 text-primary font-medium text-sm mb-6">
             <Building2 className="w-4 h-4" />
             FOR BUSINESSES
@@ -52,17 +46,15 @@ export const BusinessPromoSection = () => {
             Custom 3D printed promotional items manufactured locally. 
             Support Canadian makers while building your brand.
           </p>
-        </motion.div>
+        </div>
 
         {/* Promo Items Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           {promoItems.map((item, index) => (
-            <motion.div
+            <div
               key={item.name}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
+              className="animate-fade-in"
+              style={{ animationDelay: `${index * 100}ms` }}
             >
               <GlowCard className="overflow-hidden group">
                 <div className="aspect-[4/3] overflow-hidden">
@@ -77,22 +69,17 @@ export const BusinessPromoSection = () => {
                   <p className="text-muted-foreground text-sm">{item.description}</p>
                 </div>
               </GlowCard>
-            </motion.div>
+            </div>
           ))}
         </div>
 
         {/* Value Props */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12"
-        >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 animate-fade-in" style={{ animationDelay: '400ms' }}>
           {[
             { icon: Package, title: "Bulk Pricing", desc: "MOQs from 25 units" },
             { icon: Award, title: "Quality Assured", desc: "Local maker network" },
             { icon: Briefcase, title: "Brand Ready", desc: "Custom colors & logos" },
-          ].map((item, index) => (
+          ].map((item) => (
             <div
               key={item.title}
               className="flex items-center gap-4 p-4 rounded-lg bg-card/50 border border-border/50"
@@ -106,15 +93,10 @@ export const BusinessPromoSection = () => {
               </div>
             </div>
           ))}
-        </motion.div>
+        </div>
 
         {/* CTAs */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-4"
-        >
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in" style={{ animationDelay: '500ms' }}>
           <Link to="/promo-products">
             <NeonButton variant="primary" size="lg">
               <Package className="w-5 h-5 mr-2" />
@@ -127,7 +109,7 @@ export const BusinessPromoSection = () => {
               Business Subscription
             </NeonButton>
           </Link>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

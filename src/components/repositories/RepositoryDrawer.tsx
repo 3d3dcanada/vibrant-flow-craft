@@ -1,13 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, 
   Search, 
   Database, 
   ChevronRight,
   Sparkles,
-  Building2,
   Globe,
   Wrench,
   Landmark,
@@ -98,7 +96,6 @@ export const RepositoryDrawer = ({ isOpen, onClose }: RepositoryDrawerProps) => 
   };
 
   const handleRequestPrintSubmit = (data: PrintRequestFormData) => {
-    // Navigate to quote with prefilled data
     navigate("/", { 
       state: { 
         modelPrintRequest: data 
@@ -108,188 +105,173 @@ export const RepositoryDrawer = ({ isOpen, onClose }: RepositoryDrawerProps) => 
     setShowRequestForm(false);
     onClose();
     
-    // Scroll to quote section after navigation
     setTimeout(() => {
       document.getElementById("quote")?.scrollIntoView({ behavior: "smooth" });
     }, 100);
   };
 
+  if (!isOpen) return null;
+
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Overlay */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
+    <>
+      {/* Overlay */}
+      <div
+        className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm animate-fade-in"
+        onClick={onClose}
+      />
+
+      {/* Drawer */}
+      <div
+        className={`fixed z-50 bg-card border-l border-border shadow-2xl flex flex-col transition-transform duration-300 ease-out ${
+          isMobile 
+            ? "inset-0 translate-y-0" 
+            : "top-0 right-0 h-full w-full max-w-lg translate-x-0"
+        }`}
+        style={{
+          animation: isMobile 
+            ? 'slide-up 0.3s ease-out' 
+            : 'slide-in-right 0.3s ease-out'
+        }}
+      >
+        {/* Header */}
+        <div className="px-5 py-4 border-b border-border bg-muted/30 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center">
+              <Database className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="font-bold text-foreground font-tech text-lg">Find a Model</h2>
+              <p className="text-xs text-muted-foreground">
+                {REPOSITORY_CATEGORIES.reduce((sum, cat) => sum + cat.repositories.length, 0)}+ safe, legal sources
+              </p>
+            </div>
+          </div>
+          <button
             onClick={onClose}
-          />
-
-          {/* Drawer */}
-          <motion.div
-            initial={{ x: isMobile ? 0 : "100%", y: isMobile ? "100%" : 0 }}
-            animate={{ x: 0, y: 0 }}
-            exit={{ x: isMobile ? 0 : "100%", y: isMobile ? "100%" : 0 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className={`fixed z-50 bg-card border-l border-border shadow-2xl flex flex-col ${
-              isMobile 
-                ? "inset-0" 
-                : "top-0 right-0 h-full w-full max-w-lg"
-            }`}
+            className="p-2 rounded-lg hover:bg-background/50 text-muted-foreground hover:text-foreground transition-colors"
           >
-            {/* Header */}
-            <div className="px-5 py-4 border-b border-border bg-muted/30 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center">
-                  <Database className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h2 className="font-bold text-foreground font-tech text-lg">Find a Model</h2>
-                  <p className="text-xs text-muted-foreground">
-                    {REPOSITORY_CATEGORIES.reduce((sum, cat) => sum + cat.repositories.length, 0)}+ safe, legal sources
-                  </p>
-                </div>
-              </div>
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Search */}
+        <div className="px-5 py-3 border-b border-border shrink-0">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search repositories..."
+              className="w-full bg-background/50 border border-border rounded-lg pl-10 pr-4 py-2.5 text-sm text-foreground focus:border-primary outline-none transition-all"
+            />
+            {searchQuery && (
               <button
-                onClick={onClose}
-                className="p-2 rounded-lg hover:bg-background/50 text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
-            </div>
+            )}
+          </div>
+        </div>
 
-            {/* Search */}
-            <div className="px-5 py-3 border-b border-border shrink-0">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search repositories..."
-                  className="w-full bg-background/50 border border-border rounded-lg pl-10 pr-4 py-2.5 text-sm text-foreground focus:border-primary outline-none transition-all"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto">
+          {filteredResults ? (
+            // Search Results
+            <div className="p-5">
+              <p className="text-xs text-muted-foreground mb-3">
+                {filteredResults.length} result{filteredResults.length !== 1 ? "s" : ""} for "{searchQuery}"
+              </p>
+              <div className="space-y-3">
+                {filteredResults.map((repo) => (
+                  <RepositoryCard
+                    key={repo.id}
+                    repository={repo}
+                    onRequestPrint={handleRequestPrint}
+                  />
+                ))}
               </div>
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto">
-              {filteredResults ? (
-                // Search Results
-                <div className="p-5">
-                  <p className="text-xs text-muted-foreground mb-3">
-                    {filteredResults.length} result{filteredResults.length !== 1 ? "s" : ""} for "{searchQuery}"
-                  </p>
-                  <div className="space-y-3">
-                    {filteredResults.map((repo) => (
-                      <RepositoryCard
-                        key={repo.id}
-                        repository={repo}
-                        onRequestPrint={handleRequestPrint}
-                      />
-                    ))}
-                  </div>
-                  {filteredResults.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">No repositories found</p>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                // Category Accordions
-                <div className="p-5 space-y-3">
-                  {REPOSITORY_CATEGORIES.map((category) => (
-                    <div
-                      key={category.id}
-                      className="border border-border rounded-lg overflow-hidden"
-                    >
-                      {/* Category Header */}
-                      <button
-                        onClick={() => toggleCategory(category.id)}
-                        className="w-full px-4 py-3 flex items-center justify-between bg-muted/30 hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="text-primary">
-                            {CATEGORY_ICONS[category.id] || <Database className="w-4 h-4" />}
-                          </div>
-                          <div className="text-left">
-                            <div className="font-bold text-foreground text-sm font-tech">
-                              {category.name}
-                            </div>
-                            <div className="text-[10px] text-muted-foreground">
-                              {category.repositories.length} source{category.repositories.length !== 1 ? "s" : ""}
-                            </div>
-                          </div>
-                        </div>
-                        <motion.div
-                          animate={{ rotate: expandedCategories.has(category.id) ? 90 : 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="text-muted-foreground"
-                        >
-                          <ChevronRight className="w-4 h-4" />
-                        </motion.div>
-                      </button>
-
-                      {/* Category Content */}
-                      <AnimatePresence>
-                        {expandedCategories.has(category.id) && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="p-3 space-y-2 bg-background/30">
-                              {category.repositories.map((repo) => (
-                                <RepositoryCard
-                                  key={repo.id}
-                                  repository={repo}
-                                  onRequestPrint={handleRequestPrint}
-                                />
-                              ))}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  ))}
+              {filteredResults.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No repositories found</p>
                 </div>
               )}
             </div>
+          ) : (
+            // Category Accordions
+            <div className="p-5 space-y-3">
+              {REPOSITORY_CATEGORIES.map((category) => (
+                <div
+                  key={category.id}
+                  className="border border-border rounded-lg overflow-hidden"
+                >
+                  {/* Category Header */}
+                  <button
+                    onClick={() => toggleCategory(category.id)}
+                    className="w-full px-4 py-3 flex items-center justify-between bg-muted/30 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="text-primary">
+                        {CATEGORY_ICONS[category.id] || <Database className="w-4 h-4" />}
+                      </div>
+                      <div className="text-left">
+                        <div className="font-bold text-foreground text-sm font-tech">
+                          {category.name}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {category.repositories.length} source{category.repositories.length !== 1 ? "s" : ""}
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      className={`text-muted-foreground transition-transform duration-200 ${
+                        expandedCategories.has(category.id) ? 'rotate-90' : ''
+                      }`}
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </div>
+                  </button>
 
-            {/* Footer */}
-            <div className="px-5 py-3 border-t border-border bg-muted/20 text-center shrink-0">
-              <p className="text-[10px] text-muted-foreground">
-                All sources vetted for legal, safe content. No weapons or illicit materials.
-              </p>
+                  {/* Category Content */}
+                  {expandedCategories.has(category.id) && (
+                    <div className="overflow-hidden animate-accordion-down">
+                      <div className="p-3 space-y-2 bg-background/30">
+                        {category.repositories.map((repo) => (
+                          <RepositoryCard
+                            key={repo.id}
+                            repository={repo}
+                            onRequestPrint={handleRequestPrint}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
-          </motion.div>
+          )}
+        </div>
 
-          {/* Request Print Form Modal */}
-          <AnimatePresence>
-            {showRequestForm && (
-              <RequestPrintForm
-                repository={selectedRepo || undefined}
-                onClose={() => setShowRequestForm(false)}
-                onSubmit={handleRequestPrintSubmit}
-              />
-            )}
-          </AnimatePresence>
-        </>
+        {/* Footer */}
+        <div className="px-5 py-3 border-t border-border bg-muted/20 text-center shrink-0">
+          <p className="text-[10px] text-muted-foreground">
+            All sources vetted for legal, safe content. No weapons or illicit materials.
+          </p>
+        </div>
+      </div>
+
+      {/* Request Print Form Modal */}
+      {showRequestForm && (
+        <RequestPrintForm
+          repository={selectedRepo || undefined}
+          onClose={() => setShowRequestForm(false)}
+          onSubmit={handleRequestPrintSubmit}
+        />
       )}
-    </AnimatePresence>
+    </>
   );
 };
 
