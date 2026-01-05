@@ -1,8 +1,7 @@
-import { motion, HTMLMotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { ReactNode } from "react";
+import { ReactNode, HTMLAttributes } from "react";
 
-interface GlowCardProps extends Omit<HTMLMotionProps<"div">, "children"> {
+interface GlowCardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   variant?: "teal" | "magenta" | "neutral";
   hover?: "lift" | "glow" | "both" | "none";
@@ -24,27 +23,22 @@ export const GlowCard = ({
     neutral: "hover:border-foreground/20",
   };
 
-  const glowStyles = {
-    sm: "hover:shadow-glow-sm",
-    md: variant === "teal" ? "hover:shadow-neon-teal" : "hover:shadow-neon-magenta",
-    lg: variant === "teal" ? "hover:shadow-neon-teal-lg" : "hover:shadow-neon-magenta-lg",
-  };
+  const hoverTransform = hover === "lift" || hover === "both" 
+    ? "hover:-translate-y-1 hover:scale-[1.02]" 
+    : "";
 
   return (
-    <motion.div
+    <div
       className={cn(
-        "glass-panel rounded-xl p-6",
-        hover === "lift" || hover === "both" ? "hover-lift" : "",
-        hover === "glow" || hover === "both" ? glowStyles[glowIntensity] : "",
-        variantStyles[variant],
+        "glass-panel rounded-xl p-6 transition-all duration-300",
+        hoverTransform,
+        hover === "glow" || hover === "both" ? variantStyles[variant] : "",
         className
       )}
-      whileHover={hover !== "none" ? { scale: hover === "lift" || hover === "both" ? 1.02 : 1 } : {}}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
       {...props}
     >
       {children}
-    </motion.div>
+    </div>
   );
 };
 

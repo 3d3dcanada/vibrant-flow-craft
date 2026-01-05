@@ -1,8 +1,7 @@
-import { motion, HTMLMotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { ReactNode } from "react";
+import { ReactNode, ButtonHTMLAttributes } from "react";
 
-interface NeonButtonProps extends Omit<HTMLMotionProps<"button">, "children"> {
+interface NeonButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
   variant?: "primary" | "secondary" | "outline" | "ghost" | "hero";
   size?: "sm" | "md" | "lg" | "xl";
@@ -22,7 +21,7 @@ export const NeonButton = ({
   className,
   ...props
 }: NeonButtonProps) => {
-  const baseStyles = "relative overflow-hidden font-tech font-bold tracking-wide transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none";
+  const baseStyles = "relative overflow-hidden font-tech font-bold tracking-wide transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none hover:scale-[1.02] hover:-translate-y-0.5 active:scale-[0.98]";
 
   const variantStyles = {
     primary: cn(
@@ -54,11 +53,8 @@ export const NeonButton = ({
   };
 
   return (
-    <motion.button
+    <button
       className={cn(baseStyles, variantStyles[variant], sizeStyles[size], className)}
-      whileHover={{ scale: 1.02, y: -2 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ type: "spring", stiffness: 400, damping: 17 }}
       {...props}
     >
       {/* Shimmer effect */}
@@ -70,7 +66,7 @@ export const NeonButton = ({
         {children}
         {icon && iconPosition === "right" && icon}
       </span>
-    </motion.button>
+    </button>
   );
 };
 

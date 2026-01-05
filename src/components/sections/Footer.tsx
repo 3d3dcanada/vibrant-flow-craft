@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { Mail, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import AnimatedLogo from "../ui/AnimatedLogo";
@@ -31,26 +30,10 @@ const TikTokIcon = () => (
 );
 
 const socialLinks = [
-  { 
-    icon: YouTubeIcon, 
-    href: "https://www.youtube.com/@3D3Dcanada/shorts",
-    label: "YouTube"
-  },
-  { 
-    icon: FacebookIcon, 
-    href: "https://www.facebook.com/profile.php?id=61575548079847",
-    label: "Facebook"
-  },
-  { 
-    icon: InstagramIcon, 
-    href: "https://www.instagram.com/3d3dca/",
-    label: "Instagram"
-  },
-  { 
-    icon: TikTokIcon, 
-    href: "https://www.tiktok.com/@3d3dcanada",
-    label: "TikTok"
-  },
+  { icon: YouTubeIcon, href: "https://www.youtube.com/@3D3Dcanada/shorts", label: "YouTube" },
+  { icon: FacebookIcon, href: "https://www.facebook.com/profile.php?id=61575548079847", label: "Facebook" },
+  { icon: InstagramIcon, href: "https://www.instagram.com/3d3dca/", label: "Instagram" },
+  { icon: TikTokIcon, href: "https://www.tiktok.com/@3d3dcanada", label: "TikTok" },
 ];
 
 const footerLinks = {
@@ -138,18 +121,16 @@ export const Footer = () => {
               <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider font-bold">Follow Us</p>
               <div className="flex gap-3">
                 {socialLinks.map((social) => (
-                  <motion.a
+                  <a
                     key={social.label}
                     href={social.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-10 h-10 rounded-lg bg-muted/30 flex items-center justify-center text-muted-foreground hover:bg-secondary/10 hover:text-secondary transition-all"
-                    whileHover={{ scale: 1.1, y: -2 }}
-                    whileTap={{ scale: 0.95 }}
+                    className="w-10 h-10 rounded-lg bg-muted/30 flex items-center justify-center text-muted-foreground hover:bg-secondary/10 hover:text-secondary transition-all hover:scale-110 hover:-translate-y-0.5 active:scale-95"
                     aria-label={social.label}
                   >
                     <social.icon />
-                  </motion.a>
+                  </a>
                 ))}
               </div>
             </div>
@@ -219,14 +200,10 @@ export const Footer = () => {
           </p>
 
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <motion.span
-              className="flex items-center gap-2"
-              animate={{ opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
+            <span className="flex items-center gap-2 animate-pulse">
               <span className="w-2 h-2 rounded-full bg-success" />
               All systems operational
-            </motion.span>
+            </span>
           </div>
         </div>
       </div>

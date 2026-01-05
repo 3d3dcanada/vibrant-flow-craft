@@ -1,5 +1,3 @@
-import { motion } from "framer-motion";
-
 const tickerItems = [
   { text: "ORDER #8922 COMPLETED IN MONCTON", status: "success" },
   { text: "NEW MAKER JOINED: HALIFAX_NODE_42", status: "info" },
@@ -28,24 +26,14 @@ const statusDots = {
 export const LiveTicker = () => {
   return (
     <div className="w-full bg-background/50 border-y border-border overflow-hidden py-3 backdrop-blur-sm">
-      <motion.div
-        className="flex whitespace-nowrap gap-12 text-xs font-mono text-muted-foreground"
-        animate={{ x: [0, -2000] }}
-        transition={{
-          x: {
-            duration: 40,
-            repeat: Infinity,
-            ease: "linear",
-          },
-        }}
-      >
+      <div className="flex whitespace-nowrap gap-12 text-xs font-mono text-muted-foreground animate-marquee">
         {[...tickerItems, ...tickerItems].map((item, index) => (
           <span key={index} className="flex items-center gap-2">
             <span className={`w-2 h-2 rounded-full ${statusDots[item.status as keyof typeof statusDots]}`} />
             <span className={statusColors[item.status as keyof typeof statusColors]}>{item.text}</span>
           </span>
         ))}
-      </motion.div>
+      </div>
     </div>
   );
 };

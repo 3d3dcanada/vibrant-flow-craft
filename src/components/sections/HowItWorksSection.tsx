@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { Box, Layers, Printer, HandHeart } from "lucide-react";
 import { GlowCard } from "../ui/GlowCard";
 
@@ -61,25 +60,6 @@ const steps = [
   },
 ];
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.2,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5 },
-  },
-};
-
 export const HowItWorksSection = () => {
   return (
     <section id="how-it-works" className="py-24 relative overflow-hidden">
@@ -88,12 +68,7 @@ export const HowItWorksSection = () => {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Section Header */}
-        <motion.div
-          className="text-center mb-16"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-        >
+        <div className="text-center mb-16 animate-fade-in">
           <span className="text-secondary font-bold tracking-widest uppercase text-sm mb-2 block">
             Beginner's Guide
           </span>
@@ -103,28 +78,22 @@ export const HowItWorksSection = () => {
           <p className="text-muted-foreground max-w-2xl mx-auto">
             No jargon. No assumptions. This is your 5-minute crash course from zero to print-ready.
           </p>
-        </motion.div>
+        </div>
 
         {/* Timeline */}
-        <motion.div
-          className="relative"
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-        >
+        <div className="relative">
           {/* Connecting line */}
           <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 w-[2px] bg-gradient-to-b from-secondary via-primary to-success" />
 
           {/* Steps */}
           <div className="space-y-12 lg:space-y-0">
             {steps.map((step, index) => (
-              <motion.div
+              <div
                 key={step.number}
-                className={`lg:grid lg:grid-cols-2 lg:gap-12 items-center ${
+                className={`lg:grid lg:grid-cols-2 lg:gap-12 items-center animate-fade-in ${
                   index % 2 === 1 ? "lg:direction-rtl" : ""
                 }`}
-                variants={itemVariants}
+                style={{ animationDelay: `${index * 200}ms` }}
               >
                 {/* Content */}
                 <div className={`${index % 2 === 1 ? "lg:order-2 lg:text-right" : ""} mb-8 lg:mb-0`}>
@@ -134,8 +103,8 @@ export const HowItWorksSection = () => {
                     className="relative"
                   >
                     {/* Step number badge */}
-                    <motion.div
-                      className={`absolute -top-4 ${index % 2 === 1 ? "lg:right-6 right-6" : "left-6"} w-10 h-10 rounded-full border-2 flex items-center justify-center font-bold text-lg bg-background z-10`}
+                    <div
+                      className={`absolute -top-4 ${index % 2 === 1 ? "lg:right-6 right-6" : "left-6"} w-10 h-10 rounded-full border-2 flex items-center justify-center font-bold text-lg bg-background z-10 transition-transform hover:scale-110 hover:rotate-[360deg] duration-500`}
                       style={{
                         borderColor: step.variant === "teal" ? "hsl(var(--secondary))" 
                           : step.variant === "magenta" ? "hsl(var(--primary))"
@@ -152,16 +121,14 @@ export const HowItWorksSection = () => {
                           : "transparent"
                         }`,
                       }}
-                      whileHover={{ scale: 1.1, rotate: 360 }}
-                      transition={{ duration: 0.5 }}
                     >
                       {step.number}
-                    </motion.div>
+                    </div>
 
                     {/* Icon */}
                     <div className="flex items-start gap-4 mt-4">
-                      <motion.div
-                        className={`w-16 h-16 rounded-xl flex items-center justify-center text-3xl shrink-0`}
+                      <div
+                        className="w-16 h-16 rounded-xl flex items-center justify-center text-3xl shrink-0 animate-float"
                         style={{
                           backgroundColor: step.variant === "teal" ? "hsl(var(--secondary) / 0.1)" 
                             : step.variant === "magenta" ? "hsl(var(--primary) / 0.1)"
@@ -172,11 +139,9 @@ export const HowItWorksSection = () => {
                             : step.variant === "success" ? "hsl(var(--success))"
                             : "hsl(var(--foreground))",
                         }}
-                        animate={{ y: [0, -5, 0] }}
-                        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
                       >
                         <step.icon className="w-8 h-8" />
-                      </motion.div>
+                      </div>
 
                       <div className="flex-1">
                         <h3 className="text-xl font-bold text-foreground mb-2">{step.title}</h3>
@@ -197,20 +162,10 @@ export const HowItWorksSection = () => {
                     </div>
 
                     {/* Expandable details */}
-                    <motion.div
-                      className="mt-4 pt-4 border-t border-border/30"
-                      initial={{ opacity: 0.7 }}
-                      whileHover={{ opacity: 1 }}
-                    >
+                    <div className="mt-4 pt-4 border-t border-border/30 opacity-70 hover:opacity-100 transition-opacity">
                       <ul className="text-xs text-muted-foreground space-y-1">
                         {step.details.map((detail, i) => (
-                          <motion.li 
-                            key={i}
-                            className="flex items-start gap-2"
-                            initial={{ x: -10, opacity: 0 }}
-                            whileInView={{ x: 0, opacity: 1 }}
-                            transition={{ delay: i * 0.1 }}
-                          >
+                          <li key={i} className="flex items-start gap-2">
                             <span 
                               className="w-1 h-1 rounded-full mt-1.5 shrink-0"
                               style={{
@@ -221,19 +176,19 @@ export const HowItWorksSection = () => {
                               }}
                             />
                             {detail}
-                          </motion.li>
+                          </li>
                         ))}
                       </ul>
-                    </motion.div>
+                    </div>
                   </GlowCard>
                 </div>
 
                 {/* Visual placeholder for other side */}
                 <div className={`hidden lg:block ${index % 2 === 1 ? "lg:order-1" : ""}`} />
-              </motion.div>
+              </div>
             ))}
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

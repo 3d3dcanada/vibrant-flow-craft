@@ -1,5 +1,4 @@
-import { motion } from "framer-motion";
-import { Handshake, Copyright, Users } from "lucide-react";
+import { Handshake, Copyright } from "lucide-react";
 import { GlowCard } from "../ui/GlowCard";
 
 export const AboutSection = () => {
@@ -11,12 +10,7 @@ export const AboutSection = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           {/* Left content */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
+          <div className="animate-fade-in">
             <span className="text-primary font-bold tracking-widest uppercase text-sm mb-2 block">
               Our Mission
             </span>
@@ -37,9 +31,8 @@ export const AboutSection = () => {
 
             {/* Feature cards */}
             <div className="grid grid-cols-2 gap-6">
-              <motion.div
-                className="bg-muted/30 p-4 rounded-xl border border-border/50 hover:border-secondary/50 transition-all"
-                whileHover={{ scale: 1.02, y: -2 }}
+              <div
+                className="bg-muted/30 p-4 rounded-xl border border-border/50 hover:border-secondary/50 transition-all hover:scale-[1.02] hover:-translate-y-0.5"
               >
                 <div className="text-secondary text-3xl mb-2">
                   <Handshake />
@@ -48,11 +41,10 @@ export const AboutSection = () => {
                 <p className="text-xs text-muted-foreground mt-1">
                   Makers keep 75% of revenue. We take a flat fee to run the platform.
                 </p>
-              </motion.div>
+              </div>
 
-              <motion.div
-                className="bg-muted/30 p-4 rounded-xl border border-border/50 hover:border-primary/50 transition-all"
-                whileHover={{ scale: 1.02, y: -2 }}
+              <div
+                className="bg-muted/30 p-4 rounded-xl border border-border/50 hover:border-primary/50 transition-all hover:scale-[1.02] hover:-translate-y-0.5"
               >
                 <div className="text-primary text-3xl mb-2">
                   <Copyright />
@@ -61,18 +53,12 @@ export const AboutSection = () => {
                 <p className="text-xs text-muted-foreground mt-1">
                   We automatically pay 25¢ royalties to file creators.
                 </p>
-              </motion.div>
+              </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* Right - Team card */}
-          <motion.div
-            className="relative"
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
+          <div className="relative animate-fade-in" style={{ animationDelay: '200ms' }}>
             {/* Glow background */}
             <div className="absolute inset-0 bg-gradient-to-br from-secondary/20 to-primary/20 rounded-2xl blur-xl opacity-50 transform rotate-3" />
 
@@ -106,17 +92,12 @@ export const AboutSection = () => {
                     color: "success",
                   },
                 ].map((member, index) => (
-                  <motion.div
+                  <div
                     key={member.role}
-                    className="flex items-center gap-4 group cursor-default"
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: index * 0.1 }}
-                    whileHover={{ x: 4 }}
+                    className="flex items-center gap-4 group cursor-default transition-transform hover:translate-x-1"
                   >
-                    <motion.div
-                      className={`w-16 h-16 rounded-full bg-card border-2 flex items-center justify-center text-2xl overflow-hidden transition-all`}
+                    <div
+                      className={`w-16 h-16 rounded-full bg-card border-2 flex items-center justify-center text-2xl overflow-hidden transition-transform hover:scale-110 hover:rotate-[5deg]`}
                       style={{
                         borderColor:
                           member.color === "secondary"
@@ -125,47 +106,33 @@ export const AboutSection = () => {
                             ? "hsl(var(--primary))"
                             : "hsl(var(--success))",
                       }}
-                      whileHover={{ scale: 1.1, rotate: 5 }}
                     >
                       {member.icon}
-                    </motion.div>
+                    </div>
                     <div>
-                      <h4
-                        className="font-bold text-foreground transition-colors"
-                        style={{
-                          color: undefined,
-                        }}
-                      >
-                        <span className={`group-hover:text-${member.color}`}>{member.role}</span>
+                      <h4 className="font-bold text-foreground transition-colors group-hover:text-secondary">
+                        {member.role}
                       </h4>
                       <p className="text-xs text-muted-foreground uppercase tracking-wider">
                         {member.title}
                       </p>
                       <p className="text-sm text-muted-foreground mt-1">{member.desc}</p>
                     </div>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
 
               {/* Join CTA */}
-              <motion.div
-                className="mt-8 pt-6 border-t border-border/30"
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-              >
+              <div className="mt-8 pt-6 border-t border-border/30">
                 <p className="text-sm text-muted-foreground mb-3">
                   Have a 3D printer? Join our maker network and earn money.
                 </p>
-                <motion.button
-                  className="text-secondary font-tech font-bold text-sm animated-underline"
-                  whileHover={{ scale: 1.05 }}
-                >
+                <button className="text-secondary font-tech font-bold text-sm animated-underline hover:scale-105 transition-transform">
                   Become a Maker →
-                </motion.button>
-              </motion.div>
+                </button>
+              </div>
             </GlowCard>
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>

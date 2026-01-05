@@ -1,5 +1,4 @@
-import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Menu, X, Database, Zap, User, LogIn } from "lucide-react";
 import AnimatedLogo from "./AnimatedLogo";
@@ -20,27 +19,29 @@ export const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
-  // Handle scroll
-  if (typeof window !== "undefined") {
-    window.addEventListener("scroll", () => {
+  useEffect(() => {
+    setIsVisible(true);
+    
+    const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
-    });
-  }
+    };
+    
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
     <>
-      <motion.nav
+      <nav
         className={`fixed w-full z-50 transition-all duration-300 border-b ${
           isScrolled 
             ? "bg-background/95 backdrop-blur-xl border-border shadow-lg" 
             : "bg-background/80 backdrop-blur-md border-transparent"
-        }`}
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.5 }}
+        } ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
@@ -71,15 +72,13 @@ export const Navbar = () => {
                 )
               ))}
 
-              <motion.button
-                className="text-sm font-medium text-foreground hover:text-primary transition-colors flex items-center gap-2 group py-2 px-4 rounded-lg border border-border hover:bg-muted/50"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+              <button
+                className="text-sm font-medium text-foreground hover:text-primary transition-all duration-200 flex items-center gap-2 group py-2 px-4 rounded-lg border border-border hover:bg-muted/50 hover:scale-[1.02] active:scale-[0.98]"
                 onClick={() => setIsDrawerOpen(true)}
               >
                 <Database className="w-4 h-4 text-primary group-hover:animate-bounce" />
                 Find a Model
-              </motion.button>
+              </button>
 
               <NeonButton
                 variant="primary"
@@ -115,138 +114,123 @@ export const Navbar = () => {
             </div>
 
             {/* Mobile Menu Toggle */}
-            <motion.button
-              className="md:hidden text-foreground text-2xl hover:text-secondary transition-colors"
+            <button
+              className="md:hidden text-foreground text-2xl hover:text-secondary transition-colors active:scale-90"
               onClick={() => setIsMobileMenuOpen(true)}
-              whileTap={{ scale: 0.9 }}
             >
               <Menu />
-            </motion.button>
+            </button>
           </div>
         </div>
-      </motion.nav>
+      </nav>
 
       {/* Mobile Menu Overlay */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-            className="fixed inset-0 z-[100] bg-background/98 backdrop-blur-2xl md:hidden"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <div className="p-8 flex flex-col h-full justify-center space-y-8 text-center relative">
-              <motion.button
-                className="absolute top-6 right-6 text-muted-foreground text-3xl hover:text-foreground transition-colors"
-                onClick={() => setIsMobileMenuOpen(false)}
-                whileHover={{ rotate: 90 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                <X />
-              </motion.button>
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 z-[100] bg-background/98 backdrop-blur-2xl md:hidden animate-fade-in"
+        >
+          <div className="p-8 flex flex-col h-full justify-center space-y-8 text-center relative">
+            <button
+              className="absolute top-6 right-6 text-muted-foreground text-3xl hover:text-foreground transition-all hover:rotate-90 active:scale-90"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <X />
+            </button>
 
-              <div className="text-secondary text-sm tracking-widest uppercase font-bold mb-4 border-b border-border pb-4">
-                Main Menu
-              </div>
+            <div className="text-secondary text-sm tracking-widest uppercase font-bold mb-4 border-b border-border pb-4">
+              Main Menu
+            </div>
 
-              {navLinks.map((link, index) => (
-                link.isRoute ? (
-                  <motion.div
-                    key={link.label}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                  >
-                    <Link
-                      to={link.href}
-                      className="text-2xl font-tech font-bold text-foreground hover:text-secondary transition-colors flex items-center justify-center gap-3"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      {link.label}
-                    </Link>
-                  </motion.div>
-                ) : (
-                  <motion.a
-                    key={link.label}
-                    href={link.href}
+            {navLinks.map((link, index) => (
+              link.isRoute ? (
+                <div
+                  key={link.label}
+                  className="animate-fade-in"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <Link
+                    to={link.href}
                     className="text-2xl font-tech font-bold text-foreground hover:text-secondary transition-colors flex items-center justify-center gap-3"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
                   >
                     {link.label}
-                  </motion.a>
-                )
-              ))}
+                  </Link>
+                </div>
+              ) : (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  className="text-2xl font-tech font-bold text-foreground hover:text-secondary transition-colors flex items-center justify-center gap-3 animate-fade-in"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  {link.label}
+                </a>
+              )
+            ))}
 
-              {/* STL Repositories - Mobile */}
-              <motion.button
-                className="text-2xl font-tech font-bold text-primary hover:text-secondary transition-colors flex items-center justify-center gap-3"
+            {/* STL Repositories - Mobile */}
+            <button
+              className="text-2xl font-tech font-bold text-primary hover:text-secondary transition-colors flex items-center justify-center gap-3 animate-fade-in"
+              style={{ animationDelay: `${navLinks.length * 100}ms` }}
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                setIsDrawerOpen(true);
+              }}
+            >
+              <Database className="w-6 h-6" />
+              STL Repositories
+            </button>
+
+            <div
+              className="pt-8 space-y-4 animate-fade-in"
+              style={{ animationDelay: '400ms' }}
+            >
+              <NeonButton
+                variant="secondary"
+                size="xl"
+                className="w-full"
                 onClick={() => {
                   setIsMobileMenuOpen(false);
-                  setIsDrawerOpen(true);
+                  document.getElementById("quote")?.scrollIntoView({ behavior: "smooth" });
                 }}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: navLinks.length * 0.1 }}
               >
-                <Database className="w-6 h-6" />
-                STL Repositories
-              </motion.button>
+                START PRINTING
+              </NeonButton>
 
-              <motion.div
-                className="pt-8 space-y-4"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-              >
-                <NeonButton
-                  variant="secondary"
-                  size="xl"
-                  className="w-full"
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    document.getElementById("quote")?.scrollIntoView({ behavior: "smooth" });
-                  }}
-                >
-                  START PRINTING
-                </NeonButton>
-
-                {!loading && (
-                  user ? (
-                    <NeonButton
-                      variant="outline"
-                      size="lg"
-                      className="w-full"
-                      icon={<User className="w-5 h-5" />}
-                      onClick={() => {
-                        setIsMobileMenuOpen(false);
-                        navigate('/dashboard');
-                      }}
-                    >
-                      Dashboard
-                    </NeonButton>
-                  ) : (
-                    <NeonButton
-                      variant="primary"
-                      size="lg"
-                      className="w-full"
-                      icon={<LogIn className="w-5 h-5" />}
-                      onClick={() => {
-                        setIsMobileMenuOpen(false);
-                        navigate('/auth');
-                      }}
-                    >
-                      Login / Sign Up
-                    </NeonButton>
-                  )
-                )}
-              </motion.div>
+              {!loading && (
+                user ? (
+                  <NeonButton
+                    variant="outline"
+                    size="lg"
+                    className="w-full"
+                    icon={<User className="w-5 h-5" />}
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      navigate('/dashboard');
+                    }}
+                  >
+                    Dashboard
+                  </NeonButton>
+                ) : (
+                  <NeonButton
+                    variant="primary"
+                    size="lg"
+                    className="w-full"
+                    icon={<LogIn className="w-5 h-5" />}
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      navigate('/auth');
+                    }}
+                  >
+                    Login / Sign Up
+                  </NeonButton>
+                )
+              )}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </div>
+      )}
 
       {/* Repository Drawer */}
       <RepositoryDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />
