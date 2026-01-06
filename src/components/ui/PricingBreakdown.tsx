@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Info, Sparkles, UserPlus, Clock, Package } from 'lucide-react';
 import { QuoteBreakdown, FREE_MEMBER_DISCOUNT_RATE, SLA_TIMELINES } from '@/config/pricing';
@@ -90,11 +89,7 @@ export const PricingBreakdown = ({
 
       {/* Member Savings Banner (for non-members) */}
       {!isMember && breakdown.memberSavings > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-3 rounded-lg bg-secondary/10 border border-secondary/30"
-        >
+        <div className="p-3 rounded-lg bg-secondary/10 border border-secondary/30 animate-fade-in">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-secondary" />
@@ -117,19 +112,15 @@ export const PricingBreakdown = ({
               Join Free
             </NeonButton>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* Member Pricing Applied Label */}
       {isMember && breakdown.memberSavings > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-2 text-success text-sm"
-        >
+        <div className="flex items-center gap-2 text-success text-sm animate-fade-in">
           <Sparkles className="w-4 h-4" />
           <span>Member pricing applied — saving {formatCad(breakdown.memberSavings)}</span>
-        </motion.div>
+        </div>
       )}
 
       {/* Total Display */}
@@ -143,15 +134,9 @@ export const PricingBreakdown = ({
           </p>
         </div>
         <div className="text-right">
-          <motion.div
-            className="text-4xl font-tech font-bold text-secondary"
-            key={displayCredits}
-            initial={{ scale: 1.1 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.3 }}
-          >
+          <div className="text-4xl font-tech font-bold text-secondary transition-transform duration-300">
             {formatCredits(displayCredits)}
-          </motion.div>
+          </div>
           <div className="text-sm text-muted-foreground">
             {formatCad(displayTotal)}
           </div>
@@ -174,18 +159,16 @@ export const PricingBreakdown = ({
 
         <div className="space-y-2">
           {visibleLineItems.map((item, index) => (
-            <motion.div
+            <div
               key={`${item.label}-${index}`}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.03 }}
-              className={`flex justify-between items-start text-sm ${
+              className={`flex justify-between items-start text-sm animate-fade-in ${
                 item.type === 'discount' ? 'text-success' : 
                 item.type === 'adjustment' ? 'text-warning' : 
                 item.type === 'rush' ? 'text-primary' :
                 item.type === 'info' ? 'text-muted-foreground/70 italic' :
                 'text-muted-foreground'
               }`}
+              style={{ animationDelay: `${index * 30}ms` }}
             >
               <div className="flex-1">
                 <span className={
@@ -212,7 +195,7 @@ export const PricingBreakdown = ({
                   : `${item.amount < 0 ? '-' : ''}${formatCad(Math.abs(item.amount))}`
                 }
               </span>
-            </motion.div>
+            </div>
           ))}
         </div>
 
@@ -265,8 +248,6 @@ export const PricingBreakdown = ({
           </p>
         </div>
       </div>
-
-      {/* Removed Maker Payout section - customer-facing UI should not show maker earnings */}
     </div>
   );
 };

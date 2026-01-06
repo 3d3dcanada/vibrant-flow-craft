@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { 
@@ -146,11 +145,7 @@ Consequences:
 
       <main className="container mx-auto px-4 py-12 max-w-4xl">
         {/* Hero */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
+        <div className="text-center mb-12 animate-fade-in">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/20 mb-6">
             <Users className="w-10 h-10 text-primary" />
           </div>
@@ -160,15 +155,10 @@ Consequences:
           <p className="text-muted-foreground">
             Last updated: {lastUpdated}
           </p>
-        </motion.div>
+        </div>
 
         {/* Intro */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mb-8"
-        >
+        <div className="mb-8 animate-fade-in" style={{ animationDelay: '100ms' }}>
           <GlowCard className="p-6">
             <p className="text-muted-foreground leading-relaxed">
               3D3D is a community of makers, designers, and customers working together. This policy 
@@ -176,16 +166,15 @@ Consequences:
               how we handle issues. By using 3D3D, you agree to follow these guidelines.
             </p>
           </GlowCard>
-        </motion.div>
+        </div>
 
         {/* Sections */}
         <div className="space-y-6">
           {sections.map((section, index) => (
-            <motion.div
+            <div
               key={index}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 + index * 0.05 }}
+              className="animate-fade-in"
+              style={{ animationDelay: `${100 + index * 50}ms` }}
             >
               <GlowCard className="p-6">
                 <div className="flex items-start gap-4">
@@ -200,17 +189,12 @@ Consequences:
                   </div>
                 </div>
               </GlowCard>
-            </motion.div>
+            </div>
           ))}
         </div>
 
         {/* Contact */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="mt-12"
-        >
+        <div className="mt-12 animate-fade-in" style={{ animationDelay: '500ms' }}>
           <GlowCard className="p-6 bg-secondary/5 border-secondary/20">
             <div className="flex items-start gap-4">
               <div className="p-3 rounded-xl bg-secondary/20">
@@ -229,7 +213,7 @@ Consequences:
               </div>
             </div>
           </GlowCard>
-        </motion.div>
+        </div>
 
         {/* Links */}
         <div className="mt-8 text-center text-sm text-muted-foreground">

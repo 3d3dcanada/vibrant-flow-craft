@@ -1,4 +1,3 @@
-import { motion, AnimatePresence } from "framer-motion";
 import { useState, ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -52,7 +51,7 @@ export const ExpandableCard = ({
   };
 
   return (
-    <motion.div
+    <div
       className={cn(
         "glass-panel rounded-xl overflow-hidden cursor-pointer group transition-all duration-300",
         variantStyles[variant].border,
@@ -61,22 +60,20 @@ export const ExpandableCard = ({
         className
       )}
       onClick={() => setIsExpanded(!isExpanded)}
-      layout
     >
       {/* Header */}
       <div className="p-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
           {icon && (
-            <motion.div
+            <div
               className={cn(
-                "w-12 h-12 rounded-lg bg-card flex items-center justify-center text-2xl transition-all duration-300",
-                variantStyles[variant].icon
+                "w-12 h-12 rounded-lg bg-card flex items-center justify-center text-2xl transition-all duration-500",
+                variantStyles[variant].icon,
+                isExpanded && "rotate-[360deg]"
               )}
-              animate={{ rotate: isExpanded ? 360 : 0 }}
-              transition={{ duration: 0.5 }}
             >
               {icon}
-            </motion.div>
+            </div>
           )}
           <div>
             <h3 className="text-lg font-bold text-foreground font-tech">{title}</h3>
@@ -86,32 +83,25 @@ export const ExpandableCard = ({
           </div>
         </div>
 
-        <motion.div
-          animate={{ rotate: isExpanded ? 180 : 0 }}
-          transition={{ duration: 0.3 }}
-          className="text-muted-foreground"
+        <div
+          className={cn(
+            "text-muted-foreground transition-transform duration-300",
+            isExpanded && "rotate-180"
+          )}
         >
           <ChevronDown className="w-5 h-5" />
-        </motion.div>
+        </div>
       </div>
 
       {/* Expandable Content */}
-      <AnimatePresence initial={false}>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="overflow-hidden"
-          >
-            <div className="px-6 pb-6 border-t border-border/50 pt-4">
-              {children}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+      {isExpanded && (
+        <div className="overflow-hidden animate-accordion-down">
+          <div className="px-6 pb-6 border-t border-border/50 pt-4">
+            {children}
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

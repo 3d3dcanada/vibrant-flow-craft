@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { ParticleBackground } from '@/components/ui/ParticleBackground';
@@ -170,11 +169,7 @@ const CommunityModels = () => {
 
         <main className="container mx-auto px-4 py-8">
           {/* Hero */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-8"
-          >
+          <div className="text-center mb-8 animate-fade-in">
             <h1 className="text-4xl font-tech font-bold text-foreground mb-2">
               Community Models
             </h1>
@@ -194,7 +189,7 @@ const CommunityModels = () => {
                 </div>
               ))}
             </div>
-          </motion.div>
+          </div>
 
           {/* Tabs */}
           <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
@@ -217,11 +212,7 @@ const CommunityModels = () => {
 
           {/* Browse Tab */}
           {activeTab === 'browse' && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="space-y-6"
-            >
+            <div className="space-y-6 animate-fade-in">
               {/* Search & Filters */}
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1 relative">
@@ -260,11 +251,10 @@ const CommunityModels = () => {
               ) : models && models.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {models.map((model: any, index: number) => (
-                    <motion.div
+                    <div
                       key={model.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
+                      className="animate-fade-in"
+                      style={{ animationDelay: `${index * 50}ms` }}
                     >
                       <GlowCard className="overflow-hidden group cursor-pointer">
                         <div className="aspect-square bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center relative">
@@ -300,7 +290,7 @@ const CommunityModels = () => {
                           </div>
                         </div>
                       </GlowCard>
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
               ) : (
@@ -314,15 +304,12 @@ const CommunityModels = () => {
                   </NeonButton>
                 </div>
               )}
-            </motion.div>
+            </div>
           )}
 
           {/* Upload Tab */}
           {activeTab === 'upload' && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
+            <div className="animate-fade-in">
               <div className="max-w-2xl mx-auto">
                 <GlowCard className="p-6 mb-6 bg-success/5 border-success/20">
                   <div className="flex items-center gap-4">
@@ -414,15 +401,12 @@ const CommunityModels = () => {
                   </div>
                 </GlowCard>
               </div>
-            </motion.div>
+            </div>
           )}
 
           {/* My Models Tab */}
           {activeTab === 'my-models' && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
+            <div className="animate-fade-in">
               {myModelsLoading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[...Array(4)].map((_, i) => (
@@ -475,7 +459,7 @@ const CommunityModels = () => {
                   </NeonButton>
                 </div>
               )}
-            </motion.div>
+            </div>
           )}
         </main>
       </div>
