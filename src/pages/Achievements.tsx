@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAchievements, useUserAchievements } from '@/hooks/useUserData';
 import { ParticleBackground } from '@/components/ui/ParticleBackground';
@@ -59,11 +58,7 @@ const Achievements = () => {
 
         <main className="container mx-auto px-4 py-12">
           {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-12"
-          >
+          <div className="text-center mb-12 animate-fade-in">
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-yellow-500/20 mb-6">
               <Trophy className="w-10 h-10 text-yellow-500" />
             </div>
@@ -74,7 +69,7 @@ const Achievements = () => {
               <span className="text-secondary font-semibold">{userAchievements?.length || 0}</span> of{' '}
               <span className="font-semibold">{achievements?.length || 0}</span> unlocked
             </p>
-          </motion.div>
+          </div>
 
           {/* Achievements Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -83,11 +78,10 @@ const Achievements = () => {
               const Icon = iconMap[achievement.icon] || Trophy;
               
               return (
-                <motion.div
+                <div
                   key={achievement.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
+                  className="animate-fade-in"
+                  style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <GlowCard 
                     className={`p-6 h-full transition-all ${
@@ -131,7 +125,7 @@ const Achievements = () => {
                       </div>
                     </div>
                   </GlowCard>
-                </motion.div>
+                </div>
               );
             })}
           </div>

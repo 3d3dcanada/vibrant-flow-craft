@@ -257,7 +257,7 @@ export const QuoteSection = () => {
                 </div>
 
                 {/* Price Breakdown */}
-                <PricingBreakdown breakdown={quoteBreakdown} />
+                <PricingBreakdown breakdown={quoteBreakdown} qty={qty} />
 
                 {/* CTA */}
                 <div className="mt-6">

@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { 
@@ -74,11 +73,7 @@ const About = () => {
 
       <main className="container mx-auto px-4 py-12 max-w-5xl">
         {/* Hero */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-16"
-        >
+        <div className="text-center mb-16 animate-fade-in">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/20 mb-6">
             <Users className="w-10 h-10 text-primary" />
           </div>
@@ -89,15 +84,10 @@ const About = () => {
             We're building a different kind of manufacturing company — one that's distributed, 
             fair, and rooted in Atlantic Canadian communities.
           </p>
-        </motion.div>
+        </div>
 
         {/* Founder Story */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mb-16"
-        >
+        <div className="mb-16 animate-fade-in" style={{ animationDelay: '100ms' }}>
           <GlowCard className="p-8">
             <h2 className="text-2xl font-tech font-bold text-foreground mb-4 flex items-center gap-3">
               <Coffee className="w-6 h-6 text-secondary" />
@@ -124,15 +114,10 @@ const About = () => {
               </p>
             </div>
           </GlowCard>
-        </motion.div>
+        </div>
 
         {/* Our People */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-16"
-        >
+        <div className="mb-16 animate-fade-in" style={{ animationDelay: '200ms' }}>
           <h2 className="text-2xl font-tech font-bold text-foreground mb-6 text-center">
             The People Behind 3D3D
           </h2>
@@ -148,15 +133,10 @@ const About = () => {
               </GlowCard>
             ))}
           </div>
-        </motion.div>
+        </div>
 
         {/* Values */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="mb-16"
-        >
+        <div className="mb-16 animate-fade-in" style={{ animationDelay: '300ms' }}>
           <h2 className="text-2xl font-tech font-bold text-foreground mb-6 text-center">
             What We Believe
           </h2>
@@ -175,15 +155,10 @@ const About = () => {
               </GlowCard>
             ))}
           </div>
-        </motion.div>
+        </div>
 
         {/* What We Do Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mb-16"
-        >
+        <div className="mb-16 animate-fade-in" style={{ animationDelay: '400ms' }}>
           <GlowCard className="p-8 bg-secondary/5 border-secondary/20">
             <h2 className="text-2xl font-tech font-bold text-foreground mb-4 flex items-center gap-3">
               <Zap className="w-6 h-6 text-secondary" />
@@ -212,15 +187,10 @@ const About = () => {
               </li>
             </ul>
           </GlowCard>
-        </motion.div>
+        </div>
 
         {/* CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="text-center"
-        >
+        <div className="text-center animate-fade-in" style={{ animationDelay: '500ms' }}>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/#quote">
               <NeonButton variant="secondary" size="lg" icon={<ArrowRight className="w-5 h-5" />} iconPosition="right">
@@ -233,7 +203,7 @@ const About = () => {
               </NeonButton>
             </Link>
           </div>
-        </motion.div>
+        </div>
 
         {/* Links */}
         <div className="mt-16 text-center text-sm text-muted-foreground">

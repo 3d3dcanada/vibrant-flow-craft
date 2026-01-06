@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile, useSubscription, useCreditWallet, usePointWallet } from '@/hooks/useUserData';
 import { usePrimaryRole } from '@/hooks/useUserRoles';
@@ -273,13 +272,14 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       <ParticleBackground />
       
       {/* Desktop Sidebar */}
-      <motion.aside
-        initial={false}
-        animate={{ width: collapsed ? 72 : 280 }}
-        className="hidden lg:block relative z-30 border-r border-border/50 bg-card/80 backdrop-blur-xl shrink-0"
+      <aside
+        className={cn(
+          "hidden lg:block relative z-30 border-r border-border/50 bg-card/80 backdrop-blur-xl shrink-0 transition-all duration-300",
+          collapsed ? "w-[72px]" : "w-[280px]"
+        )}
       >
         <SidebarContent />
-      </motion.aside>
+      </aside>
 
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 h-16 bg-card/90 backdrop-blur-xl border-b border-border/50 flex items-center justify-between px-4">
@@ -296,34 +296,25 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       </div>
 
       {/* Mobile Sidebar Overlay */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+      {mobileOpen && (
+        <>
+          <div
+            onClick={() => setMobileOpen(false)}
+            className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm animate-fade-in"
+          />
+          <aside
+            className="lg:hidden fixed left-0 top-0 bottom-0 z-50 w-[280px] bg-card border-r border-border/50 animate-slide-in-right"
+          >
+            <button
               onClick={() => setMobileOpen(false)}
-              className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
-            />
-            <motion.aside
-              initial={{ x: -280 }}
-              animate={{ x: 0 }}
-              exit={{ x: -280 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="lg:hidden fixed left-0 top-0 bottom-0 z-50 w-[280px] bg-card border-r border-border/50"
+              className="absolute top-4 right-4 p-2 hover:bg-muted/50 rounded-lg transition-colors"
             >
-              <button
-                onClick={() => setMobileOpen(false)}
-                className="absolute top-4 right-4 p-2 hover:bg-muted/50 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-muted-foreground" />
-              </button>
-              <SidebarContent />
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
+              <X className="w-5 h-5 text-muted-foreground" />
+            </button>
+            <SidebarContent />
+          </aside>
+        </>
+      )}
 
       {/* Main Content */}
       <main className="flex-1 relative z-10 lg:pt-0 pt-16 min-w-0">

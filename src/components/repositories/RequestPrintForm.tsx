@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import { Link as LinkIcon, Package, Layers, Hash, FileText, Send, X, User, ChevronDown, ChevronUp } from "lucide-react";
 import { Repository } from "@/data/repositories";
 import { MaterialType } from "@/config/pricing";
-import { ModelAttribution, PrintRequestFormData, createAttribution } from "@/types/modelSource";
+import { PrintRequestFormData, createAttribution } from "@/types/modelSource";
 import NeonButton from "@/components/ui/NeonButton";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -75,18 +74,12 @@ export const RequestPrintForm = ({ repository, onClose, onSubmit }: RequestPrint
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm"
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-fade-in"
       onClick={onClose}
     >
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        className="w-full max-w-md bg-card border border-border rounded-xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
+      <div
+        className="w-full max-w-md bg-card border border-border rounded-xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -220,7 +213,7 @@ export const RequestPrintForm = ({ repository, onClose, onSubmit }: RequestPrint
             </button>
             
             {showAttribution && (
-              <div className="p-4 space-y-3 border-t border-border/50">
+              <div className="p-4 space-y-3 border-t border-border/50 animate-accordion-down">
                 <p className="text-[10px] text-muted-foreground leading-relaxed">
                   We track this only for attribution and creator goodwill. No fees are enforced.
                 </p>
@@ -273,8 +266,8 @@ export const RequestPrintForm = ({ repository, onClose, onSubmit }: RequestPrint
             {isSubmitting ? "Sending..." : "Send to Quote"}
           </NeonButton>
         </form>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 };
 

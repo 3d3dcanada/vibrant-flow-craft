@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { ArrowLeft, Shield, Eye, Database, Globe, Lock, UserCheck, Mail, MapPin } from 'lucide-react';
@@ -141,11 +140,7 @@ Location:
 
       <main className="container mx-auto px-4 py-12 max-w-4xl">
         {/* Hero */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
+        <div className="text-center mb-12 animate-fade-in">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/20 mb-6">
             <Shield className="w-10 h-10 text-primary" />
           </div>
@@ -155,15 +150,10 @@ Location:
           <p className="text-muted-foreground">
             Last updated: {lastUpdated}
           </p>
-        </motion.div>
+        </div>
 
         {/* Intro */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mb-8"
-        >
+        <div className="mb-8 animate-fade-in" style={{ animationDelay: '100ms' }}>
           <GlowCard className="p-6">
             <p className="text-muted-foreground leading-relaxed">
               3D3D Canada Inc. ("we", "us", "our") is committed to protecting your privacy. 
@@ -173,16 +163,15 @@ Location:
               provincial privacy legislation.
             </p>
           </GlowCard>
-        </motion.div>
+        </div>
 
         {/* Sections */}
         <div className="space-y-6">
           {sections.map((section, index) => (
-            <motion.div
+            <div
               key={index}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 + index * 0.05 }}
+              className="animate-fade-in"
+              style={{ animationDelay: `${100 + index * 50}ms` }}
             >
               <GlowCard className="p-6">
                 <div className="flex items-start gap-4">
@@ -197,17 +186,12 @@ Location:
                   </div>
                 </div>
               </GlowCard>
-            </motion.div>
+            </div>
           ))}
         </div>
 
         {/* Updates Notice */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="mt-8"
-        >
+        <div className="mt-8 animate-fade-in" style={{ animationDelay: '500ms' }}>
           <GlowCard className="p-6 bg-secondary/5 border-secondary/20">
             <h3 className="text-lg font-semibold text-foreground mb-2">Policy Updates</h3>
             <p className="text-muted-foreground text-sm">
@@ -216,15 +200,10 @@ Location:
               For significant changes, we will provide additional notice via email or through the Service.
             </p>
           </GlowCard>
-        </motion.div>
+        </div>
 
         {/* Contact */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.55 }}
-          className="mt-6"
-        >
+        <div className="mt-6 animate-fade-in" style={{ animationDelay: '550ms' }}>
           <GlowCard className="p-6 bg-primary/5 border-primary/20">
             <div className="flex items-start gap-4">
               <div className="p-3 rounded-xl bg-primary/20">
@@ -246,7 +225,7 @@ Location:
               </div>
             </div>
           </GlowCard>
-        </motion.div>
+        </div>
 
         {/* Links */}
         <div className="mt-8 text-center text-sm text-muted-foreground">

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { 
   ChevronDown, 
   ExternalLink, 
@@ -12,6 +11,7 @@ import {
 } from "lucide-react";
 import { Repository } from "@/data/repositories";
 import NeonButton from "@/components/ui/NeonButton";
+import { cn } from "@/lib/utils";
 
 interface RepositoryCardProps {
   repository: Repository;
@@ -33,10 +33,7 @@ export const RepositoryCard = ({ repository, onRequestPrint }: RepositoryCardPro
   };
 
   return (
-    <motion.div
-      className="border border-border rounded-lg overflow-hidden bg-card/50 hover:bg-card/80 transition-all"
-      layout
-    >
+    <div className="border border-border rounded-lg overflow-hidden bg-card/50 hover:bg-card/80 transition-all">
       {/* Header - Always Visible */}
       <div 
         className="p-4 cursor-pointer"
@@ -63,13 +60,14 @@ export const RepositoryCard = ({ repository, onRequestPrint }: RepositoryCardPro
               ))}
             </div>
           </div>
-          <motion.div
-            animate={{ rotate: isExpanded ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-            className="text-muted-foreground mt-1"
+          <div
+            className={cn(
+              "text-muted-foreground mt-1 transition-transform duration-200",
+              isExpanded && "rotate-180"
+            )}
           >
             <ChevronDown className="w-4 h-4" />
-          </motion.div>
+          </div>
         </div>
 
         {/* Quick Actions */}
@@ -101,84 +99,76 @@ export const RepositoryCard = ({ repository, onRequestPrint }: RepositoryCardPro
       </div>
 
       {/* Expanded Content */}
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            <div className="px-4 pb-4 space-y-4 border-t border-border pt-4">
-              {/* About */}
-              <div>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {repository.about}
+      {isExpanded && (
+        <div className="overflow-hidden animate-accordion-down">
+          <div className="px-4 pb-4 space-y-4 border-t border-border pt-4">
+            {/* About */}
+            <div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {repository.about}
+              </p>
+            </div>
+
+            {/* License & Safety */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3 rounded-lg bg-background/50 border border-border">
+                <div className="flex items-center gap-2 text-xs font-bold text-foreground mb-1">
+                  <FileText className="w-3 h-3 text-secondary" />
+                  License
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {repository.licenseNotes}
                 </p>
               </div>
-
-              {/* License & Safety */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="p-3 rounded-lg bg-background/50 border border-border">
-                  <div className="flex items-center gap-2 text-xs font-bold text-foreground mb-1">
-                    <FileText className="w-3 h-3 text-secondary" />
-                    License
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {repository.licenseNotes}
-                  </p>
+              <div className="p-3 rounded-lg bg-background/50 border border-border">
+                <div className="flex items-center gap-2 text-xs font-bold text-foreground mb-1">
+                  <Shield className="w-3 h-3 text-success" />
+                  Content Policy
                 </div>
-                <div className="p-3 rounded-lg bg-background/50 border border-border">
-                  <div className="flex items-center gap-2 text-xs font-bold text-foreground mb-1">
-                    <Shield className="w-3 h-3 text-success" />
-                    Content Policy
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {repository.safeContentNotes}
-                  </p>
-                </div>
-              </div>
-
-              {/* Top Designers */}
-              <div className="p-3 rounded-lg bg-secondary/5 border border-secondary/20">
-                <div className="flex items-center gap-2 text-xs font-bold text-foreground mb-3">
-                  <Users className="w-3 h-3 text-secondary" />
-                  Top Designers
-                  {repository.topDesigners.some(d => d.isEditablePick) && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground flex items-center gap-1">
-                      <Sparkles className="w-2.5 h-2.5" />
-                      Featured picks (editable)
-                    </span>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  {repository.topDesigners.map((designer) => (
-                    <a
-                      key={designer.name}
-                      href={designer.profileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-between p-2 rounded-lg bg-background/50 border border-border hover:border-secondary/50 transition-all group"
-                    >
-                      <div>
-                        <div className="text-xs font-medium text-foreground group-hover:text-secondary transition-colors">
-                          {designer.name}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground">
-                          {designer.specialty}
-                        </div>
-                      </div>
-                      <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-secondary transition-colors" />
-                    </a>
-                  ))}
-                </div>
+                <p className="text-xs text-muted-foreground">
+                  {repository.safeContentNotes}
+                </p>
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+
+            {/* Top Designers */}
+            <div className="p-3 rounded-lg bg-secondary/5 border border-secondary/20">
+              <div className="flex items-center gap-2 text-xs font-bold text-foreground mb-3">
+                <Users className="w-3 h-3 text-secondary" />
+                Top Designers
+                {repository.topDesigners.some(d => d.isEditablePick) && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground flex items-center gap-1">
+                    <Sparkles className="w-2.5 h-2.5" />
+                    Featured picks (editable)
+                  </span>
+                )}
+              </div>
+              <div className="space-y-2">
+                {repository.topDesigners.map((designer) => (
+                  <a
+                    key={designer.name}
+                    href={designer.profileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between p-2 rounded-lg bg-background/50 border border-border hover:border-secondary/50 transition-all group"
+                  >
+                    <div>
+                      <div className="text-xs font-medium text-foreground group-hover:text-secondary transition-colors">
+                        {designer.name}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {designer.specialty}
+                      </div>
+                    </div>
+                    <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-secondary transition-colors" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

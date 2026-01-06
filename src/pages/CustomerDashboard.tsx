@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile, useSubscription, useCreditWallet, usePointWallet, useReferralCode, usePointTransactions } from '@/hooks/useUserData';
 import { useUserPrintRequests } from '@/hooks/useCustomerData';
@@ -100,11 +99,7 @@ const CustomerDashboard = () => {
 
         <main className="container mx-auto px-4 py-8">
           {/* Welcome Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
-          >
+          <div className="mb-8 animate-fade-in">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
                 <h1 className="text-3xl font-tech font-bold text-foreground">
@@ -122,11 +117,11 @@ const CustomerDashboard = () => {
                 </span>
               </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* Top KPIs */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <div className="animate-fade-in" style={{ animationDelay: '100ms' }}>
               <GlowCard className="p-5" variant="teal">
                 <div className="flex items-center justify-between mb-2">
                   <Coins className="w-6 h-6 text-secondary" />
@@ -135,9 +130,9 @@ const CustomerDashboard = () => {
                 <div className="text-2xl font-tech font-bold text-foreground">{creditWallet?.balance?.toLocaleString() || 0}</div>
                 <div className="text-xs text-muted-foreground">Credits Balance</div>
               </GlowCard>
-            </motion.div>
+            </div>
 
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+            <div className="animate-fade-in" style={{ animationDelay: '150ms' }}>
               <GlowCard className="p-5" variant="magenta">
                 <div className="flex items-center justify-between mb-2">
                   <Sparkles className="w-6 h-6 text-primary" />
@@ -145,9 +140,9 @@ const CustomerDashboard = () => {
                 <div className="text-2xl font-tech font-bold text-foreground">{pointWallet?.balance?.toLocaleString() || 0}</div>
                 <div className="text-xs text-muted-foreground">Reward Points</div>
               </GlowCard>
-            </motion.div>
+            </div>
 
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <div className="animate-fade-in" style={{ animationDelay: '200ms' }}>
               <GlowCard className="p-5">
                 <div className="flex items-center justify-between mb-2">
                   <FileText className="w-6 h-6 text-warning" />
@@ -155,9 +150,9 @@ const CustomerDashboard = () => {
                 <div className="text-2xl font-tech font-bold text-foreground">{activeRequests}</div>
                 <div className="text-xs text-muted-foreground">Active Requests</div>
               </GlowCard>
-            </motion.div>
+            </div>
 
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+            <div className="animate-fade-in" style={{ animationDelay: '250ms' }}>
               <GlowCard className="p-5">
                 <div className="flex items-center justify-between mb-2">
                   <Package className="w-6 h-6 text-success" />
@@ -165,11 +160,11 @@ const CustomerDashboard = () => {
                 <div className="text-2xl font-tech font-bold text-foreground">{completedPrints}</div>
                 <div className="text-xs text-muted-foreground">Completed Prints</div>
               </GlowCard>
-            </motion.div>
+            </div>
           </div>
 
           {/* Quick Actions */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mb-8">
+          <div className="mb-8 animate-fade-in" style={{ animationDelay: '300ms' }}>
             <h2 className="text-lg font-tech font-bold text-foreground mb-4 flex items-center gap-2">
               <Zap className="w-5 h-5 text-secondary" />
               Quick Actions
@@ -208,12 +203,12 @@ const CustomerDashboard = () => {
                 </GlowCard>
               </Link>
             </div>
-          </motion.div>
+          </div>
 
           {/* Two Column Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {/* My Requests */}
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+            <div className="animate-fade-in" style={{ animationDelay: '400ms' }}>
               <GlowCard className="p-6 h-full">
                 <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                   <FileText className="w-5 h-5 text-secondary" />
@@ -260,10 +255,10 @@ const CustomerDashboard = () => {
                   </div>
                 )}
               </GlowCard>
-            </motion.div>
+            </div>
 
             {/* Rewards & Recycling */}
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+            <div className="animate-fade-in" style={{ animationDelay: '500ms' }}>
               <GlowCard className="p-6 h-full">
                 <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                   <Recycle className="w-5 h-5 text-green-500" />
@@ -321,11 +316,11 @@ const CustomerDashboard = () => {
                   )}
                 </div>
               </GlowCard>
-            </motion.div>
+            </div>
           </div>
 
           {/* Beginner Guidance */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
+          <div className="animate-fade-in" style={{ animationDelay: '600ms' }}>
             <GlowCard className="p-6">
               <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                 <Lightbulb className="w-5 h-5 text-yellow-500" />
@@ -344,7 +339,7 @@ const CustomerDashboard = () => {
                 ))}
               </div>
             </GlowCard>
-          </motion.div>
+          </div>
         </main>
       </div>
 
