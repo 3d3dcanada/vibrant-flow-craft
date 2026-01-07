@@ -78,6 +78,18 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      spacing: {
+        'panel-gap': 'var(--panel-gap)',
+        'panel-padding': 'var(--panel-padding)',
+      },
+      zIndex: {
+        'drawer': '50',
+        'bottom-nav': '40',
+        'panel': '10',
+      },
+      transitionTimingFunction: {
+        'cyber': 'cubic-bezier(0.4, 0, 0.2, 1)',
+      },
       boxShadow: {
         'neon-teal': '0 0 20px hsl(var(--secondary) / 0.5), 0 0 40px hsl(var(--secondary) / 0.3)',
         'neon-magenta': '0 0 20px hsl(var(--primary) / 0.5), 0 0 40px hsl(var(--primary) / 0.3)',
@@ -137,11 +149,11 @@ export default {
           "100%": { transform: "rotate(360deg)" },
         },
         "glow-pulse": {
-          "0%, 100%": { 
-            boxShadow: "0 0 20px hsl(var(--secondary) / 0.3), 0 0 40px hsl(var(--secondary) / 0.2)" 
+          "0%, 100%": {
+            boxShadow: "0 0 20px hsl(var(--secondary) / 0.3), 0 0 40px hsl(var(--secondary) / 0.2)"
           },
-          "50%": { 
-            boxShadow: "0 0 30px hsl(var(--secondary) / 0.5), 0 0 60px hsl(var(--secondary) / 0.3), 0 0 80px hsl(var(--secondary) / 0.1)" 
+          "50%": {
+            boxShadow: "0 0 30px hsl(var(--secondary) / 0.5), 0 0 60px hsl(var(--secondary) / 0.3), 0 0 80px hsl(var(--secondary) / 0.1)"
           },
         },
         "border-glow": {
