@@ -102,6 +102,11 @@ export default {
         'inner-glow': 'inset 0 0 20px hsl(var(--secondary) / 0.2)',
       },
       keyframes: {
+        "shake": {
+          "0%, 100%": { transform: "translateX(0)" },
+          "25%": { transform: "translateX(-10px)" },
+          "75%": { transform: "translateX(10px)" },
+        },
         "accordion-down": {
           from: { height: "0" },
           to: { height: "var(--radix-accordion-content-height)" },
