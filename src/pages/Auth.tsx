@@ -10,7 +10,7 @@ import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 import { Loader2, Mail, Lock, User, Gift, ArrowRight, KeyRound, CheckCircle, CloudOff, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
-import { backendReady } from '@/config/backend';
+import { backendReady, FORMSPREE_ENDPOINT, formspreeReady } from '@/config/backend';
 
 const emailSchema = z.string().email('Please enter a valid email address');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
@@ -178,6 +178,28 @@ const Auth = () => {
     }
   };
 
+  const sendSignupNotification = async () => {
+    if (!formspreeReady) {
+      console.warn('Formspree endpoint not configured. Set VITE_FORMSPREE_ENDPOINT.');
+      return;
+    }
+
+    await fetch(FORMSPREE_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        fullName,
+        referralCode: referralCode.trim() || null,
+        source: 'signup',
+        submittedAt: new Date().toISOString(),
+      }),
+    });
+  };
+
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -279,22 +301,17 @@ const Auth = () => {
             });
           }
         } else {
-          // Auto sign in after signup
-          const { error: signInError } = await signIn(email, password);
-          if (signInError) {
-            toast({
-              title: 'Signup succeeded, but login failed',
-              description: signInError.message,
-              variant: 'destructive',
-            });
-            setMode('login');
-            return;
+          try {
+            await sendSignupNotification();
+          } catch (error) {
+            console.warn('Failed to notify Formspree about signup:', error);
           }
 
           toast({
             title: 'Account created',
-            description: "You're signed in and ready to go.",
+            description: 'Your account is ready. Please sign in to continue.',
           });
+          setMode('login');
         }
       }
     } catch {
@@ -360,6 +377,21 @@ const Auth = () => {
                 </div>
               </motion.div>
             )}
+            {backendReady && !formspreeReady && mode === 'signup' && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-6 p-4 rounded-xl bg-muted/30 border border-muted flex items-start gap-3"
+              >
+                <Sparkles className="w-5 h-5 text-secondary shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-foreground">Signup notifications paused</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Add <span className="font-mono">VITE_FORMSPREE_ENDPOINT</span> to receive new signup alerts.
+                  </p>
+                </div>
+              </motion.div>
+            )}
 
             {/* Header */}
             <div className="text-center mb-8">
@@ -415,6 +447,12 @@ const Auth = () => {
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {mode === 'signup' && (
+              <div className="mb-4 rounded-xl border border-secondary/30 bg-secondary/10 px-4 py-3 text-xs text-secondary-foreground">
+                Accounts are created instantly. Your role is assigned in Supabase by the team after signup.
+              </div>
+            )}
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">

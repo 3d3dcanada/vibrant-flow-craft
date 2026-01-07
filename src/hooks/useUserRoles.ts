@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export type AppRole = 'admin' | 'maker' | 'customer';
 
@@ -14,10 +15,11 @@ interface UserRole {
  * Fetch user roles from the secure user_roles table
  */
 export const useUserRoles = () => {
+  const { user } = useAuth();
+
   return useQuery({
-    queryKey: ['user-roles'],
+    queryKey: ['user-roles', user?.id],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
       const { data, error } = await supabase
