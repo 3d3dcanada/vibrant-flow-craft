@@ -5,6 +5,7 @@ import { ProgressIndicator } from '@/components/ui/ProgressIndicator';
 import { NeonButton } from '@/components/ui/NeonButton';
 import { FileUpload, FileAnalysis } from '@/components/ui/FileUpload';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 type QuoteStep = 1 | 2 | 3 | 4 | 5;
 
@@ -35,6 +36,9 @@ export default function QuoteConfigurator() {
         quantity: 1,
         deliverySpeed: 'standard',
     });
+    const [priceBreakdown, setPriceBreakdown] = useState<any>(null);
+    const [loadingPrice, setLoadingPrice] = useState(false);
+    const [priceError, setPriceError] = useState<string | null>(null);
 
     const steps = [
         { label: 'Upload', completed: currentStep > 1 },
@@ -65,6 +69,37 @@ export default function QuoteConfigurator() {
             file,
             analysis: demoAnalysis,
         }));
+    };
+
+    const fetchQuote = async () => {
+        if (!quoteData.analysis) {
+            setPriceError('No file analysis available');
+            return;
+        }
+
+        setLoadingPrice(true);
+        setPriceError(null);
+        console.log('[Quote] Calling calculate-quote API...');
+
+        const { data, error } = await supabase.functions.invoke('calculate-quote', {
+            body: {
+                grams: quoteData.analysis.weight,
+                material: quoteData.materialType,
+                quality: 'standard',
+                quantity: quoteData.quantity,
+                delivery_speed: quoteData.deliverySpeed,
+            }
+        });
+
+        if (error) {
+            console.error('[Quote] API Error:', error);
+            setPriceError(error.message || 'Failed to calculate price');
+        } else {
+            console.log('[Quote] Price calculated:', data);
+            setPriceBreakdown(data);
+        }
+
+        setLoadingPrice(false);
     };
 
     const handleNext = () => {
@@ -228,13 +263,58 @@ export default function QuoteConfigurator() {
                                 </p>
                             </div>
 
-                            <div className="text-center py-12 border-2 border-dashed border-border/50 rounded-lg">
-                                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-                                    <span className="text-2xl">🔧</span>
+                            {!priceBreakdown && !loadingPrice && !priceError && (
+                                <div className="text-center py-8">
+                                    <NeonButton onClick={fetchQuote} variant="primary">
+                                        Calculate Price
+                                    </NeonButton>
                                 </div>
-                                <p className="text-lg font-tech text-foreground mb-2">Step 4: In Development</p>
-                                <p className="text-sm text-muted-foreground">Pricing engine is live — UI integration in progress.</p>
-                            </div>
+                            )}
+
+                            {loadingPrice && (
+                                <div className="text-center py-12">
+                                    <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                                    <p className="text-muted-foreground">Calculating price...</p>
+                                </div>
+                            )}
+
+                            {priceError && (
+                                <div className="bg-destructive/10 border border-destructive rounded-lg p-4">
+                                    <p className="text-destructive font-tech">Error: {priceError}</p>
+                                    <NeonButton onClick={fetchQuote} variant="secondary" className="mt-4">
+                                        Try Again
+                                    </NeonButton>
+                                </div>
+                            )}
+
+                            {priceBreakdown && (
+                                <div className="space-y-4">
+                                    <div className="bg-background/50 border border-border/50 rounded-lg p-6">
+                                        <div className="flex justify-between text-lg font-tech mb-2">
+                                            <span>Material Cost:</span>
+                                            <span>${priceBreakdown.material_cost?.toFixed(2) || '0.00'}</span>
+                                        </div>
+                                        <div className="flex justify-between text-lg font-tech mb-2">
+                                            <span>Labor:</span>
+                                            <span>${priceBreakdown.labor_cost?.toFixed(2) || '0.00'}</span>
+                                        </div>
+                                        <div className="flex justify-between text-lg font-tech mb-2">
+                                            <span>Platform Fee:</span>
+                                            <span>${priceBreakdown.platform_fee?.toFixed(2) || '0.00'}</span>
+                                        </div>
+                                        <div className="border-t border-border/50 my-4"></div>
+                                        <div className="flex justify-between text-2xl font-tech font-bold text-primary">
+                                            <span>Total:</span>
+                                            <span>${priceBreakdown.total_price?.toFixed(2) || '0.00'}</span>
+                                        </div>
+                                    </div>
+                                    <div className="bg-blue-500/10 border border-blue-500/50 rounded-lg p-4">
+                                        <p className="text-sm text-center">
+                                            Note: This is a price estimate. Payments are not yet active.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
