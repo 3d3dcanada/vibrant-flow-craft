@@ -12,11 +12,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  ArrowLeft, User, Mail, Phone, MapPin, Save, 
-  Camera, CheckCircle, AlertCircle
+import {
+  ArrowLeft, User, Mail, Phone, MapPin, Save,
+  Camera, CheckCircle, AlertCircle, Bell
 } from 'lucide-react';
 import { z } from 'zod';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const profileSchema = z.object({
   full_name: z.string().min(2, 'Name must be at least 2 characters').max(100),
@@ -33,7 +34,7 @@ const ProfileSettings = () => {
   const { user, loading: authLoading } = useAuth();
   const { data: profile, isLoading: profileLoading, refetch } = useProfile();
   const { toast } = useToast();
-  
+
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
@@ -45,6 +46,9 @@ const ProfileSettings = () => {
     province: '',
     postal_code: '',
   });
+  const [caslConsent, setCaslConsent] = useState(false);
+  const [caslSaving, setCaslSaving] = useState(false);
+  const [caslError, setCaslError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -63,6 +67,8 @@ const ProfileSettings = () => {
         province: profile.province || '',
         postal_code: profile.postal_code || '',
       });
+      // Load CASL consent state from profile
+      setCaslConsent((profile as any).consent_email_marketing || false);
     }
   }, [profile]);
 
@@ -116,6 +122,44 @@ const ProfileSettings = () => {
     }
   };
 
+  const handleCaslToggle = async (checked: boolean) => {
+    setCaslSaving(true);
+    setCaslError(null);
+    setCaslConsent(checked);
+
+    const updateData = checked
+      ? {
+        consent_email_marketing: true,
+        consent_email_timestamp: new Date().toISOString(),
+        consent_ip_address: null, // Best-effort: IP not safely obtainable client-side
+      }
+      : {
+        consent_email_marketing: false,
+        consent_email_timestamp: null,
+        consent_ip_address: null,
+      };
+
+    const { error } = await supabase
+      .from('profiles')
+      .update(updateData as any)
+      .eq('id', user?.id);
+
+    if (error) {
+      setCaslError('Failed to save preference. Please try again.');
+      setCaslConsent(!checked); // Revert
+      console.error('CASL toggle error:', error);
+    } else {
+      toast({
+        title: checked ? 'Marketing emails enabled' : 'Marketing emails disabled',
+        description: checked
+          ? 'You will receive community updates and promotions.'
+          : 'You will only receive essential account notifications.',
+      });
+    }
+
+    setCaslSaving(false);
+  };
+
   if (authLoading || profileLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -127,8 +171,8 @@ const ProfileSettings = () => {
   }
 
   const provinces = [
-    'Alberta', 'British Columbia', 'Manitoba', 'New Brunswick', 
-    'Newfoundland and Labrador', 'Nova Scotia', 'Ontario', 
+    'Alberta', 'British Columbia', 'Manitoba', 'New Brunswick',
+    'Newfoundland and Labrador', 'Nova Scotia', 'Ontario',
     'Prince Edward Island', 'Quebec', 'Saskatchewan',
     'Northwest Territories', 'Nunavut', 'Yukon'
   ];
@@ -136,7 +180,7 @@ const ProfileSettings = () => {
   return (
     <div className="min-h-screen bg-background relative">
       <ParticleBackground />
-      
+
       <div className="relative z-10">
         {/* Header */}
         <header className="border-b border-primary/10 bg-background/80 backdrop-blur-xl sticky top-0 z-50">
@@ -201,9 +245,9 @@ const ProfileSettings = () => {
                 <div className="relative">
                   <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
                     {profile?.avatar_url ? (
-                      <img 
-                        src={profile.avatar_url} 
-                        alt="Avatar" 
+                      <img
+                        src={profile.avatar_url}
+                        alt="Avatar"
                         className="w-full h-full rounded-full object-cover"
                       />
                     ) : (
@@ -281,7 +325,7 @@ const ProfileSettings = () => {
                     <MapPin className="w-4 h-4 text-secondary" />
                     Shipping Address
                   </h4>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="address_line1" className="text-muted-foreground text-sm">Address Line 1</Label>
                     <Input
@@ -351,8 +395,8 @@ const ProfileSettings = () => {
               </div>
 
               <div className="mt-8 flex gap-4">
-                <NeonButton 
-                  onClick={handleSave} 
+                <NeonButton
+                  onClick={handleSave}
                   disabled={saving}
                   className="flex-1"
                 >
@@ -365,6 +409,50 @@ const ProfileSettings = () => {
                     </>
                   )}
                 </NeonButton>
+              </div>
+            </GlowCard>
+          </motion.div>
+
+          {/* CASL Marketing Consent */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="mt-8"
+          >
+            <GlowCard className="p-6">
+              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Bell className="w-5 h-5 text-secondary" />
+                Email Preferences
+              </h3>
+
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3">
+                  <Checkbox
+                    id="casl-marketing"
+                    checked={caslConsent}
+                    onCheckedChange={(checked) => handleCaslToggle(checked === true)}
+                    disabled={caslSaving}
+                    className="mt-1"
+                  />
+                  <label htmlFor="casl-marketing" className="text-sm text-foreground cursor-pointer leading-relaxed">
+                    I consent to receiving marketing emails from 3D3D Canada about community news, promotions, and maker updates.
+                    <span className="block text-xs text-muted-foreground mt-1">
+                      You can change this anytime. Order confirmations and account notifications are always sent.
+                    </span>
+                  </label>
+                </div>
+
+                {caslError && (
+                  <div className="flex items-center gap-2 text-destructive text-sm">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>{caslError}</span>
+                  </div>
+                )}
+
+                <p className="text-xs text-muted-foreground">
+                  Required by Canada's Anti-Spam Legislation (CASL). Your preference is recorded with a timestamp.
+                </p>
               </div>
             </GlowCard>
           </motion.div>

@@ -30,7 +30,7 @@ export function CASLConsent({ onConsentChange, className = '' }: CASLConsentProp
             />
             <Label htmlFor="casl-consent" className="text-sm text-muted-foreground leading-relaxed cursor-pointer">
                 I consent to receiving emails from 3D3D Canada about my orders, account updates,
-                and maker community news. I can unsubscribe anytime by clicking the link in any email.
+                and maker community news. You can unsubscribe anytime once email notifications are enabled.
                 <span className="block text-xs mt-1 opacity-75">
                     Required by Canada's Anti-Spam Legislation (CASL)
                 </span>

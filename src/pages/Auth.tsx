@@ -299,26 +299,38 @@ const Auth = () => {
             return;
           }
 
-          // Save CASL consent to profile
-          if (caslConsentTimestamp) {
-            const { error: consentError } = await supabase
-              .from('profiles')
-              .update({
-                consent_email_marketing: true,
-                consent_email_timestamp: caslConsentTimestamp.toISOString(),
-                consent_ip_address: 'client-side'
-              } as any) // Type assertion: CASL columns added via migration 20260108100000
-              .eq('id', (await supabase.auth.getUser()).data.user?.id);
-
-            if (consentError) {
-              console.error('Failed to save CASL consent:', consentError);
+          // Save CASL consent to profile (always write state, not just when checked)
+          const consentData = caslConsent
+            ? {
+              consent_email_marketing: true,
+              consent_email_timestamp: caslConsentTimestamp?.toISOString() || new Date().toISOString(),
+              consent_ip_address: null, // Best-effort: IP not safely obtainable client-side
             }
-          }
+            : {
+              consent_email_marketing: false,
+              consent_email_timestamp: null,
+              consent_ip_address: null,
+            };
 
-          toast({
-            title: 'Account created',
-            description: "You're signed in and ready to go.",
-          });
+          const { error: consentError } = await supabase
+            .from('profiles')
+            .update(consentData as any) // Type assertion: CASL columns added via migration 20260108100000
+            .eq('id', (await supabase.auth.getUser()).data.user?.id);
+
+          if (consentError) {
+            console.error('Failed to save CASL consent:', consentError);
+            // Show warning but don't block - account was created
+            toast({
+              title: 'Account created',
+              description: "You're signed in! Note: Consent preference could not be saved. Please update in Settings.",
+              variant: 'default',
+            });
+          } else {
+            toast({
+              title: 'Account created',
+              description: "You're signed in and ready to go.",
+            });
+          }
         }
       }
     } catch {
