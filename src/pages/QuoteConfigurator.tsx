@@ -4,7 +4,9 @@ import { GlassPanel } from '@/components/ui/GlassPanel';
 import { ProgressIndicator } from '@/components/ui/ProgressIndicator';
 import { NeonButton } from '@/components/ui/NeonButton';
 import { FileUpload, FileAnalysis } from '@/components/ui/FileUpload';
-import { ArrowRight, ArrowLeft } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { ArrowRight, ArrowLeft, AlertCircle, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 type QuoteStep = 1 | 2 | 3 | 4 | 5;
@@ -39,6 +41,8 @@ export default function QuoteConfigurator() {
     const [priceBreakdown, setPriceBreakdown] = useState<any>(null);
     const [loadingPrice, setLoadingPrice] = useState(false);
     const [priceError, setPriceError] = useState<string | null>(null);
+    const [printRightsConfirmed, setPrintRightsConfirmed] = useState(false);
+    const [showConsentError, setShowConsentError] = useState(false);
 
     const steps = [
         { label: 'Upload', completed: currentStep > 1 },
@@ -103,6 +107,12 @@ export default function QuoteConfigurator() {
     };
 
     const handleNext = () => {
+        // Block Step 1 progression if rights not confirmed
+        if (currentStep === 1 && !printRightsConfirmed) {
+            setShowConsentError(true);
+            return;
+        }
+        setShowConsentError(false);
         if (currentStep < 5) {
             setCurrentStep((prev) => (prev + 1) as QuoteStep);
         }
@@ -117,7 +127,7 @@ export default function QuoteConfigurator() {
     const canProceed = () => {
         switch (currentStep) {
             case 1:
-                return quoteData.file !== null && quoteData.analysis !== null;
+                return quoteData.file !== null && quoteData.analysis !== null && printRightsConfirmed;
             case 2:
                 return quoteData.materialType !== '';
             case 3:
@@ -204,6 +214,53 @@ export default function QuoteConfigurator() {
                                     </div>
                                 </div>
                             )}
+
+                            {/* Print Rights Acknowledgement */}
+                            <div className="space-y-4 p-4 rounded-lg bg-muted/20 border border-border/50">
+                                <div className="flex items-start space-x-3">
+                                    <Checkbox
+                                        id="print-rights"
+                                        checked={printRightsConfirmed}
+                                        onCheckedChange={(checked) => {
+                                            setPrintRightsConfirmed(checked === true);
+                                            if (checked) setShowConsentError(false);
+                                        }}
+                                        className="mt-1"
+                                    />
+                                    <Label htmlFor="print-rights" className="text-sm text-foreground cursor-pointer leading-relaxed">
+                                        I confirm that I have the right to have this file printed and that it does not violate copyright, license terms, or applicable law.
+                                    </Label>
+                                </div>
+
+                                {showConsentError && (
+                                    <div className="flex items-center gap-2 text-destructive text-sm">
+                                        <AlertCircle className="w-4 h-4" />
+                                        <span>Please confirm you have the rights to print this file to continue.</span>
+                                    </div>
+                                )}
+
+                                {/* Prohibited content list */}
+                                <div className="text-xs text-muted-foreground space-y-1 mt-3">
+                                    <p className="font-semibold text-foreground/80">We can't print:</p>
+                                    <ul className="space-y-0.5 ml-4">
+                                        <li>• Illegal or prohibited items</li>
+                                        <li>• Files you don't have rights to print</li>
+                                        <li>• Commercial-only licenses without permission</li>
+                                        <li>• Anything intended to bypass safety or the law</li>
+                                    </ul>
+                                </div>
+
+                                {/* License verification note */}
+                                <p className="text-xs text-muted-foreground italic">
+                                    We don't verify every license automatically—this confirmation helps keep the platform fair for designers.
+                                </p>
+                            </div>
+
+                            {/* File retention micro-disclosure */}
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <Clock className="w-4 h-4" />
+                                <span>Uploads are retained for up to 14 days for reprints/defects and can be deleted immediately on request.</span>
+                            </div>
                         </div>
                     )}
 
