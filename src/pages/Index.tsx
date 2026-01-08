@@ -10,6 +10,7 @@ import QuoteSection from "@/components/sections/QuoteSection";
 import BuybackPromoSection from "@/components/sections/BuybackPromoSection";
 import BusinessPromoSection from "@/components/sections/BusinessPromoSection";
 import Footer from "@/components/sections/Footer";
+import { PaymentDisclosure } from "@/components/legal";
 
 const Index = () => {
   return (
@@ -20,6 +21,11 @@ const Index = () => {
 
       {/* Navigation */}
       <Navbar />
+
+      {/* Payment Status Disclosure */}
+      <div className="max-w-5xl mx-auto px-4 pt-4">
+        <PaymentDisclosure variant="banner" />
+      </div>
 
       {/* Main Content */}
       <main>

@@ -34,6 +34,10 @@ import CommunityPolicy from "./pages/CommunityPolicy";
 import Schedule from "./pages/Schedule";
 import CustomerDashboard from "./pages/CustomerDashboard";
 import QuoteConfigurator from "./pages/QuoteConfigurator";
+import BrandGames from "./pages/BrandGames";
+import Careers from "./pages/Careers";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
 
 // Maker Dashboard pages
 import MakerOverview from "./pages/maker/MakerOverview";
@@ -79,6 +83,10 @@ const App = () => (
             <Route path="/schedule" element={<Schedule />} />
             <Route path="/quote" element={<QuoteConfigurator />} />
             <Route path="/recycle-buyback" element={<RecycleBuyback />} />
+            <Route path="/brand-games" element={<BrandGames />} />
+            <Route path="/careers" element={<Careers />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
 
             {/* Dashboard routes */}
             <Route path="/dashboard" element={<Dashboard />} />
