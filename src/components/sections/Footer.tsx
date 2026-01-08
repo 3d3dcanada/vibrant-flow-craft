@@ -40,6 +40,7 @@ const footerLinks = {
   platform: [
     { label: "How It Works", href: "/#how-it-works", isRoute: false },
     { label: "Get a Quote", href: "/#quote", isRoute: false },
+    { label: "Learning Guides", href: "/learn", isRoute: true },
     { label: "Promo Products", href: "/promo-products", isRoute: true },
     { label: "Business Subscription", href: "/business-subscription", isRoute: true },
   ],

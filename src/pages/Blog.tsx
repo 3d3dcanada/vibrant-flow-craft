@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { GlassPanel } from '@/components/ui/GlassPanel';
-import { NeonButton } from '@/components/ui/NeonButton';
-import { Calendar, ArrowRight, User } from 'lucide-react';
+import { Calendar, ArrowRight, User, BookOpen } from 'lucide-react';
 
 interface BlogPost {
     slug: string;
@@ -20,6 +19,86 @@ const posts: BlogPost[] = [
         date: "2026-01-08",
         author: "Founder",
         category: "Education"
+    },
+    {
+        slug: "what-youre-paying-for-renting-printer",
+        title: "What You're Really Paying For When You 'Rent' a 3D Printer",
+        excerpt: "A print service isn't just plastic and electricity. It's expertise, equipment, quality control, and convenience that would cost you far more on your own.",
+        date: "2026-01-08",
+        author: "Founder",
+        category: "Education"
+    },
+    {
+        slug: "why-we-dont-want-you-dependent",
+        title: "Why We Don't Want You Dependent on 3D3D Forever",
+        excerpt: "We want you to outgrow us. Here's why a print service genuinely wants you to eventually buy your own printer.",
+        date: "2026-01-08",
+        author: "Founder",
+        category: "Philosophy"
+    },
+    {
+        slug: "stl-to-object",
+        title: "From STL to Object: How Digital Things Become Physical",
+        excerpt: "Understanding the journey from file to finished print helps you make better decisions about what you're printing and why.",
+        date: "2026-01-08",
+        author: "Founder",
+        category: "Education"
+    },
+    {
+        slug: "commercial-vs-personal-licenses",
+        title: "Commercial vs Personal Licenses: What They Actually Mean",
+        excerpt: "You download a file. Can you sell prints? The answer depends on the license — and most people have no idea what that means.",
+        date: "2026-01-08",
+        author: "Founder",
+        category: "Education"
+    },
+    {
+        slug: "how-designers-make-money",
+        title: "How 3D Designers Make Money (And Why Many Don't)",
+        excerpt: "Behind every cool 3D model is someone who spent hours designing it. How do they get paid? And why do many struggle?",
+        date: "2026-01-08",
+        author: "Founder",
+        category: "Industry"
+    },
+    {
+        slug: "problem-with-overseas-print-farms",
+        title: "The Problem With Overseas Print Farms",
+        excerpt: "You can get 3D prints from China for incredibly low prices. Why would anyone pay more? Because cheap has costs that don't show up on the invoice.",
+        date: "2026-01-08",
+        author: "Founder",
+        category: "Industry"
+    },
+    {
+        slug: "why-local-manufacturing-matters",
+        title: "Why Local Manufacturing Still Matters in 2026",
+        excerpt: "The global additive manufacturing market exceeds $31 billion. Much of that shift is local. Here's why distributed production is the future.",
+        date: "2026-01-08",
+        author: "Founder",
+        category: "Industry"
+    },
+    {
+        slug: "environmental-cost-of-cheap-prints",
+        title: "The Environmental Cost of 'Cheap' Prints",
+        excerpt: "3D printing has a reputation as green technology. The reality is more complicated. Here's what actually impacts the environment.",
+        date: "2026-01-08",
+        author: "Founder",
+        category: "Education"
+    },
+    {
+        slug: "what-happens-after-upload",
+        title: "What Happens to Your Files After You Upload Them",
+        excerpt: "Where does your file go? Who sees it? When is it deleted? Complete transparency about how we handle your data.",
+        date: "2026-01-08",
+        author: "Founder",
+        category: "Trust"
+    },
+    {
+        slug: "building-trust-in-ai-world",
+        title: "Building Trust in a World of AI, Automation, and Cheap Copies",
+        excerpt: "When anyone can fake legitimacy, how do you know what's real? Here's how we think about authenticity in 2026.",
+        date: "2026-01-08",
+        author: "Founder",
+        category: "Philosophy"
     },
     {
         slug: "why-3d3d-exists",
@@ -57,7 +136,7 @@ const posts: BlogPost[] = [
 
 /**
  * Blog Index Page
- * Foundational content establishing voice and philosophy.
+ * Deep educational content establishing voice, philosophy, and expertise.
  */
 export default function Blog() {
     return (
@@ -65,14 +144,33 @@ export default function Blog() {
             <div className="max-w-4xl mx-auto">
                 {/* Header */}
                 <div className="text-center mb-16">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-6">
+                        <BookOpen className="w-5 h-5" />
+                        <span className="font-tech text-sm">Learn</span>
+                    </div>
                     <h1 className="text-5xl font-display font-bold gradient-text mb-6">
-                        Updates & Thoughts
+                        3D3D Blog
                     </h1>
-                    <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                        Honest reflections from building a maker platform in Canada.
-                        No fluff, no hype, just real talk.
+                    <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                        Deep dives into 3D printing, maker culture, licensing, and the future of local manufacturing.
+                        No fluff. No AI-generated filler. Real thinking from real people building a real platform.
                     </p>
                 </div>
+
+                {/* Learning Pages CTA */}
+                <GlassPanel className="p-6 mb-12 border-secondary/30">
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                        <div>
+                            <h3 className="font-tech font-bold text-foreground mb-1">New to 3D Printing?</h3>
+                            <p className="text-sm text-muted-foreground">
+                                Start with our beginner-friendly learning guides — foundational knowledge without the jargon.
+                            </p>
+                        </div>
+                        <Link to="/learn" className="text-secondary hover:underline font-medium flex items-center gap-2">
+                            Browse Learning Guides <ArrowRight className="w-4 h-4" />
+                        </Link>
+                    </div>
+                </GlassPanel>
 
                 {/* Posts List */}
                 <div className="space-y-6 mb-12">
@@ -114,7 +212,7 @@ export default function Blog() {
                         Stay Updated
                     </h2>
                     <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                        Get occasional updates about new features, maker stories, and platform news.
+                        Get occasional updates about new articles, maker stories, and platform news.
                         No spam, ever.
                     </p>
                     <p className="text-sm text-muted-foreground">

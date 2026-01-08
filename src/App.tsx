@@ -38,6 +38,8 @@ import BrandGames from "./pages/BrandGames";
 import Careers from "./pages/Careers";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
+import Learn from "./pages/Learn";
+import LearnArticle from "./pages/LearnArticle";
 import PrintResponsibility from "./pages/PrintResponsibility";
 import Store from "./pages/Store";
 import StoreModels from "./pages/StoreModels";
@@ -91,6 +93,8 @@ const App = () => (
             <Route path="/careers" element={<Careers />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPost />} />
+            <Route path="/learn" element={<Learn />} />
+            <Route path="/learn/:slug" element={<LearnArticle />} />
             <Route path="/print-responsibility" element={<PrintResponsibility />} />
             <Route path="/store" element={<Store />} />
             <Route path="/store/models" element={<StoreModels />} />
