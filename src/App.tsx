@@ -38,6 +38,7 @@ import BrandGames from "./pages/BrandGames";
 import Careers from "./pages/Careers";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
+import PrintResponsibility from "./pages/PrintResponsibility";
 
 // Maker Dashboard pages
 import MakerOverview from "./pages/maker/MakerOverview";
@@ -87,6 +88,7 @@ const App = () => (
             <Route path="/careers" element={<Careers />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPost />} />
+            <Route path="/print-responsibility" element={<PrintResponsibility />} />
 
             {/* Dashboard routes */}
             <Route path="/dashboard" element={<Dashboard />} />

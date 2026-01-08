@@ -15,6 +15,7 @@ const PrivacyPolicy = () => {
 • Shipping addresses for print deliveries
 • Payment information processed through secure third-party providers
 • Account credentials and profile data
+• CASL consent records (timestamp and confirmation)
 
 Usage Information:
 • Device information and browser type
@@ -22,11 +23,15 @@ Usage Information:
 • Pages visited and features used
 • Print orders and transaction history
 
+Uploaded Files:
+• 3D model files (STL) you submit for printing
+• File metadata (name, size, upload date)
+• Note: Files are NOT retained permanently — see Section 7
+
 Community Data:
 • Recycling drop submissions and locations
 • Community cleanup activity
-• Referral program participation
-• 3D model uploads and downloads`
+• Referral program participation`
     },
     {
       icon: Database,
@@ -35,15 +40,19 @@ Community Data:
 • Process and fulfill your 3D print orders
 • Manage your account and credits balance
 • Verify recycling and cleanup submissions for reward programs
-• Communicate order updates, promotions, and service changes
+• Communicate order updates and service changes
+• Send marketing emails (only with your explicit consent)
 • Improve our services and user experience
 • Prevent fraud and ensure platform security
 • Comply with legal obligations
+• Respond to designer opt-out and takedown requests
 
 We do NOT:
 • Sell your personal information to third parties
 • Share your data for advertising purposes without consent
-• Store payment card details on our servers`
+• Store payment card details on our servers
+• Retain your uploaded files permanently
+• Use your uploaded files for any purpose other than fulfilling your order`
     },
     {
       icon: Globe,
@@ -53,13 +62,14 @@ We do NOT:
 Service Providers:
 • Shipping carriers (Canada Post, UPS, etc.) for delivery
 • Payment processors for transaction handling
-• Cloud hosting providers for data storage
+• Cloud hosting providers for data storage (Supabase, Canada region)
 • Email service providers for communications
 
 Legal Requirements:
 • When required by Canadian law or court order
 • To protect our rights, privacy, safety, or property
 • In connection with a merger, acquisition, or sale of assets
+• To respond to valid copyright infringement claims
 
 With Your Consent:
 • When you explicitly agree to share information
@@ -71,6 +81,7 @@ With Your Consent:
       content: `We implement industry-standard security measures:
 • SSL/TLS encryption for all data transmission
 • Secure password hashing and storage
+• Row-level security (RLS) on all database tables
 • Regular security audits and updates
 • Limited employee access to personal data
 • Secure backup and disaster recovery procedures
@@ -94,8 +105,86 @@ To exercise these rights, contact us at privacy@3d3d.ca
 We will respond to requests within 30 days as required by Canadian law.`
     },
     {
+      icon: Mail,
+      title: "6. Email Marketing (CASL Compliance)",
+      content: `Canada's Anti-Spam Legislation (CASL) requires your explicit consent before we send marketing emails.
+
+When you sign up:
+• You choose whether to receive marketing emails (checkbox, unchecked by default)
+• We record the timestamp and IP address of your consent
+• You can unsubscribe at any time via link in any email
+
+We will NEVER:
+• Pre-check the consent checkbox
+• Send marketing emails without explicit consent
+• Make consent a condition of using our core services
+• Share your email with third parties for marketing
+
+Transactional emails (order confirmations, password resets) are exempt from CASL and will always be sent.`
+    },
+    {
       icon: Shield,
-      title: "6. Cookies & Tracking",
+      title: "7. File Retention & Deletion",
+      content: `CRITICAL: Your uploaded 3D files are temporary.
+
+Uploaded Files (STL):
+• Maximum retention: 14 days after order completion
+• Purpose: Reprints, defect correction, quality assurance only
+• Immediate deletion: Available on request at any time
+• Contact: privacy@3d3d.ca or use delete option in order history
+
+What We Keep:
+• Order metadata (what was printed, when, specifications)
+• Thumbnail previews (for order history display)
+
+What We Delete:
+• The actual STL file
+• Any intermediate processing files
+
+We NEVER:
+• Sell or share your uploaded files
+• Add your files to our store without explicit permission
+• Use your files for any purpose other than fulfilling your order`
+    },
+    {
+      icon: MapPin,
+      title: "8. Data Retention & Location",
+      content: `Retention Periods:
+• Account data: Retained while account is active, plus 3 years after closure
+• Transaction records: 7 years as required by Canadian tax law
+• Usage logs: 12 months for security and analytics
+• CASL consent records: Permanent (legal requirement)
+• Uploaded files: Maximum 14 days (see Section 7)
+
+Location:
+• Your data is stored on servers located in Canada (Supabase Canada Central)
+• Data transfers outside Canada comply with PIPEDA requirements
+• We use service providers that maintain equivalent privacy standards`
+    },
+    {
+      icon: Shield,
+      title: "9. Designer Opt-Out Records",
+      content: `If you are a designer who has requested your work not be printed through our service:
+
+What We Store:
+• Your contact information (for communication)
+• Design identifiers or hashes you provide
+• Date of opt-out request
+• Status of your request
+
+Why We Store It:
+• To honor your opt-out request
+• To prevent future uploads of your designs
+• To respond to inquiries about your work
+
+Your Rights:
+• Update your opt-out at any time
+• Request removal of your opt-out record
+• Contact: designers@3d3d.ca`
+    },
+    {
+      icon: Eye,
+      title: "10. Cookies & Tracking",
       content: `We use cookies and similar technologies for:
 • Essential site functionality (login sessions, shopping cart)
 • Analytics to understand site usage (anonymized)
@@ -106,19 +195,6 @@ You can control cookies through your browser settings. Disabling essential cooki
 We do not use cookies for:
 • Cross-site advertising tracking
 • Selling to third-party advertisers`
-    },
-    {
-      icon: MapPin,
-      title: "7. Data Retention & Location",
-      content: `Retention:
-• Account data: Retained while account is active, plus 3 years after closure
-• Transaction records: 7 years as required by Canadian tax law
-• Usage logs: 12 months for security and analytics
-
-Location:
-• Your data is stored on servers located in Canada and/or the United States
-• Data transfers outside Canada comply with PIPEDA requirements
-• We use service providers that maintain equivalent privacy standards`
     },
   ];
 
@@ -156,10 +232,10 @@ Location:
         <div className="mb-8 animate-fade-in" style={{ animationDelay: '100ms' }}>
           <GlowCard className="p-6">
             <p className="text-muted-foreground leading-relaxed">
-              3D3D Canada Inc. ("we", "us", "our") is committed to protecting your privacy. 
-              This Privacy Policy explains how we collect, use, disclose, and safeguard your information 
-              when you use our website 3D3D.ca and related services. We comply with Canada's 
-              Personal Information Protection and Electronic Documents Act (PIPEDA) and applicable 
+              3D3D Canada Inc. ("we", "us", "our") is committed to protecting your privacy.
+              This Privacy Policy explains how we collect, use, disclose, and safeguard your information
+              when you use our website 3D3D.ca and related services. We comply with Canada's
+              Personal Information Protection and Electronic Documents Act (PIPEDA) and applicable
               provincial privacy legislation.
             </p>
           </GlowCard>
@@ -195,8 +271,8 @@ Location:
           <GlowCard className="p-6 bg-secondary/5 border-secondary/20">
             <h3 className="text-lg font-semibold text-foreground mb-2">Policy Updates</h3>
             <p className="text-muted-foreground text-sm">
-              We may update this Privacy Policy from time to time. We will notify you of any changes 
-              by posting the new Privacy Policy on this page and updating the "Last updated" date. 
+              We may update this Privacy Policy from time to time. We will notify you of any changes
+              by posting the new Privacy Policy on this page and updating the "Last updated" date.
               For significant changes, we will provide additional notice via email or through the Service.
             </p>
           </GlowCard>
@@ -219,7 +295,7 @@ Location:
                   <p className="text-foreground">Address: Calgary, Alberta, Canada</p>
                 </div>
                 <p className="text-xs text-muted-foreground mt-3">
-                  If you are not satisfied with our response, you may contact the 
+                  If you are not satisfied with our response, you may contact the
                   Office of the Privacy Commissioner of Canada at www.priv.gc.ca
                 </p>
               </div>

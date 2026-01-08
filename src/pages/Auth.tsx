@@ -11,6 +11,7 @@ import { Loader2, Mail, Lock, User, Gift, ArrowRight, KeyRound, CheckCircle, Clo
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 import { backendReady } from '@/config/backend';
+import { CASLConsent } from '@/components/legal';
 
 const emailSchema = z.string().email('Please enter a valid email address');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
@@ -20,7 +21,7 @@ type AuthMode = 'login' | 'signup' | 'forgot' | 'reset';
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const initialMode = searchParams.get('mode') as AuthMode | null;
-  
+
   const [mode, setMode] = useState<AuthMode>(initialMode === 'reset' ? 'reset' : 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -28,8 +29,10 @@ const Auth = () => {
   const [fullName, setFullName] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string; confirmPassword?: string; consent?: string }>({});
   const [resetSent, setResetSent] = useState(false);
+  const [caslConsent, setCaslConsent] = useState(false);
+  const [caslConsentTimestamp, setCaslConsentTimestamp] = useState<Date | null>(null);
 
   const { signIn, signUp, user, resetPassword, updatePassword } = useAuth();
   const navigate = useNavigate();
@@ -136,13 +139,18 @@ const Auth = () => {
       }
     }
 
+    // CASL consent required for signup
+    if (mode === 'signup' && !caslConsent) {
+      newErrors.consent = 'You must consent to receive emails to create an account';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       emailSchema.parse(email);
     } catch {
@@ -291,6 +299,22 @@ const Auth = () => {
             return;
           }
 
+          // Save CASL consent to profile
+          if (caslConsentTimestamp) {
+            const { error: consentError } = await supabase
+              .from('profiles')
+              .update({
+                consent_email_marketing: true,
+                consent_email_timestamp: caslConsentTimestamp.toISOString(),
+                consent_ip_address: 'client-side'
+              } as any) // Type assertion: CASL columns added via migration 20260108100000
+              .eq('id', (await supabase.auth.getUser()).data.user?.id);
+
+            if (consentError) {
+              console.error('Failed to save CASL consent:', consentError);
+            }
+          }
+
           toast({
             title: 'Account created',
             description: "You're signed in and ready to go.",
@@ -329,7 +353,7 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       <ParticleBackground />
-      
+
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-12">
         <motion.div
           initial={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -363,7 +387,7 @@ const Auth = () => {
 
             {/* Header */}
             <div className="text-center mb-8">
-              <motion.h1 
+              <motion.h1
                 className="text-3xl font-tech font-bold text-foreground mb-2"
                 key={mode}
                 initial={{ opacity: 0, y: -10 }}
@@ -536,6 +560,32 @@ const Auth = () => {
                 )}
               </AnimatePresence>
 
+              {/* CASL Consent (signup only) */}
+              <AnimatePresence mode="wait">
+                {mode === 'signup' && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-1"
+                  >
+                    <CASLConsent
+                      onConsentChange={(consented, timestamp) => {
+                        setCaslConsent(consented);
+                        setCaslConsentTimestamp(timestamp);
+                        if (consented) {
+                          setErrors(prev => ({ ...prev, consent: undefined }));
+                        }
+                      }}
+                      className="py-2"
+                    />
+                    {errors.consent && (
+                      <p className="text-xs text-destructive ml-1">{errors.consent}</p>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               {/* Forgot Password Link (login only) */}
               {mode === 'login' && (
                 <div className="text-right">
@@ -607,7 +657,7 @@ const Auth = () => {
 
             {/* Legal */}
             <p className="mt-6 text-xs text-center text-muted-foreground/60">
-              By continuing, you agree to our Terms of Service and Privacy Policy. 
+              By continuing, you agree to our Terms of Service and Privacy Policy.
               All prices in CAD. Subject to Canadian regulations.
             </p>
           </div>
