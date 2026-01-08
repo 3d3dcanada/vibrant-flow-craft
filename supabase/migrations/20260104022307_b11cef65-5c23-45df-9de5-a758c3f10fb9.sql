@@ -1,5 +1,9 @@
 -- Remove role column from profiles table (roles now stored in user_roles)
--- First drop the constraint
+-- First drop any policies that depend on the role column
+DROP POLICY IF EXISTS "Users can update own profile (no role)" ON public.profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
+
+-- Drop the constraint
 ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
 
 -- Drop the role column

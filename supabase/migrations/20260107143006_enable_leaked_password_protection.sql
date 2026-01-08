@@ -9,11 +9,15 @@
 -- Note: This setting is configured via Supabase Dashboard, not SQL
 -- This migration serves as documentation and verification
 
--- Verify the setting is enabled (this will fail if not enabled)
 -- To enable: Supabase Dashboard → Authentication → Policies → Enable "Leaked Password Protection"
 
--- Add comment for documentation
-COMMENT ON SCHEMA auth IS 'Supabase Auth schema. Leaked password protection should be enabled via Dashboard → Authentication → Policies.';
+-- Documentation-only migration - no SQL changes required
+-- The actual setting must be enabled via Supabase Dashboard
+DO $$
+BEGIN
+  RAISE NOTICE 'REMINDER: Enable leaked password protection via Supabase Dashboard → Authentication → Policies';
+END
+$$;
 
 -- Create a function to check if a password is in the leaked password list
 -- (This is handled by Supabase Auth, but we document the expectation)

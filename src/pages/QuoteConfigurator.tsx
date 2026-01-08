@@ -45,25 +45,25 @@ export default function QuoteConfigurator() {
     ];
 
     const handleFileUpload = async (file: File) => {
-        // TODO: Implement actual file upload to Supabase Storage
-        // TODO: Parse STL client-side or call server-side analysis
-        console.log('Uploading file:', file.name);
+        // DEV NOTE: Real file upload to Supabase Storage + STL parsing not yet wired
+        // This uses demo data to show UI flow. Backend Edge Function is deployed.
+        console.log('[Quote] File selected:', file.name);
 
-        // Simulate upload delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Demo delay to simulate analysis
+        await new Promise(resolve => setTimeout(resolve, 800));
 
-        // Mock analysis data
-        const mockAnalysis: FileAnalysis = {
-            weight: 50, // grams
-            dimensions: { x: 100, y: 100, z: 50 }, // mm
-            estimatedPrintTime: 3.5, // hours
-            volume: 500000, // mm³
+        // Demo analysis data - real parsing will replace this
+        const demoAnalysis: FileAnalysis = {
+            weight: 50,
+            dimensions: { x: 100, y: 100, z: 50 },
+            estimatedPrintTime: 3.5,
+            volume: 500000,
         };
 
         setQuoteData(prev => ({
             ...prev,
             file,
-            analysis: mockAnalysis,
+            analysis: demoAnalysis,
         }));
     };
 
@@ -184,9 +184,12 @@ export default function QuoteConfigurator() {
                                 </p>
                             </div>
 
-                            <div className="text-center text-muted-foreground py-12">
-                                <p>Material selector coming in next commit...</p>
-                                <p className="text-sm mt-2">Will include: Material dropdown, color picker, post-processing toggle</p>
+                            <div className="text-center py-12 border-2 border-dashed border-border/50 rounded-lg">
+                                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                                    <span className="text-2xl">🔧</span>
+                                </div>
+                                <p className="text-lg font-tech text-foreground mb-2">Step 2: In Development</p>
+                                <p className="text-sm text-muted-foreground">Material selection is being built. Check back soon.</p>
                             </div>
                         </div>
                     )}
@@ -203,9 +206,12 @@ export default function QuoteConfigurator() {
                                 </p>
                             </div>
 
-                            <div className="text-center text-muted-foreground py-12">
-                                <p>Quantity selector coming in next commit...</p>
-                                <p className="text-sm mt-2">Will include: Quick buttons (1, 2, 5, 10, 25, 50), delivery speed selector</p>
+                            <div className="text-center py-12 border-2 border-dashed border-border/50 rounded-lg">
+                                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                                    <span className="text-2xl">🔧</span>
+                                </div>
+                                <p className="text-lg font-tech text-foreground mb-2">Step 3: In Development</p>
+                                <p className="text-sm text-muted-foreground">Quantity options are being built. Check back soon.</p>
                             </div>
                         </div>
                     )}
@@ -222,9 +228,12 @@ export default function QuoteConfigurator() {
                                 </p>
                             </div>
 
-                            <div className="text-center text-muted-foreground py-12">
-                                <p>Price breakdown coming in next commit...</p>
-                                <p className="text-sm mt-2">Will include: Line items, total, credit conversion, maker payout</p>
+                            <div className="text-center py-12 border-2 border-dashed border-border/50 rounded-lg">
+                                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                                    <span className="text-2xl">🔧</span>
+                                </div>
+                                <p className="text-lg font-tech text-foreground mb-2">Step 4: In Development</p>
+                                <p className="text-sm text-muted-foreground">Pricing engine is live — UI integration in progress.</p>
                             </div>
                         </div>
                     )}
@@ -241,9 +250,12 @@ export default function QuoteConfigurator() {
                                 </p>
                             </div>
 
-                            <div className="text-center text-muted-foreground py-12">
-                                <p>Checkout options coming in next commit...</p>
-                                <p className="text-sm mt-2">Will include: Guest checkout, login/signup, save quote</p>
+                            <div className="text-center py-12 border-2 border-dashed border-border/50 rounded-lg">
+                                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                                    <span className="text-2xl">🔧</span>
+                                </div>
+                                <p className="text-lg font-tech text-foreground mb-2">Step 5: In Development</p>
+                                <p className="text-sm text-muted-foreground">Checkout flow is being built. Payments not yet live.</p>
                             </div>
                         </div>
                     )}
