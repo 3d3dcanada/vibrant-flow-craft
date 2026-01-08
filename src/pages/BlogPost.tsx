@@ -172,6 +172,85 @@ const postsContent: Record<string, PostContent> = {
                 </p>
             </>
         )
+    },
+    "printing-isnt-piracy": {
+        title: "Printing Isn't Piracy: How to Respect Designers and Still Make Things",
+        date: "2026-01-08",
+        author: "Founder",
+        category: "Education",
+        content: (
+            <>
+                <p>
+                    There's a tension in the 3D printing world that nobody talks about honestly:
+                    How do you print cool things while respecting the people who designed them?
+                </p>
+                <p>
+                    Let's be clear upfront: <strong>Printing is not piracy.</strong> Using a 3D printer
+                    to make things is wonderful. But how you get the files matters.
+                </p>
+                <h3>The Difference That Matters</h3>
+                <p>
+                    When you download a file from Thingiverse with a Creative Commons license that says
+                    "free for personal use," and you print it for yourself — that's great. That's exactly
+                    how it's supposed to work.
+                </p>
+                <p>
+                    When you download that same file and start selling prints on Etsy without permission?
+                    That's not printing. That's taking someone's work without paying for it.
+                </p>
+                <h3>How to Know If You're Good</h3>
+                <p><strong>You're probably fine if:</strong></p>
+                <ul>
+                    <li>You designed it yourself</li>
+                    <li>You bought the file with commercial rights</li>
+                    <li>The license explicitly allows what you're doing</li>
+                    <li>You have written permission from the creator</li>
+                    <li>It's truly public domain (not just "I found it online")</li>
+                </ul>
+                <p><strong>You should pause if:</strong></p>
+                <ul>
+                    <li>The file says "personal use only" and you're selling prints</li>
+                    <li>You found it on a site known for pirated content</li>
+                    <li>You're not sure where the file came from</li>
+                    <li>You're avoiding the question because you don't want to know the answer</li>
+                </ul>
+                <h3>What About "Grey Areas"?</h3>
+                <p>
+                    Here's the honest truth: there are grey areas. A file you made for yourself that
+                    a friend wants to buy. A design that's "inspired by" something else. A remix of
+                    someone's work.
+                </p>
+                <p>
+                    Our advice: when in doubt, reach out. Most designers are happy to work with you.
+                    They'd rather sell you a license than chase you for infringement. A simple email
+                    asking "can I sell prints of this?" goes a long way.
+                </p>
+                <h3>How 3D3D Handles This</h3>
+                <p>
+                    We're a print service, not a license inspector. We don't scan your files or run
+                    AI detection. When you upload a file, you confirm you have the right to print it.
+                    That's on you.
+                </p>
+                <p>
+                    But we're not neutral enablers either. We refuse obvious violations. We offer
+                    a designer opt-out program. We don't knowingly print pirated content.
+                </p>
+                <p>
+                    Most importantly, we're building a store where you can buy files with clear
+                    commercial rights. If you want to print and sell, start there.
+                </p>
+                <h3>The Bigger Picture</h3>
+                <p>
+                    Designers make the 3D printing community possible. Without people creating and
+                    sharing models, we'd all be 3D printing basic cubes. When you respect creators,
+                    you keep the ecosystem healthy.
+                </p>
+                <p>
+                    Printing isn't piracy. Printing is wonderful. Just make sure the file you're
+                    printing came from the right place.
+                </p>
+            </>
+        )
     }
 };
 

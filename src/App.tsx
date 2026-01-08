@@ -39,6 +39,9 @@ import Careers from "./pages/Careers";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import PrintResponsibility from "./pages/PrintResponsibility";
+import Store from "./pages/Store";
+import StoreModels from "./pages/StoreModels";
+import StorePrinted from "./pages/StorePrinted";
 
 // Maker Dashboard pages
 import MakerOverview from "./pages/maker/MakerOverview";
@@ -89,6 +92,9 @@ const App = () => (
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPost />} />
             <Route path="/print-responsibility" element={<PrintResponsibility />} />
+            <Route path="/store" element={<Store />} />
+            <Route path="/store/models" element={<StoreModels />} />
+            <Route path="/store/printed" element={<StorePrinted />} />
 
             {/* Dashboard routes */}
             <Route path="/dashboard" element={<Dashboard />} />

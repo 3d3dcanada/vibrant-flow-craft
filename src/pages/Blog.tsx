@@ -14,6 +14,14 @@ interface BlogPost {
 
 const posts: BlogPost[] = [
     {
+        slug: "printing-isnt-piracy",
+        title: "Printing Isn't Piracy: How to Respect Designers and Still Make Things",
+        excerpt: "How to know if you have the right to print a file, what to do when you're unsure, and why respecting creators keeps the community healthy.",
+        date: "2026-01-08",
+        author: "Founder",
+        category: "Education"
+    },
+    {
         slug: "why-3d3d-exists",
         title: "Why 3D3D Exists",
         excerpt: "The maker revolution happened. But somewhere along the way, 3D printing became complicated, expensive, and inaccessible. We're here to fix that.",

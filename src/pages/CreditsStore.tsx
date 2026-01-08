@@ -11,7 +11,7 @@ import { GlowCard } from '@/components/ui/GlowCard';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { 
+import {
   ArrowLeft, Coins, Gift, CreditCard, Wallet, TrendingUp,
   CheckCircle, ArrowRight, Sparkles, Tag, Calendar, ShoppingCart
 } from 'lucide-react';
@@ -49,25 +49,25 @@ const CreditsStore = () => {
       return;
     }
     setRedeeming(true);
-    
+
     try {
-      const { data, error } = await supabase.rpc('redeem_gift_card', { 
-        p_code: giftCardCode.trim() 
+      const { data, error } = await supabase.rpc('redeem_gift_card', {
+        p_code: giftCardCode.trim()
       });
-      
+
       if (error) throw error;
-      
+
       const result = data as { success: boolean; error?: string; credits_value?: number; new_balance?: number; message?: string };
-      
+
       if (!result.success) {
-        toast({ 
-          title: "Redemption Failed", 
+        toast({
+          title: "Redemption Failed",
           description: result.error || "Unable to redeem gift card",
-          variant: "destructive" 
+          variant: "destructive"
         });
       } else {
-        toast({ 
-          title: "Success!", 
+        toast({
+          title: "Success!",
           description: result.message || `Redeemed +${result.credits_value} credits!`,
         });
         setGiftCardCode('');
@@ -75,10 +75,10 @@ const CreditsStore = () => {
         window.location.reload();
       }
     } catch (error: any) {
-      toast({ 
-        title: "Error", 
+      toast({
+        title: "Error",
         description: error.message || "Failed to redeem gift card",
-        variant: "destructive" 
+        variant: "destructive"
       });
     } finally {
       setRedeeming(false);
@@ -124,7 +124,7 @@ const CreditsStore = () => {
   return (
     <div className="min-h-screen bg-background relative">
       <ParticleBackground />
-      
+
       <div className="relative z-10">
         {/* Header */}
         <header className="border-b border-primary/10 bg-background/80 backdrop-blur-xl sticky top-0 z-50">
@@ -137,7 +137,7 @@ const CreditsStore = () => {
               </Link>
               <AnimatedLogo size="sm" />
             </div>
-            
+
             <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/10 border border-secondary/30">
               <Coins className="w-5 h-5 text-secondary" />
               <span className="font-tech font-bold text-secondary">
@@ -160,6 +160,10 @@ const CreditsStore = () => {
             </h1>
             <p className="text-muted-foreground">
               Buy credits for prints • Redeem gift cards • Track your balance
+            </p>
+            <p className="text-xs text-muted-foreground mt-2 max-w-lg mx-auto">
+              Credits are platform balance only. Non-refundable except where legally required.
+              Cannot be exchanged for cash or transferred between accounts.
             </p>
           </motion.div>
 
@@ -186,7 +190,7 @@ const CreditsStore = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex flex-col md:flex-row items-center gap-4 text-sm">
                   <div className="text-center px-4 py-2 rounded-lg bg-background/50">
                     <div className="text-muted-foreground">Lifetime Earned</div>
@@ -207,11 +211,10 @@ const CreditsStore = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-6 py-3 rounded-lg font-medium transition-all whitespace-nowrap ${
-                  activeTab === tab 
-                    ? 'bg-secondary text-secondary-foreground' 
+                className={`px-6 py-3 rounded-lg font-medium transition-all whitespace-nowrap ${activeTab === tab
+                    ? 'bg-secondary text-secondary-foreground'
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                }`}
+                  }`}
               >
                 {tab === 'buy' && 'Buy Credits'}
                 {tab === 'redeem' && 'Redeem Code'}
@@ -241,10 +244,9 @@ const CreditsStore = () => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
                     >
-                      <GlowCard 
-                        className={`p-5 relative cursor-pointer transition-all hover:border-secondary ${
-                          pkg.popular ? 'border-secondary ring-2 ring-secondary/30' : ''
-                        }`}
+                      <GlowCard
+                        className={`p-5 relative cursor-pointer transition-all hover:border-secondary ${pkg.popular ? 'border-secondary ring-2 ring-secondary/30' : ''
+                          }`}
                         variant={pkg.popular ? 'teal' : undefined}
                       >
                         {pkg.popular && (
@@ -252,20 +254,20 @@ const CreditsStore = () => {
                             BEST VALUE
                           </div>
                         )}
-                        
+
                         <div className="text-center">
                           <div className="text-3xl font-tech font-bold text-foreground">
                             {pkg.credits}
                           </div>
                           <div className="text-sm text-muted-foreground mb-3">credits</div>
-                          
+
                           {pkg.bonus > 0 && (
                             <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-success/20 text-success text-xs font-medium mb-3">
                               <Sparkles className="w-3 h-3" />
                               +{pkg.bonus} bonus
                             </div>
                           )}
-                          
+
                           <div className="text-2xl font-bold text-secondary mb-1">
                             ${pkg.price} <span className="text-sm text-muted-foreground">CAD</span>
                           </div>
@@ -273,9 +275,9 @@ const CreditsStore = () => {
                             ${((pkg.price / (pkg.credits + pkg.bonus)) * 10).toFixed(2)}/10 credits
                           </div>
                         </div>
-                        
-                        <NeonButton 
-                          size="sm" 
+
+                        <NeonButton
+                          size="sm"
                           className="w-full mt-4"
                           variant={selectedPackage === index ? 'primary' : pkg.popular ? 'primary' : 'secondary'}
                           onClick={() => setSelectedPackage(index)}
@@ -296,13 +298,12 @@ const CreditsStore = () => {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {paymentMethods.map((method) => (
-                    <GlowCard 
+                    <GlowCard
                       key={method.id}
-                      className={`p-5 cursor-pointer transition-all ${
-                        method.available 
-                          ? 'hover:border-secondary' 
+                      className={`p-5 cursor-pointer transition-all ${method.available
+                          ? 'hover:border-secondary'
                           : 'opacity-50 cursor-not-allowed'
-                      }`}
+                        }`}
                       onClick={() => {
                         if (method.available && method.id === 'etransfer') {
                           if (selectedPackage === null) {
@@ -364,7 +365,7 @@ const CreditsStore = () => {
                   <div>
                     <h4 className="font-medium text-foreground mb-1">Gift Card Trade Program</h4>
                     <p className="text-sm text-muted-foreground">
-                      Have unused gift cards? We accept Amazon, Steam, PlayStation, Xbox, and more! 
+                      Have unused gift cards? We accept Amazon, Steam, PlayStation, Xbox, and more!
                       Trade them for print credits at competitive rates. Contact us to start.
                     </p>
                   </div>
@@ -403,7 +404,7 @@ const CreditsStore = () => {
                     />
                   </div>
 
-                  <NeonButton 
+                  <NeonButton
                     onClick={handleRedeemGiftCard}
                     disabled={redeeming || !giftCardCode.trim()}
                     className="w-full"
@@ -425,8 +426,8 @@ const CreditsStore = () => {
                 <div className="space-y-3">
                   {transactions && transactions.length > 0 ? (
                     transactions.map((tx: any) => (
-                      <div 
-                        key={tx.id} 
+                      <div
+                        key={tx.id}
                         className="flex items-center justify-between p-4 rounded-lg bg-background/50 border border-primary/10 hover:border-secondary/30 transition-colors"
                       >
                         <div className="flex items-center gap-4">
