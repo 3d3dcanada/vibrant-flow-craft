@@ -33,6 +33,7 @@ import Refunds from "./pages/Refunds";
 import CommunityPolicy from "./pages/CommunityPolicy";
 import Schedule from "./pages/Schedule";
 import CustomerDashboard from "./pages/CustomerDashboard";
+import QuoteConfigurator from "./pages/QuoteConfigurator";
 
 // Maker Dashboard pages
 import MakerOverview from "./pages/maker/MakerOverview";
@@ -69,15 +70,16 @@ const App = () => (
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/promo-products" element={<PromoProducts />} />
             <Route path="/business-subscription" element={<BusinessSubscription />} />
-            
+
             {/* New public pages */}
             <Route path="/mission" element={<Mission />} />
             <Route path="/about" element={<About />} />
             <Route path="/refunds" element={<Refunds />} />
             <Route path="/community-policy" element={<CommunityPolicy />} />
             <Route path="/schedule" element={<Schedule />} />
+            <Route path="/quote" element={<QuoteConfigurator />} />
             <Route path="/recycle-buyback" element={<RecycleBuyback />} />
-            
+
             {/* Dashboard routes */}
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dashboard/customer" element={<CustomerDashboard />} />
@@ -91,7 +93,7 @@ const App = () => (
             <Route path="/dashboard/community-cleanup" element={<CommunityCleanup />} />
             <Route path="/dashboard/recycling" element={<Recycling />} />
             <Route path="/dashboard/gift-cards" element={<GiftCards />} />
-            
+
             {/* Maker Dashboard routes */}
             <Route path="/dashboard/maker" element={<MakerOverview />} />
             <Route path="/dashboard/maker/requests" element={<MakerRequests />} />
@@ -100,7 +102,7 @@ const App = () => (
             <Route path="/dashboard/maker/filament" element={<MakerFilament />} />
             <Route path="/dashboard/maker/earnings" element={<MakerEarnings />} />
             <Route path="/dashboard/maker/profile" element={<MakerProfile />} />
-            
+
             {/* Admin Dashboard routes */}
             <Route path="/dashboard/admin" element={<AdminOverview />} />
             <Route path="/dashboard/admin/content" element={<AdminContentPromos />} />
@@ -109,7 +111,7 @@ const App = () => (
             <Route path="/dashboard/admin/makers" element={<AdminMakerManager />} />
             <Route path="/dashboard/admin/ops" element={<AdminOperations />} />
             <Route path="/dashboard/admin/buyback" element={<AdminBuybackRequests />} />
-            
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
