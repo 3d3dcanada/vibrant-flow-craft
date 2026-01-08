@@ -462,6 +462,530 @@ const learnContent: Record<string, LearnContent> = {
                 </p>
             </>
         )
+    },
+    "post-processing-fundamentals": {
+        title: "Post-Processing Fundamentals",
+        readTime: "16 min",
+        content: (
+            <>
+                <p className="text-lg font-medium text-foreground">
+                    A print coming off the bed is rarely finished. Post-processing transforms raw prints
+                    into polished pieces. Here's what you need to know.
+                </p>
+
+                <h3>Support Removal</h3>
+                <p>
+                    Most complex prints require supports — temporary structures that hold up overhangs
+                    during printing. Removing them is the first step.
+                </p>
+                <ul>
+                    <li><strong>Breakaway supports:</strong> Snap off with pliers or by hand. Leave small nubs.</li>
+                    <li><strong>Dissolvable supports:</strong> PVA dissolves in water. Takes hours but leaves clean surfaces.</li>
+                    <li><strong>Tree supports:</strong> Easier to remove, less surface contact, but require good slicer settings.</li>
+                </ul>
+                <p>
+                    Good support settings matter more than removal technique. If supports are
+                    impossible to remove, the settings were wrong.
+                </p>
+
+                <h3>Sanding</h3>
+                <p>
+                    Sanding removes layer lines and imperfections. It's tedious but effective.
+                </p>
+                <ul>
+                    <li>Start with 120-grit for major imperfections</li>
+                    <li>Progress through 220, 400, 600 for smoother finish</li>
+                    <li>Wet sanding (with water) produces finer results on PLA/ABS</li>
+                    <li>Sand in one direction to avoid circular scratches</li>
+                </ul>
+                <p>
+                    Sanding generates plastic dust. Use a mask and work in a ventilated area.
+                </p>
+
+                <h3>Filling and Priming</h3>
+                <p>
+                    For painted finishes, filling layer lines creates smoother surfaces.
+                </p>
+                <ul>
+                    <li><strong>Filler primer:</strong> Spray-on coatings that fill small gaps. Multiple coats needed.</li>
+                    <li><strong>Body filler:</strong> Two-part compounds for deep imperfections. Sand after curing.</li>
+                    <li><strong>3D printing-specific fillers:</strong> Products designed for PLA/ABS compatibility.</li>
+                </ul>
+
+                <h3>Painting</h3>
+                <p>
+                    3D prints take paint well with proper preparation.
+                </p>
+                <ul>
+                    <li>Prime first — paint adheres to primer better than raw plastic</li>
+                    <li>Thin coats prevent drips and preserve detail</li>
+                    <li>Acrylic paints work well on most filaments</li>
+                    <li>Clear coat protects against wear and UV</li>
+                </ul>
+
+                <h3>Vapor Smoothing</h3>
+                <p>
+                    For ABS prints, acetone vapor can melt the surface to a glossy finish.
+                </p>
+                <ul>
+                    <li>Suspend print over acetone in a sealed container</li>
+                    <li>Vapor melts the surface layer, smoothing lines</li>
+                    <li>Easy to over-do — details can blur quickly</li>
+                    <li>Requires ventilation — acetone vapor is flammable and toxic</li>
+                </ul>
+                <p>
+                    This only works on ABS. PLA does not react to acetone.
+                </p>
+
+                <h3>Heat Treatment</h3>
+                <p>
+                    Annealing prints in an oven can increase strength and heat resistance.
+                </p>
+                <ul>
+                    <li>Controlled heating realigns polymer chains</li>
+                    <li>Parts may warp — use a mold or support structure</li>
+                    <li>Temperature and time depend on material</li>
+                    <li>Results vary — experiment on test pieces first</li>
+                </ul>
+
+                <h3>When to Stop</h3>
+                <p>
+                    Not every print needs post-processing. Functional parts that no one sees?
+                    Leave them raw. Decorative pieces for display? Polish them up.
+                </p>
+                <p>
+                    Post-processing is a skill. The more you do it, the faster you get.
+                    But the first step is deciding if it's worth doing at all.
+                </p>
+            </>
+        )
+    },
+    "when-to-print-vs-buy": {
+        title: "When to Print vs Buy",
+        readTime: "12 min",
+        content: (
+            <>
+                <p className="text-lg font-medium text-foreground">
+                    3D printing is powerful, but it's not always the right choice.
+                    Here's how to think about when printing makes sense and when buying doesn't.
+                </p>
+
+                <h3>The Real Cost of Printing</h3>
+                <p>
+                    Material cost is just the beginning. Factor in:
+                </p>
+                <ul>
+                    <li><strong>Time:</strong> Design, slicing, printing, post-processing</li>
+                    <li><strong>Failure rate:</strong> Some prints fail. Material and time are lost.</li>
+                    <li><strong>Equipment wear:</strong> Nozzles, belts, and other parts wear out</li>
+                    <li><strong>Learning curve:</strong> Your time learning has value</li>
+                    <li><strong>Electricity:</strong> Printers draw power for hours</li>
+                </ul>
+                <p>
+                    Often, the "cheap" printed option costs more than buying when you account
+                    for everything.
+                </p>
+
+                <h3>When Printing Wins</h3>
+                <p>
+                    <strong>Custom dimensions:</strong> If you need an exact size that doesn't exist
+                    commercially, printing is often the only option.
+                </p>
+                <p>
+                    <strong>Iteration and prototyping:</strong> When you need to test multiple versions
+                    quickly, printing beats ordering and waiting.
+                </p>
+                <p>
+                    <strong>Unavailable parts:</strong> Replacement parts for discontinued products.
+                    Specialty items no one manufactures.
+                </p>
+                <p>
+                    <strong>Learning and skill-building:</strong> The value isn't just the object —
+                    it's the capability you're developing.
+                </p>
+
+                <h3>When Buying Wins</h3>
+                <p>
+                    <strong>Commodity items:</strong> Basic brackets, hooks, containers.
+                    Mass-produced versions are cheaper and often stronger.
+                </p>
+                <p>
+                    <strong>High-stress applications:</strong> Metal, injection-molded plastic, and
+                    professionally manufactured parts beat printed equivalents for reliability.
+                </p>
+                <p>
+                    <strong>Time-sensitive needs:</strong> If you need it today, Amazon wins.
+                    Printing takes hours or days.
+                </p>
+                <p>
+                    <strong>Food contact:</strong> Printed parts have layer lines that harbor bacteria.
+                    Commercial food-safe items are purpose-built.
+                </p>
+
+                <h3>The Decision Framework</h3>
+                <p>Ask yourself:</p>
+                <ol>
+                    <li>Does a commercial option exist that meets my needs?</li>
+                    <li>What's my time worth on this project?</li>
+                    <li>How important is material performance (strength, heat, safety)?</li>
+                    <li>Am I using this as a learning opportunity?</li>
+                    <li>How urgently do I need it?</li>
+                </ol>
+                <p>
+                    If you answer honestly, the right choice usually becomes clear.
+                </p>
+
+                <h3>The Hybrid Approach</h3>
+                <p>
+                    Sometimes the answer is both. Buy the main component, print the adapter
+                    or mount. Use commercial fasteners with printed housings. Combine
+                    the strengths of each approach.
+                </p>
+            </>
+        )
+    },
+    "pricing-prints-fairly": {
+        title: "How to Price Prints Fairly",
+        readTime: "14 min",
+        content: (
+            <>
+                <p className="text-lg font-medium text-foreground">
+                    If you're selling prints, pricing is hard. Charge too little and you're
+                    working for pennies. Charge too much and you're exploiting customers.
+                    Here's how to find the balance.
+                </p>
+
+                <h3>Understanding Your Costs</h3>
+                <p>
+                    <strong>Material:</strong> Calculate actual filament used, not spool price.
+                    Slicers estimate grams. Multiply by cost per gram.
+                </p>
+                <p>
+                    <strong>Electricity:</strong> Roughly $0.10-0.25 CAD per print hour,
+                    depending on your rates and printer power draw.
+                </p>
+                <p>
+                    <strong>Machine time:</strong> Your printer has a lifespan. Each hour of
+                    printing uses some of that lifespan. Factor in eventual replacement.
+                </p>
+                <p>
+                    <strong>Failures:</strong> If you fail 10% of prints, build that into pricing.
+                    Every successful print covers part of a failed one.
+                </p>
+
+                <h3>Valuing Your Time</h3>
+                <p>
+                    This is where most people under-price. Your time includes:
+                </p>
+                <ul>
+                    <li>Customer communication</li>
+                    <li>File preparation and slicing</li>
+                    <li>Print monitoring</li>
+                    <li>Post-processing</li>
+                    <li>Packaging and shipping</li>
+                </ul>
+                <p>
+                    If you wouldn't work for $5/hour at a job, don't accept it in your
+                    print business. Your expertise has value.
+                </p>
+
+                <h3>Pricing Models</h3>
+                <p>
+                    <strong>Cost-plus:</strong> Calculate costs, add margin (30-50%+). Simple but
+                    may underprice complex work.
+                </p>
+                <p>
+                    <strong>Time-based:</strong> Charge per hour of print time plus setup fee.
+                    Fair for both parties but harder to quote quickly.
+                </p>
+                <p>
+                    <strong>Volume-based:</strong> Charge per cubic centimeter of print volume.
+                    Easy to calculate from slicer output.
+                </p>
+                <p>
+                    <strong>Value-based:</strong> What is this worth to the customer?
+                    A custom replacement part saving a $500 repair is worth more than material cost.
+                </p>
+
+                <h3>Common Mistakes</h3>
+                <ul>
+                    <li>Ignoring your time (working for free)</li>
+                    <li>Not accounting for failure rate</li>
+                    <li>Pricing to match overseas factories (you can't)</li>
+                    <li>Discounting for "exposure" or "volume" that never materializes</li>
+                    <li>Forgetting shipping and packaging costs</li>
+                </ul>
+
+                <h3>The Human Element</h3>
+                <p>
+                    Fair pricing isn't just math. It's respect — for yourself, your skills,
+                    and your customers. A sustainable price lets you continue doing good work.
+                    An unsustainable one burns you out or forces you to cut corners.
+                </p>
+                <p>
+                    You're offering a service that requires equipment, skill, and time.
+                    Price it accordingly.
+                </p>
+            </>
+        )
+    },
+    "choosing-filaments-responsibly": {
+        title: "Choosing Filaments Responsibly",
+        readTime: "13 min",
+        content: (
+            <>
+                <p className="text-lg font-medium text-foreground">
+                    Every spool of filament has an environmental footprint. Here's how
+                    to make material choices you can feel better about.
+                </p>
+
+                <h3>The Uncomfortable Truth</h3>
+                <p>
+                    Most 3D printing filaments are plastic. PLA is marketed as "biodegradable,"
+                    but only in industrial composting facilities — not your backyard or a landfill.
+                    PETG, ABS, and other materials are effectively permanent.
+                </p>
+                <p>
+                    3D printing is often positioned as "sustainable" because it reduces material
+                    waste compared to subtractive manufacturing. This is partially true, but
+                    it doesn't mean printing is environmentally neutral.
+                </p>
+
+                <h3>Material Comparisons</h3>
+                <p>
+                    <strong>PLA:</strong> Made from corn starch or sugarcane. Lower carbon footprint
+                    to produce than petroleum-based plastics. But farming corn uses land, water,
+                    and fertilizers. And PLA doesn't biodegrade in normal conditions.
+                </p>
+                <p>
+                    <strong>PETG:</strong> Chemically similar to recyclable water bottles, but
+                    contaminated PETG (like printed parts) disrupts recycling streams.
+                    Most municipalities won't accept it.
+                </p>
+                <p>
+                    <strong>ABS:</strong> Petroleum-based, produces fumes during printing, and
+                    is not recyclable through consumer channels. Durable, which means
+                    parts last longer — but also persist longer when discarded.
+                </p>
+
+                <h3>Recycled Filaments</h3>
+                <p>
+                    Some manufacturers offer recycled filaments (rPLA, rPETG). These take
+                    post-industrial or post-consumer waste and turn it back into usable material.
+                </p>
+                <ul>
+                    <li>Quality can be inconsistent — voids, color variation</li>
+                    <li>Usually costs the same or more than virgin material</li>
+                    <li>Still ends up as waste eventually unless recycled again</li>
+                    <li>Better than virgin — but not zero-impact</li>
+                </ul>
+
+                <h3>Reducing Waste</h3>
+                <p>
+                    The best environmental choice is printing less. When you do print:
+                </p>
+                <ul>
+                    <li><strong>Design intentionally:</strong> Right-size parts. Don't over-engineer.</li>
+                    <li><strong>Minimize supports:</strong> Better orientation = less waste</li>
+                    <li><strong>Test at small scale:</strong> Prototype tiny before printing big</li>
+                    <li><strong>Reduce failures:</strong> Good calibration = fewer failed prints</li>
+                    <li><strong>Print for durability:</strong> A part that lasts 10 years beats one that breaks in 1</li>
+                </ul>
+
+                <h3>End-of-Life Options</h3>
+                <p>
+                    <strong>Recycling programs:</strong> Some communities have filament recycling.
+                    Some companies take back spools. Check availability in your area.
+                </p>
+                <p>
+                    <strong>Home recyclers:</strong> Machines that shred failed prints and extrude
+                    new filament exist. Expensive and require consistent material streams.
+                </p>
+                <p>
+                    <strong>Honest disposal:</strong> If it's going in the garbage, at least don't
+                    pretend otherwise. Greenwashing helps no one.
+                </p>
+
+                <h3>Making Better Choices</h3>
+                <p>
+                    Perfect environmental choices don't exist in 3D printing. But better ones do.
+                    Print what you need. Choose recycled when possible. Design for longevity.
+                    Don't print junk for the sake of printing.
+                </p>
+            </>
+        )
+    },
+    "designing-for-strength": {
+        title: "Designing for Strength vs Looks",
+        readTime: "15 min",
+        content: (
+            <>
+                <p className="text-lg font-medium text-foreground">
+                    A beautiful print that breaks is a failure. A strong print nobody wants to
+                    look at is also a failure. Here's how to balance structural integrity with aesthetics.
+                </p>
+
+                <h3>How Prints Fail</h3>
+                <p>
+                    Understanding failure modes helps you prevent them:
+                </p>
+                <ul>
+                    <li><strong>Layer separation:</strong> Prints are weakest between layers. Stress parallel to layers causes delamination.</li>
+                    <li><strong>Cracking:</strong> Brittle materials (PLA) crack under impact or bending.</li>
+                    <li><strong>Warping:</strong> Internal stress causes parts to deform over time or under load.</li>
+                    <li><strong>Thin wall failure:</strong> Walls too thin to handle stress.</li>
+                </ul>
+
+                <h3>Orientation Matters Most</h3>
+                <p>
+                    The single biggest impact on strength is how you orient the print.
+                    Layer lines are weak points. Stress should run along layers, not across them.
+                </p>
+                <p>
+                    A hook printed flat (horizontal layers) will be much weaker than the same
+                    hook printed standing (vertical layers along the stress direction).
+                </p>
+
+                <h3>Wall Thickness</h3>
+                <p>
+                    Standard wall thickness is 0.8-1.2mm (2-3 perimeters with a 0.4mm nozzle).
+                    Functional parts often need more:
+                </p>
+                <ul>
+                    <li>High-stress parts: 1.6-2.4mm walls</li>
+                    <li>Snap fits and clips: minimum 1.2mm</li>
+                    <li>Decorative parts: 0.8mm is often fine</li>
+                </ul>
+
+                <h3>Infill: The Inside Story</h3>
+                <p>
+                    Infill provides internal structure. Common patterns include:
+                </p>
+                <ul>
+                    <li><strong>Grid:</strong> Simple, moderate strength in all directions</li>
+                    <li><strong>Gyroid:</strong> Excellent omnidirectional strength, slower to print</li>
+                    <li><strong>Lightning:</strong> Minimal infill for support only — not for functional parts</li>
+                    <li><strong>Cubic:</strong> Good strength, efficient material use</li>
+                </ul>
+                <p>
+                    Higher infill percentage doesn't always mean more strength. After 40-50%,
+                    returns diminish rapidly. Often, more perimeters beat more infill.
+                </p>
+
+                <h3>Designing for Load</h3>
+                <p>
+                    Think about how forces will act on your part:
+                </p>
+                <ul>
+                    <li>Add fillets to internal corners (stress concentrators)</li>
+                    <li>Use chamfers instead of sharp edges</li>
+                    <li>Distribute load across larger areas</li>
+                    <li>Avoid thin sections in load paths</li>
+                </ul>
+
+                <h3>Balancing Looks</h3>
+                <p>
+                    Sometimes you need both aesthetics and function:
+                </p>
+                <ul>
+                    <li>External appearance can be optimized while internal structure handles load</li>
+                    <li>Visible faces oriented for best surface quality</li>
+                    <li>Support contact on non-visible surfaces</li>
+                    <li>Post-processing to smooth areas that affect appearance but not strength</li>
+                </ul>
+
+                <h3>Testing</h3>
+                <p>
+                    If strength matters, test it. Print a prototype and try to break it.
+                    See where it fails. Adjust orientation, walls, or infill. Test again.
+                </p>
+                <p>
+                    Real-world testing beats theoretical calculations every time.
+                </p>
+            </>
+        )
+    },
+    "understanding-tolerances": {
+        title: "Understanding Tolerances",
+        readTime: "14 min",
+        content: (
+            <>
+                <p className="text-lg font-medium text-foreground">
+                    You designed two parts to fit together. They don't. Welcome to tolerances —
+                    the gap between what you design and what actually prints.
+                </p>
+
+                <h3>Why Things Don't Fit</h3>
+                <p>
+                    A 10mm hole in CAD rarely prints as exactly 10mm. Factors include:
+                </p>
+                <ul>
+                    <li><strong>Material shrinkage:</strong> Most plastics shrink slightly as they cool</li>
+                    <li><strong>Extrusion width:</strong> The nozzle creates paths wider than the nominal line</li>
+                    <li><strong>First layer squish:</strong> Over-squished first layers expand outward</li>
+                    <li><strong>Thermal expansion:</strong> Parts may expand during hot printing and shrink when cool</li>
+                    <li><strong>Calibration:</strong> Printers that aren't calibrated produce parts the wrong size</li>
+                </ul>
+
+                <h3>Typical Tolerance Values</h3>
+                <p>
+                    For well-calibrated FDM printers:
+                </p>
+                <ul>
+                    <li><strong>Holes:</strong> Often print 0.2-0.4mm smaller than designed</li>
+                    <li><strong>Outer dimensions:</strong> Often print 0.1-0.3mm larger than designed</li>
+                    <li><strong>Press-fit interference:</strong> 0.2-0.3mm for tight fits</li>
+                    <li><strong>Sliding fit clearance:</strong> 0.3-0.5mm for parts that move freely</li>
+                </ul>
+                <p>
+                    These vary by printer, material, and settings. Your printer may differ.
+                </p>
+
+                <h3>Designing for Tolerance</h3>
+                <p>
+                    The solution isn't hoping for perfect prints — it's designing for imperfection.
+                </p>
+                <ul>
+                    <li><strong>Clearance holes:</strong> Add 0.3-0.5mm to hole diameters</li>
+                    <li><strong>Mating parts:</strong> Print test pieces first, measure, adjust design</li>
+                    <li><strong>Captive designs:</strong> Design so parts can be adjusted after printing</li>
+                    <li><strong>Post-processing:</strong> Drill holes to final size, file edges</li>
+                </ul>
+
+                <h3>Calibrating Your Printer</h3>
+                <p>
+                    Before blaming the design, calibrate:
+                </p>
+                <ol>
+                    <li>Print a calibration cube (20x20x20mm)</li>
+                    <li>Measure all three dimensions with calipers</li>
+                    <li>Adjust steps/mm or slicer scaling if consistently off</li>
+                    <li>Print again and verify</li>
+                </ol>
+                <p>
+                    Also calibrate extrusion (e-steps) and flow rate. Over-extrusion causes
+                    dimensional errors.
+                </p>
+
+                <h3>Material-Specific Considerations</h3>
+                <ul>
+                    <li><strong>PLA:</strong> Low shrinkage, relatively accurate</li>
+                    <li><strong>ABS:</strong> Significant shrinkage (up to 2%), needs compensation</li>
+                    <li><strong>PETG:</strong> Moderate shrinkage, slight squish expansion</li>
+                    <li><strong>Nylon:</strong> Absorbs moisture, dimensions change over time</li>
+                </ul>
+
+                <h3>Test, Measure, Iterate</h3>
+                <p>
+                    The only reliable way to achieve good fits is iterative testing.
+                    Print small test pieces. Measure them. Adjust. Repeat until it works.
+                </p>
+                <p>
+                    Document what works for your printer and materials. Build a reference
+                    of compensation values you can reuse.
+                </p>
+            </>
+        )
     }
 };
 

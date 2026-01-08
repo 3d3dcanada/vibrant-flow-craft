@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { NeonButton } from '@/components/ui/NeonButton';
-import { BookOpen, ArrowRight, GraduationCap, Printer, FileText, Box } from 'lucide-react';
+import { BookOpen, ArrowRight, GraduationCap, Printer, FileText, Box, Wrench, DollarSign, Ruler, PaintBucket, Target, Scale } from 'lucide-react';
 
 interface LearningGuide {
     slug: string;
@@ -39,6 +39,48 @@ const guides: LearningGuide[] = [
         description: "PLA, PETG, ABS, TPU, and beyond. What each material does, when to use it, and what to watch out for.",
         icon: <Box className="w-6 h-6" />,
         readTime: "14 min"
+    },
+    {
+        slug: "post-processing-fundamentals",
+        title: "Post-Processing Fundamentals",
+        description: "Support removal, sanding, painting, vapor smoothing — turning raw prints into finished pieces.",
+        icon: <Wrench className="w-6 h-6" />,
+        readTime: "16 min"
+    },
+    {
+        slug: "when-to-print-vs-buy",
+        title: "When to Print vs Buy",
+        description: "The honest math on when 3D printing makes sense and when you should just order from a store.",
+        icon: <Scale className="w-6 h-6" />,
+        readTime: "12 min"
+    },
+    {
+        slug: "pricing-prints-fairly",
+        title: "How to Price Prints Fairly",
+        description: "Understanding costs, valuing time, and setting prices that sustain you without exploiting customers.",
+        icon: <DollarSign className="w-6 h-6" />,
+        readTime: "14 min"
+    },
+    {
+        slug: "choosing-filaments-responsibly",
+        title: "Choosing Filaments Responsibly",
+        description: "Environmental impact, recyclability, and making material choices you can feel good about.",
+        icon: <PaintBucket className="w-6 h-6" />,
+        readTime: "13 min"
+    },
+    {
+        slug: "designing-for-strength",
+        title: "Designing for Strength vs Looks",
+        description: "Wall thickness, infill patterns, orientation — the structural decisions that determine success.",
+        icon: <Target className="w-6 h-6" />,
+        readTime: "15 min"
+    },
+    {
+        slug: "understanding-tolerances",
+        title: "Understanding Tolerances",
+        description: "Why things don't fit, how to account for shrinkage, and designing parts that actually work together.",
+        icon: <Ruler className="w-6 h-6" />,
+        readTime: "14 min"
     }
 ];
 
@@ -49,7 +91,7 @@ const guides: LearningGuide[] = [
 export default function Learn() {
     return (
         <div className="min-h-screen bg-background py-16 px-4">
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-5xl mx-auto">
                 {/* Header */}
                 <div className="text-center mb-16">
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/10 text-secondary mb-6">
@@ -72,31 +114,33 @@ export default function Learn() {
                         <p className="text-muted-foreground max-w-xl mx-auto text-sm leading-relaxed">
                             We believe understanding leads to better decisions. These guides aren't about selling you
                             on 3D printing or our service — they're about giving you the knowledge to decide for yourself
-                            what suits your needs.
+                            what suits your needs. We'd rather you make an informed choice than a profitable-for-us mistake.
                         </p>
                     </div>
                 </GlassPanel>
 
                 {/* Guides Grid */}
-                <div className="grid md:grid-cols-2 gap-6 mb-12">
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
                     {guides.map((guide) => (
                         <Link key={guide.slug} to={`/learn/${guide.slug}`}>
                             <GlassPanel className="p-6 h-full hover:border-secondary/50 transition-colors cursor-pointer">
-                                <div className="flex items-start gap-4">
-                                    <div className="p-3 rounded-xl bg-secondary/10 text-secondary">
-                                        {guide.icon}
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <h2 className="text-lg font-tech font-bold text-foreground">
-                                                {guide.title}
-                                            </h2>
+                                <div className="flex flex-col h-full">
+                                    <div className="flex items-start gap-4 mb-4">
+                                        <div className="p-3 rounded-xl bg-secondary/10 text-secondary flex-shrink-0">
+                                            {guide.icon}
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="flex items-start justify-between gap-2">
+                                                <h2 className="text-lg font-tech font-bold text-foreground leading-tight">
+                                                    {guide.title}
+                                                </h2>
+                                            </div>
                                             <span className="text-xs text-muted-foreground">{guide.readTime}</span>
                                         </div>
-                                        <p className="text-muted-foreground text-sm leading-relaxed">
-                                            {guide.description}
-                                        </p>
                                     </div>
+                                    <p className="text-muted-foreground text-sm leading-relaxed flex-1">
+                                        {guide.description}
+                                    </p>
                                 </div>
                             </GlassPanel>
                         </Link>
