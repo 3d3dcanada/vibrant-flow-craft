@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/ui/Navbar';
@@ -58,6 +58,7 @@ const ETRANSFER_CONFIG = {
 export default function OrderConfirmation() {
     const navigate = useNavigate();
     const { orderId } = useParams();
+    const [searchParams] = useSearchParams();
     const { user, loading: authLoading } = useAuth();
     const { toast } = useToast();
 
@@ -65,6 +66,7 @@ export default function OrderConfirmation() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState<string | null>(null);
+    const [verifyingPayment, setVerifyingPayment] = useState(false);
 
     // Redirect if not authenticated
     useEffect(() => {
@@ -73,7 +75,7 @@ export default function OrderConfirmation() {
         }
     }, [user, authLoading, navigate, orderId]);
 
-    // Load order
+    // Load order and verify Stripe payment if returning from checkout
     useEffect(() => {
         const loadOrder = async () => {
             if (!user || !orderId) return;
@@ -96,6 +98,46 @@ export default function OrderConfirmation() {
                 }
 
                 setOrder(data);
+
+                // Check if returning from Stripe checkout
+                const stripeSuccess = searchParams.get('stripe_success');
+                const sessionId = searchParams.get('session_id');
+
+                if (stripeSuccess === '1' && sessionId && data.status === 'pending_payment') {
+                    // Verify the payment
+                    setVerifyingPayment(true);
+
+                    const { data: verifyResult, error: verifyError } = await supabase.functions.invoke(
+                        'verify-checkout-session',
+                        { body: { session_id: sessionId, order_id: orderId } }
+                    );
+
+                    if (verifyError) {
+                        console.error('Verification error:', verifyError);
+                        toast({
+                            title: 'Payment verification pending',
+                            description: 'We are confirming your payment. Please refresh in a moment.',
+                        });
+                    } else if (verifyResult?.verified && verifyResult?.status === 'paid') {
+                        // Payment confirmed - update local order state
+                        setOrder(prev => prev ? { ...prev, status: 'paid', payment_confirmed_at: new Date().toISOString() } : null);
+                        toast({
+                            title: 'Payment confirmed!',
+                            description: 'Your order is now being processed.',
+                        });
+                    } else if (verifyResult?.status === 'unpaid') {
+                        toast({
+                            title: 'Payment incomplete',
+                            description: 'Your payment was not completed. Please try again.',
+                            variant: 'destructive',
+                        });
+                    }
+
+                    setVerifyingPayment(false);
+
+                    // Clean up URL params
+                    window.history.replaceState({}, '', `/order/${orderId}`);
+                }
             } catch (err) {
                 console.error('Error loading order:', err);
                 setError('Failed to load order. Please try again.');
@@ -105,7 +147,7 @@ export default function OrderConfirmation() {
         };
 
         loadOrder();
-    }, [user, orderId]);
+    }, [user, orderId, searchParams, toast]);
 
     const copyToClipboard = (text: string, field: string) => {
         navigator.clipboard.writeText(text);
@@ -169,15 +211,55 @@ export default function OrderConfirmation() {
                 <div className="max-w-3xl mx-auto">
                     {/* Success Header */}
                     <div className="text-center mb-8">
-                        <div className="w-20 h-20 mx-auto rounded-full bg-success/10 flex items-center justify-center mb-4">
-                            <CheckCircle className="w-10 h-10 text-success" />
-                        </div>
-                        <h1 className="text-3xl font-display font-bold gradient-text mb-2">
-                            Order Placed!
-                        </h1>
-                        <p className="text-muted-foreground">
-                            Thank you for your order. Here are your order details.
-                        </p>
+                        {verifyingPayment ? (
+                            <>
+                                <div className="w-20 h-20 mx-auto rounded-full bg-secondary/10 flex items-center justify-center mb-4">
+                                    <Loader2 className="w-10 h-10 text-secondary animate-spin" />
+                                </div>
+                                <h1 className="text-3xl font-display font-bold gradient-text mb-2">
+                                    Verifying Payment...
+                                </h1>
+                                <p className="text-muted-foreground">
+                                    Please wait while we confirm your payment.
+                                </p>
+                            </>
+                        ) : order.status === 'paid' ? (
+                            <>
+                                <div className="w-20 h-20 mx-auto rounded-full bg-success/10 flex items-center justify-center mb-4">
+                                    <CheckCircle className="w-10 h-10 text-success" />
+                                </div>
+                                <h1 className="text-3xl font-display font-bold gradient-text mb-2">
+                                    Payment Confirmed!
+                                </h1>
+                                <p className="text-muted-foreground">
+                                    Thank you! Your order is now being processed.
+                                </p>
+                            </>
+                        ) : order.status === 'pending_payment' ? (
+                            <>
+                                <div className="w-20 h-20 mx-auto rounded-full bg-warning/10 flex items-center justify-center mb-4">
+                                    <Clock className="w-10 h-10 text-warning" />
+                                </div>
+                                <h1 className="text-3xl font-display font-bold gradient-text mb-2">
+                                    Payment Pending
+                                </h1>
+                                <p className="text-muted-foreground">
+                                    Your order is awaiting payment confirmation.
+                                </p>
+                            </>
+                        ) : (
+                            <>
+                                <div className="w-20 h-20 mx-auto rounded-full bg-success/10 flex items-center justify-center mb-4">
+                                    <CheckCircle className="w-10 h-10 text-success" />
+                                </div>
+                                <h1 className="text-3xl font-display font-bold gradient-text mb-2">
+                                    Order Placed!
+                                </h1>
+                                <p className="text-muted-foreground">
+                                    Thank you for your order. Here are your order details.
+                                </p>
+                            </>
+                        )}
                     </div>
 
                     {/* Order Number */}

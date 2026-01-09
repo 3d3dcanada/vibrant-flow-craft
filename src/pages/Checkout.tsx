@@ -250,13 +250,34 @@ export default function Checkout() {
 
             // Handle payment method
             if (paymentMethod === 'stripe') {
-                // For Stripe, we would redirect to Stripe Checkout
-                // Since we don't have the secret key configured, show a message
-                toast({
-                    title: 'Card payments coming soon',
-                    description: 'Online card payments are being set up. Your order has been saved.',
-                });
-                navigate(`/order/${order.id}`);
+                // Call edge function to create Stripe checkout session
+                const { data: sessionData, error: sessionError } = await supabase.functions.invoke(
+                    'create-checkout-session',
+                    { body: { order_id: order.id } }
+                );
+
+                if (sessionError || !sessionData?.checkout_url) {
+                    // Stripe not configured or error - show message and go to order page
+                    const errorCode = sessionData?.code || sessionError?.message;
+                    if (errorCode === 'STRIPE_NOT_CONFIGURED') {
+                        toast({
+                            title: 'Card payments unavailable',
+                            description: 'Online card payments are not yet configured. Your order has been saved. Please use e-Transfer or contact us.',
+                            variant: 'destructive',
+                        });
+                    } else {
+                        toast({
+                            title: 'Payment error',
+                            description: 'Could not connect to payment processor. Your order has been saved.',
+                            variant: 'destructive',
+                        });
+                    }
+                    navigate(`/order/${order.id}`);
+                    return;
+                }
+
+                // Redirect to Stripe Checkout
+                window.location.href = sessionData.checkout_url;
             } else {
                 // e-Transfer - go to order page with instructions
                 navigate(`/order/${order.id}`);
@@ -475,10 +496,10 @@ export default function Checkout() {
                                         onClick={() => stripeAvailable && setPaymentMethod('stripe')}
                                         disabled={!stripeAvailable}
                                         className={`w-full p-4 rounded-lg border text-left transition-all ${paymentMethod === 'stripe' && stripeAvailable
-                                                ? 'border-secondary bg-secondary/10 ring-2 ring-secondary/50'
-                                                : stripeAvailable
-                                                    ? 'border-border hover:border-secondary/50'
-                                                    : 'border-border opacity-50 cursor-not-allowed'
+                                            ? 'border-secondary bg-secondary/10 ring-2 ring-secondary/50'
+                                            : stripeAvailable
+                                                ? 'border-border hover:border-secondary/50'
+                                                : 'border-border opacity-50 cursor-not-allowed'
                                             }`}
                                     >
                                         <div className="flex items-center gap-3">
@@ -503,8 +524,8 @@ export default function Checkout() {
                                     <button
                                         onClick={() => setPaymentMethod('etransfer')}
                                         className={`w-full p-4 rounded-lg border text-left transition-all ${paymentMethod === 'etransfer'
-                                                ? 'border-secondary bg-secondary/10 ring-2 ring-secondary/50'
-                                                : 'border-border hover:border-secondary/50'
+                                            ? 'border-secondary bg-secondary/10 ring-2 ring-secondary/50'
+                                            : 'border-border hover:border-secondary/50'
                                             }`}
                                     >
                                         <div className="flex items-center gap-3">
