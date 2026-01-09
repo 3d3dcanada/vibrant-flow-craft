@@ -7,8 +7,8 @@ import Footer from '@/components/sections/Footer';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { NeonButton } from '@/components/ui/NeonButton';
 import {
-    CheckCircle, Clock, Package, Bitcoin, FileText, Coins,
-    AlertCircle, Loader2, Copy, Check, ArrowRight, Mail, AlertTriangle
+    CheckCircle, Clock, Package, FileText, Coins,
+    AlertCircle, Loader2, ArrowRight, Mail, Info
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -20,7 +20,7 @@ interface Order {
     quote_snapshot: any;
     total_cad: number;
     currency: string;
-    payment_method: 'bitcoin' | 'invoice' | 'credits';
+    payment_method: 'invoice' | 'credits';
     payment_confirmed_at?: string;
     shipping_address: any;
     status: string;
@@ -48,17 +48,10 @@ const MATERIAL_NAMES: Record<string, string> = {
     'ABS_ASA': 'ABS/ASA',
 };
 
-// Bitcoin payment configuration
-const BITCOIN_CONFIG = {
-    address: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh', // 3D3D BTC address
-    networkWarning: 'Bitcoin network fees are paid by the sender. Confirmations typically take 10-60 minutes.',
-    verificationNote: 'Our team will manually verify your Bitcoin payment. Orders begin production after confirmation (typically 1-3 business days).',
-};
-
 // Invoice configuration
 const INVOICE_CONFIG = {
     email: 'orders@3d3d.ca',
-    responseTime: 'within 24 hours',
+    responseTime: 'within 24 business hours',
 };
 
 export default function OrderConfirmation() {
@@ -70,7 +63,6 @@ export default function OrderConfirmation() {
     const [order, setOrder] = useState<Order | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [copied, setCopied] = useState<string | null>(null);
 
     // Redirect if not authenticated
     useEffect(() => {
@@ -113,13 +105,6 @@ export default function OrderConfirmation() {
         loadOrder();
     }, [user, orderId]);
 
-    const copyToClipboard = (text: string, field: string) => {
-        navigator.clipboard.writeText(text);
-        setCopied(field);
-        toast({ title: 'Copied!', description: `${field} copied to clipboard` });
-        setTimeout(() => setCopied(null), 2000);
-    };
-
     const formatCurrency = (amount: number) => `$${amount.toFixed(2)} CAD`;
 
     const formatDate = (dateString: string) => {
@@ -130,13 +115,6 @@ export default function OrderConfirmation() {
             hour: '2-digit',
             minute: '2-digit',
         });
-    };
-
-    // Calculate BTC amount (rough estimate - would need live rate in production)
-    const estimateBtcAmount = (cadAmount: number) => {
-        // Using a placeholder rate - in production this would be fetched from an API
-        const btcRate = 85000; // Rough CAD per BTC as of Jan 2026 - for display only
-        return (cadAmount / btcRate).toFixed(8);
     };
 
     if (authLoading || loading) {
@@ -197,18 +175,14 @@ export default function OrderConfirmation() {
                             </>
                         ) : (
                             <>
-                                <div className="w-20 h-20 mx-auto rounded-full bg-warning/10 flex items-center justify-center mb-4">
-                                    <Clock className="w-10 h-10 text-warning" />
+                                <div className="w-20 h-20 mx-auto rounded-full bg-blue-500/10 flex items-center justify-center mb-4">
+                                    <FileText className="w-10 h-10 text-blue-400" />
                                 </div>
                                 <h1 className="text-3xl font-display font-bold gradient-text mb-2">
                                     Order Created
                                 </h1>
                                 <p className="text-muted-foreground">
-                                    {order.payment_method === 'bitcoin'
-                                        ? 'Please complete Bitcoin payment below.'
-                                        : order.payment_method === 'invoice'
-                                            ? 'We will send payment instructions to your email.'
-                                            : 'Awaiting payment confirmation.'}
+                                    We will send payment instructions to your email.
                                 </p>
                             </>
                         )}
@@ -227,88 +201,6 @@ export default function OrderConfirmation() {
                             </span>
                         </div>
                     </GlassPanel>
-
-                    {/* Bitcoin Payment Instructions */}
-                    {order.payment_method === 'bitcoin' && order.status === 'awaiting_payment' && (
-                        <GlassPanel variant="elevated" className="mb-6 border-orange-500/30">
-                            <div className="flex items-start gap-3 mb-4">
-                                <Bitcoin className="w-6 h-6 text-orange-500 shrink-0 mt-1" />
-                                <div>
-                                    <h2 className="text-lg font-tech font-bold text-foreground">
-                                        Bitcoin Payment
-                                    </h2>
-                                    <p className="text-sm text-muted-foreground">
-                                        Send the exact amount to the address below
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4 bg-background/50 rounded-lg p-4">
-                                <div>
-                                    <p className="text-xs text-muted-foreground mb-1">Amount (CAD equivalent)</p>
-                                    <p className="font-mono text-lg font-bold text-secondary">
-                                        {formatCurrency(order.total_cad)}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                        ≈ {estimateBtcAmount(order.total_cad)} BTC (approximate — verify current rate)
-                                    </p>
-                                </div>
-
-                                <div>
-                                    <p className="text-xs text-muted-foreground mb-1">Send to BTC Address</p>
-                                    <div className="flex items-center gap-2">
-                                        <code className="font-mono text-sm text-foreground bg-muted/50 px-2 py-1 rounded break-all">
-                                            {BITCOIN_CONFIG.address}
-                                        </code>
-                                        <button
-                                            onClick={() => copyToClipboard(BITCOIN_CONFIG.address, 'BTC Address')}
-                                            className="p-2 hover:bg-muted rounded-lg transition-colors shrink-0"
-                                        >
-                                            {copied === 'BTC Address' ? (
-                                                <Check className="w-4 h-4 text-success" />
-                                            ) : (
-                                                <Copy className="w-4 h-4 text-muted-foreground" />
-                                            )}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                    <p className="text-xs text-muted-foreground">Include in memo/note:</p>
-                                    <code className="font-mono text-xs text-foreground bg-muted/50 px-2 py-1 rounded">
-                                        {order.order_number}
-                                    </code>
-                                    <button
-                                        onClick={() => copyToClipboard(order.order_number, 'Order Number')}
-                                        className="p-1 hover:bg-muted rounded transition-colors"
-                                    >
-                                        {copied === 'Order Number' ? (
-                                            <Check className="w-3 h-3 text-success" />
-                                        ) : (
-                                            <Copy className="w-3 h-3 text-muted-foreground" />
-                                        )}
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="mt-4 space-y-3">
-                                <div className="p-3 bg-orange-500/10 border border-orange-500/30 rounded-lg">
-                                    <div className="flex items-start gap-2">
-                                        <AlertTriangle className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
-                                        <div className="text-sm text-muted-foreground">
-                                            <p className="font-medium text-orange-200 mb-1">Important</p>
-                                            <p>{BITCOIN_CONFIG.networkWarning}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="p-3 bg-muted/20 border border-border rounded-lg">
-                                    <p className="text-sm text-muted-foreground">
-                                        {BITCOIN_CONFIG.verificationNote}
-                                    </p>
-                                </div>
-                            </div>
-                        </GlassPanel>
-                    )}
 
                     {/* Invoice Payment Instructions */}
                     {order.payment_method === 'invoice' && order.status === 'awaiting_payment' && (
@@ -338,6 +230,15 @@ export default function OrderConfirmation() {
                                 </div>
                             </div>
 
+                            {order.notes && (
+                                <div className="mt-4 p-3 bg-secondary/10 border border-secondary/30 rounded-lg">
+                                    <div className="flex items-start gap-2">
+                                        <Info className="w-4 h-4 text-secondary shrink-0 mt-0.5" />
+                                        <p className="text-sm text-muted-foreground">{order.notes}</p>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
                                 <p className="text-sm text-muted-foreground">
                                     Questions? Contact us at{' '}
@@ -362,7 +263,7 @@ export default function OrderConfirmation() {
                                         Your platform credits have been applied to this order.
                                     </p>
                                     {order.notes && (
-                                        <p className="text-sm text-muted-foreground mt-2">
+                                        <p className="text-sm text-muted-foreground mt-2 p-2 bg-success/10 rounded">
                                             {order.notes}
                                         </p>
                                     )}
@@ -440,11 +341,9 @@ export default function OrderConfirmation() {
                             <div>
                                 <p className="text-muted-foreground">Payment Method</p>
                                 <p className="text-foreground capitalize flex items-center gap-2">
-                                    {order.payment_method === 'bitcoin' && <Bitcoin className="w-4 h-4 text-orange-500" />}
                                     {order.payment_method === 'invoice' && <FileText className="w-4 h-4 text-blue-400" />}
                                     {order.payment_method === 'credits' && <Coins className="w-4 h-4 text-secondary" />}
-                                    {order.payment_method === 'bitcoin' ? 'Bitcoin' :
-                                        order.payment_method === 'invoice' ? 'Invoice' : 'Platform Credits'}
+                                    {order.payment_method === 'invoice' ? 'Invoice' : 'Platform Credits'}
                                 </p>
                             </div>
                             <div>

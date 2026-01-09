@@ -8,10 +8,11 @@ import Footer from '@/components/sections/Footer';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { NeonButton } from '@/components/ui/NeonButton';
 import {
-    Bitcoin, FileText, Coins, ArrowLeft, Clock, Shield,
-    AlertCircle, Loader2, CheckCircle, Package, AlertTriangle
+    FileText, Coins, ArrowLeft, Clock, Shield,
+    AlertCircle, Loader2, CheckCircle, Package, Info
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { creditsToCad, cadToCredits, formatCredits, formatCad } from '@/config/credits';
 
 interface Quote {
     id: string;
@@ -52,17 +53,10 @@ const MATERIAL_NAMES: Record<string, string> = {
     'ABS_ASA': 'ABS/ASA',
 };
 
-// Bitcoin payment configuration
-const BITCOIN_CONFIG = {
-    address: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh', // 3D3D BTC address - replace in production
-    networkWarning: 'Bitcoin payments require on-chain confirmation. Network fees apply and are paid by sender.',
-    confirmationNote: 'Payment will be manually verified by our team. Orders begin production after confirmation (typically 1-3 business days for Bitcoin).',
-};
-
 // Invoice configuration
 const INVOICE_CONFIG = {
     email: 'orders@3d3d.ca',
-    responseTime: 'within 24 hours',
+    responseTime: 'within 24 business hours',
     note: 'We will send you an invoice with payment instructions via email.',
 };
 
@@ -78,8 +72,9 @@ export default function Checkout() {
     const [error, setError] = useState<string | null>(null);
     const [processing, setProcessing] = useState(false);
 
-    // Payment method: 'bitcoin' | 'invoice' | 'credits'
-    const [paymentMethod, setPaymentMethod] = useState<'bitcoin' | 'invoice' | 'credits'>('invoice');
+    // Payment method: 'invoice' | 'credits'
+    // Note: Bitcoin implementation deferred to future phase
+    const [paymentMethod, setPaymentMethod] = useState<'invoice' | 'credits'>('invoice');
     const [useCredits, setUseCredits] = useState(false);
 
     const [shippingAddress, setShippingAddress] = useState<ShippingAddress>({
@@ -94,12 +89,17 @@ export default function Checkout() {
 
     const [addressErrors, setAddressErrors] = useState<Partial<ShippingAddress>>({});
 
-    // Credits calculation
+    // Credits calculation - convert CAD to credits for comparison
     const creditsBalance = creditWallet?.balance || 0;
-    const orderTotal = quote?.total_cad || 0;
-    const creditsToApply = useCredits ? Math.min(creditsBalance, orderTotal) : 0;
-    const remainingBalance = orderTotal - creditsToApply;
-    const fullyCoveredByCredits = remainingBalance <= 0;
+    const creditsBalanceCad = creditsToCad(creditsBalance);
+    const orderTotalCad = quote?.total_cad || 0;
+    const orderTotalCredits = cadToCredits(orderTotalCad);
+
+    // Calculate how much can be applied
+    const creditsToApply = useCredits ? Math.min(creditsBalance, orderTotalCredits) : 0;
+    const creditsToApplyCad = creditsToCad(creditsToApply);
+    const remainingBalanceCad = Math.max(0, orderTotalCad - creditsToApplyCad);
+    const fullyCoveredByCredits = useCredits && creditsToApply >= orderTotalCredits;
 
     // Redirect if not authenticated
     useEffect(() => {
@@ -144,7 +144,7 @@ export default function Checkout() {
 
                 setQuote(data);
 
-                // Pre-fill name from profile
+                // Pre-fill from profile
                 const { data: profile } = await supabase
                     .from('profiles')
                     .select('full_name, address_line1, address_line2, city, province, postal_code, phone')
@@ -218,12 +218,18 @@ export default function Checkout() {
             // Determine final payment method and status
             let finalPaymentMethod: string;
             let orderStatus: string;
+            let creditsUsedNote = '';
 
-            if (fullyCoveredByCredits && useCredits) {
+            if (fullyCoveredByCredits) {
                 finalPaymentMethod = 'credits';
-                orderStatus = 'paid'; // Fully covered by credits = paid
+                orderStatus = 'paid';
+                creditsUsedNote = `Paid in full with ${creditsToApply} credits (${formatCad(creditsToApplyCad)}).`;
+            } else if (useCredits && creditsToApply > 0) {
+                finalPaymentMethod = 'invoice';
+                orderStatus = 'awaiting_payment';
+                creditsUsedNote = `${creditsToApply} credits (${formatCad(creditsToApplyCad)}) applied. Remaining ${formatCad(remainingBalanceCad)} due via invoice.`;
             } else {
-                finalPaymentMethod = paymentMethod;
+                finalPaymentMethod = 'invoice';
                 orderStatus = 'awaiting_payment';
             }
 
@@ -255,9 +261,9 @@ export default function Checkout() {
                     country: 'Canada',
                 },
                 status: orderStatus,
-                notes: useCredits && creditsToApply > 0
-                    ? `Credits applied: $${creditsToApply.toFixed(2)}. ${remainingBalance > 0 ? `Remaining: $${remainingBalance.toFixed(2)} via ${paymentMethod}` : 'Fully paid with credits.'}`
-                    : undefined,
+                notes: creditsUsedNote || undefined,
+                // Store credits info for audit trail
+                payment_confirmed_at: fullyCoveredByCredits ? new Date().toISOString() : null,
             };
 
             const { data: order, error: orderError } = await (supabase as any)
@@ -277,12 +283,27 @@ export default function Checkout() {
                 .update({ status: 'ordered' })
                 .eq('id', quote.id);
 
-            // If credits were used, deduct from wallet (this would normally be a server-side operation)
-            // For now, we just record in notes - actual deduction requires admin/backend action
+            // If credits were used, we need to deduct from wallet
+            // This is handled server-side via admin verification for MVP
+            // In production, this would be a transactional operation
             if (useCredits && creditsToApply > 0) {
-                // Note: In production, this should be a server-side transaction
-                // For MVP, credits are deducted manually by admin after verification
-                console.log(`Credits to deduct: ${creditsToApply} from user ${user.id}`);
+                // Record the intent - actual deduction requires admin action
+                // This ensures no credits are lost if the order is cancelled
+                console.log(`Order ${orderNumber}: ${creditsToApply} credits to be deducted for user ${user.id}`);
+
+                // For fully covered orders, we trust the credits and mark paid
+                // Admin will verify and deduct credits during order processing
+                if (fullyCoveredByCredits) {
+                    toast({
+                        title: 'Order Placed!',
+                        description: 'Your order has been paid with credits and is now being processed.',
+                    });
+                } else {
+                    toast({
+                        title: 'Order Created',
+                        description: `Credits applied. Invoice for remaining ${formatCad(remainingBalanceCad)} will be sent.`,
+                    });
+                }
             }
 
             // Navigate to order confirmation
@@ -491,20 +512,24 @@ export default function Checkout() {
                             </GlassPanel>
 
                             {/* Credits Section */}
-                            {creditsBalance > 0 && (
-                                <GlassPanel variant="elevated" className="border-secondary/30">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <Coins className="w-6 h-6 text-secondary" />
-                                            <div>
-                                                <p className="font-tech font-bold text-foreground">
-                                                    Platform Credits
-                                                </p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Available balance: <span className="text-secondary font-bold">{formatCurrency(creditsBalance)}</span>
-                                                </p>
-                                            </div>
+                            <GlassPanel variant="elevated" className={creditsBalance > 0 ? "border-secondary/30" : "border-muted/30"}>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <Coins className={`w-6 h-6 ${creditsBalance > 0 ? 'text-secondary' : 'text-muted-foreground'}`} />
+                                        <div>
+                                            <p className="font-tech font-bold text-foreground">
+                                                Platform Credits
+                                            </p>
+                                            <p className="text-sm text-muted-foreground">
+                                                {creditsBalance > 0 ? (
+                                                    <>Available: <span className="text-secondary font-bold">{formatCredits(creditsBalance)}</span> ({formatCad(creditsBalanceCad)})</>
+                                                ) : (
+                                                    'No credits available'
+                                                )}
+                                            </p>
                                         </div>
+                                    </div>
+                                    {creditsBalance > 0 && (
                                         <label className="flex items-center gap-2 cursor-pointer">
                                             <input
                                                 type="checkbox"
@@ -514,30 +539,42 @@ export default function Checkout() {
                                             />
                                             <span className="text-sm text-foreground">Apply credits</span>
                                         </label>
-                                    </div>
-
-                                    {useCredits && (
-                                        <div className="mt-4 p-3 bg-secondary/10 rounded-lg">
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-muted-foreground">Credits applied:</span>
-                                                <span className="text-success font-bold">-{formatCurrency(creditsToApply)}</span>
-                                            </div>
-                                            {remainingBalance > 0 && (
-                                                <div className="flex justify-between text-sm mt-1">
-                                                    <span className="text-muted-foreground">Remaining to pay:</span>
-                                                    <span className="text-foreground font-bold">{formatCurrency(remainingBalance)}</span>
-                                                </div>
-                                            )}
-                                            {fullyCoveredByCredits && (
-                                                <p className="text-success text-sm mt-2 flex items-center gap-2">
-                                                    <CheckCircle className="w-4 h-4" />
-                                                    Fully covered by credits!
-                                                </p>
-                                            )}
-                                        </div>
                                     )}
-                                </GlassPanel>
-                            )}
+                                </div>
+
+                                {useCredits && creditsBalance > 0 && (
+                                    <div className="mt-4 p-3 bg-secondary/10 rounded-lg">
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-muted-foreground">Credits applied:</span>
+                                            <span className="text-success font-bold">
+                                                -{formatCredits(creditsToApply)} ({formatCad(creditsToApplyCad)})
+                                            </span>
+                                        </div>
+                                        {remainingBalanceCad > 0 ? (
+                                            <div className="flex justify-between text-sm mt-1">
+                                                <span className="text-muted-foreground">Remaining to pay:</span>
+                                                <span className="text-foreground font-bold">{formatCad(remainingBalanceCad)}</span>
+                                            </div>
+                                        ) : (
+                                            <p className="text-success text-sm mt-2 flex items-center gap-2">
+                                                <CheckCircle className="w-4 h-4" />
+                                                Fully covered by credits — no additional payment needed!
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+
+                                {creditsBalance === 0 && (
+                                    <div className="mt-3 p-3 bg-muted/20 rounded-lg">
+                                        <p className="text-sm text-muted-foreground">
+                                            Purchase credits to pay instantly without invoices.{' '}
+                                            <a href="/dashboard/credits" className="text-secondary hover:underline">
+                                                Buy credits →
+                                            </a>
+                                        </p>
+                                    </div>
+                                )}
+                            </GlassPanel>
 
                             {/* Payment Method - Only show if not fully covered by credits */}
                             {!fullyCoveredByCredits && (
@@ -545,119 +582,53 @@ export default function Checkout() {
                                     <h2 className="text-xl font-tech font-bold text-foreground mb-4">
                                         Payment Method
                                     </h2>
-                                    <div className="space-y-3">
-                                        {/* Invoice / Email Option */}
-                                        <button
-                                            onClick={() => setPaymentMethod('invoice')}
-                                            className={`w-full p-4 rounded-lg border text-left transition-all ${paymentMethod === 'invoice'
-                                                    ? 'border-secondary bg-secondary/10 ring-2 ring-secondary/50'
-                                                    : 'border-border hover:border-secondary/50'
-                                                }`}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <FileText className="w-6 h-6 text-blue-400" />
-                                                <div className="flex-1">
-                                                    <div className="font-tech font-bold text-foreground">
-                                                        Invoice / Email Payment
-                                                    </div>
-                                                    <div className="text-sm text-muted-foreground">
-                                                        We'll send payment instructions to your email
-                                                    </div>
+
+                                    {/* Invoice Option (Primary and only card-free option) */}
+                                    <button
+                                        onClick={() => setPaymentMethod('invoice')}
+                                        className={`w-full p-4 rounded-lg border text-left transition-all ${paymentMethod === 'invoice'
+                                                ? 'border-secondary bg-secondary/10 ring-2 ring-secondary/50'
+                                                : 'border-border hover:border-secondary/50'
+                                            }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <FileText className="w-6 h-6 text-blue-400" />
+                                            <div className="flex-1">
+                                                <div className="font-tech font-bold text-foreground">
+                                                    Invoice / Email Payment
+                                                </div>
+                                                <div className="text-sm text-muted-foreground">
+                                                    We'll send payment instructions to your email
                                                 </div>
                                             </div>
-                                        </button>
-
-                                        {/* Bitcoin Option */}
-                                        <button
-                                            onClick={() => setPaymentMethod('bitcoin')}
-                                            className={`w-full p-4 rounded-lg border text-left transition-all ${paymentMethod === 'bitcoin'
-                                                    ? 'border-secondary bg-secondary/10 ring-2 ring-secondary/50'
-                                                    : 'border-border hover:border-secondary/50'
-                                                }`}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <Bitcoin className="w-6 h-6 text-orange-500" />
-                                                <div className="flex-1">
-                                                    <div className="font-tech font-bold text-foreground">
-                                                        Bitcoin
-                                                    </div>
-                                                    <div className="text-sm text-muted-foreground">
-                                                        Pay with BTC — manual verification required
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </button>
-
-                                        {/* Credits-only Option (if user has credits but not enough) */}
-                                        {creditsBalance > 0 && !useCredits && (
-                                            <button
-                                                onClick={() => {
-                                                    setUseCredits(true);
-                                                    setPaymentMethod('credits');
-                                                }}
-                                                className="w-full p-4 rounded-lg border border-border text-left transition-all hover:border-secondary/50"
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <Coins className="w-6 h-6 text-secondary" />
-                                                    <div className="flex-1">
-                                                        <div className="font-tech font-bold text-foreground">
-                                                            Use Platform Credits
-                                                        </div>
-                                                        <div className="text-sm text-muted-foreground">
-                                                            Apply your {formatCurrency(creditsBalance)} balance
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </button>
-                                        )}
-                                    </div>
+                                        </div>
+                                    </button>
 
                                     {/* Payment Method Info */}
-                                    {paymentMethod === 'invoice' && (
-                                        <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                                            <p className="text-sm text-muted-foreground mb-2">
-                                                {INVOICE_CONFIG.note}
-                                            </p>
-                                            <p className="text-sm text-muted-foreground">
-                                                Expect a response <strong className="text-foreground">{INVOICE_CONFIG.responseTime}</strong>.
-                                                Contact: <a href={`mailto:${INVOICE_CONFIG.email}`} className="text-secondary hover:underline">{INVOICE_CONFIG.email}</a>
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    {paymentMethod === 'bitcoin' && (
-                                        <div className="mt-4 space-y-3">
-                                            <div className="p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg">
-                                                <div className="flex items-start gap-3">
-                                                    <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
-                                                    <div className="text-sm">
-                                                        <p className="text-orange-200 font-medium mb-1">Important Bitcoin Information</p>
-                                                        <p className="text-muted-foreground">{BITCOIN_CONFIG.networkWarning}</p>
-                                                        <p className="text-muted-foreground mt-2">{BITCOIN_CONFIG.confirmationNote}</p>
-                                                    </div>
-                                                </div>
+                                    <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                                        <div className="flex items-start gap-3">
+                                            <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+                                            <div className="text-sm text-muted-foreground">
+                                                <p className="mb-2">{INVOICE_CONFIG.note}</p>
+                                                <p>
+                                                    Expect a response <strong className="text-foreground">{INVOICE_CONFIG.responseTime}</strong>.
+                                                    Contact: <a href={`mailto:${INVOICE_CONFIG.email}`} className="text-secondary hover:underline">{INVOICE_CONFIG.email}</a>
+                                                </p>
                                             </div>
                                         </div>
-                                    )}
-                                </GlassPanel>
-                            )}
+                                    </div>
 
-                            {/* How Credits Work (if no credits) */}
-                            {creditsBalance === 0 && (
-                                <GlassPanel variant="elevated" className="border-muted/30">
-                                    <div className="flex items-start gap-3">
-                                        <Coins className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
-                                        <div className="text-sm">
-                                            <p className="text-foreground font-medium mb-1">Platform Credits</p>
-                                            <p className="text-muted-foreground">
-                                                You can purchase credits using gift cards from trusted providers.
-                                                Credits can be applied to any order.
-                                                <a href="/dashboard/credits" className="text-secondary hover:underline ml-1">
-                                                    Learn more →
+                                    {/* Credits Prompt */}
+                                    {creditsBalance === 0 && (
+                                        <div className="mt-4 p-4 bg-secondary/10 border border-secondary/30 rounded-lg">
+                                            <p className="text-sm text-muted-foreground">
+                                                <strong className="text-foreground">💡 Skip invoices!</strong> Buy credits with your debit/credit card through our partner, then pay instantly with credits.{' '}
+                                                <a href="/dashboard/credits" className="text-secondary hover:underline">
+                                                    Get credits →
                                                 </a>
                                             </p>
                                         </div>
-                                    </div>
+                                    )}
                                 </GlassPanel>
                             )}
                         </div>
@@ -688,35 +659,36 @@ export default function Checkout() {
                                 <div className="border-t border-border my-4" />
 
                                 {/* Price Breakdown */}
-                                {quote.price_breakdown && (
-                                    <div className="space-y-2 text-sm">
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Subtotal</span>
-                                            <span className="text-foreground">{formatCurrency(quote.total_cad)}</span>
-                                        </div>
-                                        {useCredits && creditsToApply > 0 && (
-                                            <div className="flex justify-between text-success">
-                                                <span>Credits Applied</span>
-                                                <span>-{formatCurrency(creditsToApply)}</span>
-                                            </div>
-                                        )}
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">Subtotal</span>
+                                        <span className="text-foreground">{formatCurrency(quote.total_cad)}</span>
                                     </div>
-                                )}
+                                    {useCredits && creditsToApply > 0 && (
+                                        <div className="flex justify-between text-success">
+                                            <span>Credits Applied</span>
+                                            <span>-{formatCad(creditsToApplyCad)}</span>
+                                        </div>
+                                    )}
+                                </div>
 
                                 <div className="border-t border-border my-4" />
 
                                 <div className="flex justify-between text-lg font-tech font-bold">
-                                    <span className="text-foreground">Total Due</span>
+                                    <span className="text-foreground">
+                                        {fullyCoveredByCredits ? 'Total (Paid)' : 'Total Due'}
+                                    </span>
                                     <span className="text-secondary">
-                                        {fullyCoveredByCredits && useCredits
+                                        {fullyCoveredByCredits
                                             ? formatCurrency(0)
-                                            : formatCurrency(remainingBalance > 0 ? remainingBalance : quote.total_cad)}
+                                            : formatCurrency(remainingBalanceCad)}
                                     </span>
                                 </div>
 
-                                {fullyCoveredByCredits && useCredits && (
-                                    <p className="text-success text-sm mt-2 text-center">
-                                        ✓ Paid with credits
+                                {fullyCoveredByCredits && (
+                                    <p className="text-success text-sm mt-2 text-center flex items-center justify-center gap-2">
+                                        <CheckCircle className="w-4 h-4" />
+                                        Paid with credits
                                     </p>
                                 )}
 
@@ -745,9 +717,9 @@ export default function Checkout() {
                                     ) : (
                                         <>
                                             <Package className="w-4 h-4 mr-2" />
-                                            {fullyCoveredByCredits && useCredits
+                                            {fullyCoveredByCredits
                                                 ? 'Place Order (Credits)'
-                                                : `Place Order — ${formatCurrency(remainingBalance > 0 ? remainingBalance : quote.total_cad)}`}
+                                                : `Place Order — ${formatCurrency(remainingBalanceCad)}`}
                                         </>
                                     )}
                                 </NeonButton>
@@ -768,7 +740,7 @@ export default function Checkout() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Shield className="w-3 h-3 text-secondary" />
-                                        <span>Non-custodial payments</span>
+                                        <span>3D3D never touches card data</span>
                                     </div>
                                 </div>
                             </GlassPanel>
