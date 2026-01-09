@@ -63,6 +63,10 @@ import AdminStoreManager from "./pages/admin/AdminStoreManager";
 import AdminCreditPackages from "./pages/admin/AdminCreditPackages";
 import AdminMakerManager from "./pages/admin/AdminMakerManager";
 import AdminOperations from "./pages/admin/AdminOperations";
+import AdminPayments from "./pages/admin/AdminPayments";
+import AdminCredits from "./pages/admin/AdminCredits";
+import AdminAuditLog from "./pages/admin/AdminAuditLog";
+
 
 const queryClient = new QueryClient();
 
@@ -137,6 +141,10 @@ const App = () => (
             <Route path="/dashboard/admin/makers" element={<AdminMakerManager />} />
             <Route path="/dashboard/admin/ops" element={<AdminOperations />} />
             <Route path="/dashboard/admin/buyback" element={<AdminBuybackRequests />} />
+            <Route path="/dashboard/admin/payments" element={<AdminPayments />} />
+            <Route path="/dashboard/admin/credits" element={<AdminCredits />} />
+            <Route path="/dashboard/admin/audit" element={<AdminAuditLog />} />
+
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

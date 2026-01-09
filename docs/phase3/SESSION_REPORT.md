@@ -1197,8 +1197,408 @@ Exit code: 0
 ## Commit Details
 
 **Branch:** main  
+**Commit Hash:** `d6d1bfd79992524225d0382c87dc9d7bd527a86c`  
 **Message:** `feat(phase3): implement production-grade credits system using Anycard`  
 **Files Changed:** 5 files
+
+---
+
+# Phase 3E Session Report
+
+**Session:** Phase 3E — Admin Operations & Control Plane  
+**Status:** ✅ COMPLETE  
+**Commit:** `79bd9b2329bd38a2d0ceece1a0c37874f5133987`
+
+---
+
+## Executive Summary
+
+Phase 3E implements a production-grade Admin Operations Panel that allows administrators to safely operate the platform at scale. This includes:
+
+- **Payment verification and confirmation** — Mark orders as paid with audit trail
+- **Order lifecycle management** — Update status through production, shipping, delivery
+- **Credits administration** — Issue, adjust, and audit credit balances
+- **Immutable audit logging** — Every admin action is logged and cannot be deleted
+
+This phase turns 3D3D from "working" into **operable at scale**.
+
+---
+
+## Admin Capabilities Added
+
+### 1. Payment & Order Management (`/dashboard/admin/payments`)
+
+| Capability | Implementation |
+|------------|----------------|
+| View all orders | With user profile info |
+| Filter by status | Dropdown selector |
+| Search orders | By order #, email, name |
+| Confirm payment | Modal with reason + reference |
+| Update order status | Modal with reason |
+| View order details | Expanded view with quote snapshot |
+| View shipping address | Full address display |
+| View admin/customer notes | Separated display |
+
+**Payment Confirmation Flow:**
+1. Admin views orders with `awaiting_payment` status
+2. Admin clicks "Confirm Payment"
+3. Modal requires: optional payment reference, mandatory reason
+4. Confirmation calls `admin_confirm_payment` RPC
+5. Order status → `paid`, audit log created
+6. No automation lies — manual verification only
+
+### 2. Credits Administration (`/dashboard/admin/credits`)
+
+| Capability | Implementation |
+|------------|----------------|
+| View all user wallets | With balance and lifetime stats |
+| Search by email/name/ID | Instant filtering |
+| View transaction history | Per-user expansion |
+| Issue credits | Bonus, correction, refund types |
+| Adjust credits | Positive or negative with reason |
+| View circulation stats | Total credits in system |
+
+**Credit Adjustment Flow:**
+1. Admin finds user wallet
+2. Admin clicks "Adjust"
+3. Modal requires: type, amount, mandatory reason
+4. Adjustment calls `admin_adjust_credits` RPC
+5. Wallet updated, transaction logged, audit created
+6. Negative adjustments prevented if insufficient balance
+
+### 3. Audit Log Viewer (`/dashboard/admin/audit`)
+
+| Capability | Implementation |
+|------------|----------------|
+| View all admin actions | Chronological order |
+| Filter by action type | Order status, payment, credits |
+| Filter by target type | Order, credit_wallet, gift_card |
+| Search by admin/target/reason | Text search |
+| View before/after state | JSON comparison |
+| View action reason | Required for all changes |
+
+**Audit Log Properties:**
+- Immutable — no UPDATE or DELETE policies
+- Admin-only visibility
+- Captures: admin_id, action_type, target_type, target_id, before_state, after_state, reason, timestamp
+
+---
+
+## Files/Routes Changed
+
+### New Files Created
+
+| File | Description |
+|------|-------------|
+| `src/pages/admin/AdminPayments.tsx` | Order management and payment verification |
+| `src/pages/admin/AdminCredits.tsx` | Credit wallet administration |
+| `src/pages/admin/AdminAuditLog.tsx` | Audit log viewer |
+| `supabase/migrations/20260109040000_add_admin_audit_logging.sql` | Audit logging infrastructure |
+
+### Modified Files
+
+| File | Changes |
+|------|---------|
+| `src/App.tsx` | Added routes for new admin pages |
+| `docs/phase3/SESSION_REPORT.md` | Added Phase 3E documentation |
+
+### New Routes
+
+| Route | Page | Purpose |
+|-------|------|---------|
+| `/dashboard/admin/payments` | AdminPayments | Order and payment management |
+| `/dashboard/admin/credits` | AdminCredits | Credit wallet administration |
+| `/dashboard/admin/audit` | AdminAuditLog | Audit log viewer |
+
+---
+
+## Permission Model
+
+### Role-Based Access
+
+| Role | Access |
+|------|--------|
+| admin | Full access to all admin pages |
+| maker | No access to admin pages |
+| customer | No access to admin pages |
+
+### Access Control Implementation
+
+1. **AdminGuard Component** — Wraps all admin pages
+   - Checks `useIsAdmin()` hook
+   - Shows loading state during verification
+   - Redirects non-admins to dashboard
+   - Shows explicit "Admin Access Required" message
+
+2. **RLS Policies on admin_audit_log**
+   - SELECT: Only users with admin role
+   - INSERT: Only users with admin role
+   - UPDATE: Denied (no policy)
+   - DELETE: Denied (no policy)
+
+3. **Server-Side RPC Functions**
+   - Each function checks `is_admin(auth.uid())` before execution
+   - Returns error if not admin
+   - Uses `FOR UPDATE` row locking to prevent race conditions
+
+### Non-Admin Protection
+
+- Admin routes return 403-equivalent UI (not HTTP status)
+- Admin RPC functions return `{ success: false, error: 'Admin access required' }`
+- Audit log cannot be accessed, modified, or deleted by non-admins
+
+---
+
+## Audit Logging Strategy
+
+### Table Structure
+
+```sql
+CREATE TABLE public.admin_audit_log (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    admin_id UUID NOT NULL REFERENCES auth.users(id),
+    action_type TEXT NOT NULL,
+    target_type TEXT NOT NULL,
+    target_id UUID NOT NULL,
+    before_state JSONB,
+    after_state JSONB,
+    reason TEXT,
+    metadata JSONB DEFAULT '{}',
+    ip_address TEXT,
+    user_agent TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
+);
+```
+
+### Action Types Logged
+
+| Action Type | Target Type | Description |
+|-------------|-------------|-------------|
+| `order_status_update` | order | Any status change |
+| `payment_confirmation` | order | Payment marked as confirmed |
+| `credit_adjustment` | credit_wallet | Credits added or removed |
+| `gift_card_approved` | gift_card | Gift card manually approved |
+| `gift_card_rejected` | gift_card | Gift card manually rejected |
+
+### Immutability Guarantees
+
+1. No UPDATE policy on `admin_audit_log`
+2. No DELETE policy on `admin_audit_log`
+3. INSERT requires admin role
+4. All inserts via server-side RPC functions
+5. No client-direct INSERT capability
+
+### Audit Trail Example
+
+```json
+{
+  "id": "uuid-123",
+  "admin_id": "admin-user-uuid",
+  "action_type": "payment_confirmation",
+  "target_type": "order",
+  "target_id": "order-uuid",
+  "before_state": { "status": "awaiting_payment", "payment_confirmed_at": null },
+  "after_state": { "status": "paid", "payment_confirmed_at": "2026-01-09T10:30:00Z", "reference": "E-TRANSFER-12345" },
+  "reason": "E-transfer received, matched amount",
+  "created_at": "2026-01-09T10:30:00Z"
+}
+```
+
+---
+
+## Server-Side Functions Created
+
+### 1. `admin_update_order_status`
+
+```sql
+admin_update_order_status(
+    p_order_id UUID,
+    p_new_status TEXT,
+    p_reason TEXT,
+    p_admin_notes TEXT
+) RETURNS JSON
+```
+
+- Updates order status with history tracking
+- Sets payment_confirmed_at if transitioning to 'paid'
+- Creates audit log entry
+- Returns success/error JSON
+
+### 2. `admin_confirm_payment`
+
+```sql
+admin_confirm_payment(
+    p_order_id UUID,
+    p_payment_reference TEXT,
+    p_reason TEXT
+) RETURNS JSON
+```
+
+- Only works on orders with awaiting_payment status
+- Sets status to 'paid' and payment_confirmed_at
+- Adds reference to order notes
+- Creates audit log entry
+
+### 3. `admin_adjust_credits`
+
+```sql
+admin_adjust_credits(
+    p_user_id UUID,
+    p_amount INTEGER,
+    p_reason TEXT,
+    p_type TEXT -- 'bonus', 'correction', 'refund', 'adjustment'
+) RETURNS JSON
+```
+
+- Requires non-empty reason
+- Prevents negative balance
+- Updates wallet and lifetime stats
+- Creates credit transaction
+- Creates audit log entry
+
+### 4. `admin_approve_gift_card`
+
+```sql
+admin_approve_gift_card(
+    p_gift_card_id UUID,
+    p_approved BOOLEAN,
+    p_reason TEXT
+) RETURNS JSON
+```
+
+- For manual gift card verification if needed
+- Creates audit log entry
+
+---
+
+## Build Status
+
+```
+✓ 2544 modules transformed.
+dist/index.html                   1.24 kB │ gzip:   0.51 kB
+dist/assets/index-Bi_9a5HZ.css  107.05 kB │ gzip:  17.42 kB
+dist/assets/index-DjpG69mm.js 1,499.56 kB │ gzip: 397.77 kB
+✓ built in 10.00s
+Exit code: 0
+```
+
+**Build Result:** ✅ SUCCESS
+
+---
+
+## Exit Criteria Validation
+
+### A) Admin Access & Permissions
+
+| Requirement | Status |
+|-------------|--------|
+| Admin routes are role-gated | ✅ AdminGuard on all pages |
+| Non-admin users cannot access | ✅ Redirect + explicit denial UI |
+| Cannot infer admin endpoints | ✅ RPC returns generic error |
+| Explicit confirmation required | ✅ Modal with reason for all actions |
+| No one-click destruction | ✅ All actions require confirmation |
+
+### B) Payment Verification
+
+| Requirement | Status |
+|-------------|--------|
+| View awaiting_payment orders | ✅ Status filter |
+| Mark payment as confirmed | ✅ Confirm Payment button |
+| Record method/timestamp/reference | ✅ Stored in notes + payment_confirmed_at |
+| Transition to paid status | ✅ Via admin_confirm_payment RPC |
+| No automation lies | ✅ Manual verification only |
+| No silent transitions | ✅ Requires reason |
+
+### C) Credits Administration
+
+| Requirement | Status |
+|-------------|--------|
+| View user credit balances | ✅ All wallets listed |
+| View transaction history | ✅ Expandable per user |
+| Issue credits manually | ✅ Adjust modal |
+| Reverse erroneous credits | ✅ Negative adjustment |
+| Approve/reject gift cards | ✅ RPC function created |
+| Ledger entries for all actions | ✅ credit_transactions table |
+| Reason field required | ✅ Validated in RPC |
+| Immutable once logged | ✅ No update/delete |
+
+### D) Order Operations
+
+| Requirement | Status |
+|-------------|--------|
+| View all orders | ✅ Full list with search |
+| Filter by status | ✅ Dropdown filter |
+| Update status with reason | ✅ Modal + RPC |
+| Add admin notes | ✅ In RPC (admin_notes field) |
+| View quote snapshot | ✅ In expanded details |
+| No inline price editing | ✅ Read-only display |
+| No retroactive manipulation | ✅ Snapshot is immutable |
+
+### E) Fulfillment Control (Foundation)
+
+| Requirement | Status |
+|-------------|--------|
+| Mark production started | ✅ Status update to in_production |
+| Mark shipped | ✅ Status update to shipped |
+| Mark delivered | ✅ Status update to delivered |
+| Status authority exists | ✅ Full lifecycle control |
+| Assign to production (future) | ⏳ Placeholder for Phase 3F |
+
+### F) Audit Logging
+
+| Requirement | Status |
+|-------------|--------|
+| admin_id recorded | ✅ In every audit entry |
+| action_type recorded | ✅ Descriptive action name |
+| target_type recorded | ✅ order, credit_wallet, etc. |
+| target_id recorded | ✅ UUID reference |
+| before_state captured | ✅ JSON snapshot |
+| after_state captured | ✅ JSON snapshot |
+| reason captured | ✅ Required field |
+| timestamp captured | ✅ created_at |
+| No admin mutation without audit | ✅ All RPCs create entries |
+
+---
+
+## Known Limitations
+
+| Limitation | Impact | Resolution Path |
+|------------|--------|-----------------|
+| RPC types not in TypeScript | Uses `as any` assertions | Run `supabase gen types` after migration |
+| Maker assignment not implemented | Orders can't be routed to makers | Phase 3F |
+| Shipping tracking placeholder | No carrier integration | Future phase |
+| IP/User-Agent not captured | Audit incomplete | Add headers in RPC |
+| Bulk actions not implemented | One-at-a-time only | Future enhancement |
+| Email notifications not sent | Admin must contact manually | Integrate Resend |
+
+---
+
+## Security Considerations
+
+### Implemented
+
+1. **Role verification in every RPC** — First check before any operation
+2. **Row locking (FOR UPDATE)** — Prevents race conditions
+3. **Required reason fields** — Forces accountability
+4. **Immutable audit log** — Cannot be tampered with
+5. **No client-side price editing** — Read-only display
+6. **Modal confirmations** — Prevents accidental actions
+
+### Future Recommendations
+
+1. Add IP/User-Agent capture to audit log
+2. Implement rate limiting on admin actions
+3. Add two-factor confirmation for high-value operations
+4. Implement admin action email notifications
+5. Add session logging for admin logins
+
+---
+
+## Commit Details
+
+**Branch:** main  
+**Message:** `feat(phase3): add admin operations panel with audit logging`  
+**Files Changed:** 6 files
 
 ---
 
