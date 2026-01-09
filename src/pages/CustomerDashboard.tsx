@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile, useSubscription, useCreditWallet, usePointWallet, useReferralCode, usePointTransactions } from '@/hooks/useUserData';
-import { useUserPrintRequests } from '@/hooks/useCustomerData';
+import { useUserPrintRequests, useUserQuotes } from '@/hooks/useCustomerData';
 import { ParticleBackground } from '@/components/ui/ParticleBackground';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 import { NeonButton } from '@/components/ui/NeonButton';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { RepositoryDrawer } from '@/components/repositories/RepositoryDrawer';
-import { 
-  Coins, Recycle, Gift, Settings, LogOut, 
+import {
+  Coins, Recycle, Gift, Settings, LogOut,
   Sparkles, Crown, Zap, Star, Package, FileText, Search,
   CreditCard, Lightbulb, Box, Layers, Target, Shield, Copy, Check,
   Loader2
@@ -30,6 +30,7 @@ const CustomerDashboard = () => {
   const { data: referralCode } = useReferralCode();
   const { data: recentActivity } = usePointTransactions(5);
   const { data: printRequests, isLoading: requestsLoading } = useUserPrintRequests();
+  const { data: quotes, isLoading: quotesLoading } = useUserQuotes(5);
 
   const handleSignOut = async () => {
     await signOut();
@@ -56,10 +57,10 @@ const CustomerDashboard = () => {
     pro: <Crown className="w-5 h-5" />
   };
 
-  const activeRequests = printRequests?.filter(r => 
+  const activeRequests = printRequests?.filter(r =>
     ['pending', 'claimed', 'quoted', 'accepted'].includes(r.status)
   )?.length || 0;
-  
+
   const completedPrints = printRequests?.filter(r => r.status === 'accepted')?.length || 0;
 
   const beginnerGuides = [
@@ -72,7 +73,7 @@ const CustomerDashboard = () => {
   return (
     <div className="min-h-screen bg-background relative">
       <ParticleBackground />
-      
+
       <div className="relative z-10">
         {/* Header */}
         <header className="border-b border-primary/10 bg-background/80 backdrop-blur-xl sticky top-0 z-50">
@@ -80,14 +81,14 @@ const CustomerDashboard = () => {
             <Link to="/">
               <AnimatedLogo size="sm" />
             </Link>
-            
+
             <div className="flex items-center gap-4">
               <Link to="/dashboard/settings">
                 <button className="p-2 hover:bg-primary/10 rounded-lg transition-colors">
                   <Settings className="w-5 h-5 text-muted-foreground" />
                 </button>
               </Link>
-              <button 
+              <button
                 onClick={handleSignOut}
                 className="p-2 hover:bg-destructive/10 rounded-lg transition-colors"
               >
@@ -109,7 +110,7 @@ const CustomerDashboard = () => {
                   Your 3D printing dashboard
                 </p>
               </div>
-              
+
               <div className={`flex items-center gap-2 px-4 py-2 rounded-full border ${subscription?.tier === 'pro' ? 'border-primary bg-primary/10' : subscription?.tier === 'maker' ? 'border-secondary bg-secondary/10' : 'border-muted bg-muted/10'}`}>
                 {tierIcons[subscription?.tier || 'free']}
                 <span className={`font-semibold capitalize ${tierColors[subscription?.tier || 'free']}`}>
@@ -177,8 +178,8 @@ const CustomerDashboard = () => {
                   <div className="text-xs text-muted-foreground">Upload & price your model</div>
                 </GlowCard>
               </Link>
-              
-              <GlowCard 
+
+              <GlowCard
                 className="p-4 hover:border-secondary/50 transition-colors cursor-pointer h-full"
                 onClick={() => setRepositoryOpen(true)}
               >
@@ -186,7 +187,7 @@ const CustomerDashboard = () => {
                 <div className="font-medium text-foreground">Find a Model</div>
                 <div className="text-xs text-muted-foreground">Browse repositories</div>
               </GlowCard>
-              
+
               <Link to="/dashboard/credits">
                 <GlowCard className="p-4 hover:border-secondary/50 transition-colors cursor-pointer h-full">
                   <CreditCard className="w-8 h-8 text-secondary mb-2" />
@@ -194,7 +195,7 @@ const CustomerDashboard = () => {
                   <div className="text-xs text-muted-foreground">Top up your balance</div>
                 </GlowCard>
               </Link>
-              
+
               <Link to="/dashboard/gift-cards">
                 <GlowCard className="p-4 hover:border-secondary/50 transition-colors cursor-pointer h-full">
                   <Gift className="w-8 h-8 text-purple-500 mb-2" />
@@ -214,7 +215,7 @@ const CustomerDashboard = () => {
                   <FileText className="w-5 h-5 text-secondary" />
                   My Print Requests
                 </h3>
-                
+
                 {requestsLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="w-6 h-6 animate-spin text-secondary" />
@@ -222,8 +223,8 @@ const CustomerDashboard = () => {
                 ) : printRequests && printRequests.length > 0 ? (
                   <div className="space-y-3 max-h-64 overflow-y-auto">
                     {printRequests.slice(0, 5).map((request: any) => (
-                      <div 
-                        key={request.id} 
+                      <div
+                        key={request.id}
                         className="flex items-center justify-between p-3 rounded-lg bg-background/50 border border-primary/10"
                       >
                         <div className="min-w-0">
@@ -234,12 +235,11 @@ const CustomerDashboard = () => {
                             {new Date(request.created_at).toLocaleDateString('en-CA')}
                           </div>
                         </div>
-                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                          request.status === 'pending' ? 'bg-warning/20 text-warning' :
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${request.status === 'pending' ? 'bg-warning/20 text-warning' :
                           request.status === 'claimed' ? 'bg-secondary/20 text-secondary' :
-                          request.status === 'accepted' ? 'bg-success/20 text-success' :
-                          'bg-muted/20 text-muted-foreground'
-                        }`}>
+                            request.status === 'accepted' ? 'bg-success/20 text-success' :
+                              'bg-muted/20 text-muted-foreground'
+                          }`}>
                           {request.status}
                         </span>
                       </div>
@@ -264,7 +264,7 @@ const CustomerDashboard = () => {
                   <Recycle className="w-5 h-5 text-green-500" />
                   Rewards & Recycling
                 </h3>
-                
+
                 <div className="space-y-4">
                   {/* Referral Code */}
                   <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
@@ -284,7 +284,7 @@ const CustomerDashboard = () => {
                       </button>
                     </div>
                   </div>
-                  
+
                   {/* Recycling CTA */}
                   <Link to="/dashboard/recycling">
                     <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 hover:bg-green-500/20 transition-colors cursor-pointer">
@@ -319,6 +319,59 @@ const CustomerDashboard = () => {
             </div>
           </div>
 
+          {/* My Quotes Section */}
+          <div className="mb-8 animate-fade-in" style={{ animationDelay: '550ms' }}>
+            <GlowCard className="p-6">
+              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-primary" />
+                My Saved Quotes
+              </h3>
+
+              {quotesLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-secondary" />
+                </div>
+              ) : quotes && quotes.length > 0 ? (
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {quotes.map((quote) => {
+                    const isExpired = new Date(quote.expires_at) < new Date();
+                    return (
+                      <Link
+                        key={quote.id}
+                        to={`/quote`}
+                        className="flex items-center justify-between p-3 rounded-lg bg-background/50 border border-primary/10 hover:border-secondary/30 transition-colors"
+                      >
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-foreground truncate">
+                            {quote.material.replace('_', ' ')} × {quote.quantity}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            ${quote.total_cad.toFixed(2)} CAD • {new Date(quote.created_at).toLocaleDateString('en-CA')}
+                          </div>
+                        </div>
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${isExpired ? 'bg-destructive/20 text-destructive' :
+                            quote.status === 'active' ? 'bg-success/20 text-success' :
+                              quote.status === 'ordered' ? 'bg-secondary/20 text-secondary' :
+                                'bg-muted/20 text-muted-foreground'
+                          }`}>
+                          {isExpired ? 'Expired' : quote.status}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p>No quotes yet</p>
+                  <Link to="/quote" className="text-secondary text-sm hover:underline">
+                    Get your first quote
+                  </Link>
+                </div>
+              )}
+            </GlowCard>
+          </div>
+
           {/* Beginner Guidance */}
           <div className="animate-fade-in" style={{ animationDelay: '600ms' }}>
             <GlowCard className="p-6">
@@ -328,8 +381,8 @@ const CustomerDashboard = () => {
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {beginnerGuides.map((guide, index) => (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className="p-4 rounded-lg bg-background/50 border border-primary/10 hover:border-secondary/30 transition-colors"
                   >
                     <guide.icon className="w-6 h-6 text-secondary mb-2" />

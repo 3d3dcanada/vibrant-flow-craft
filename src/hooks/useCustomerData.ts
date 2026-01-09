@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 // Fetch user's print requests
 export const useUserPrintRequests = () => {
   const { user } = useAuth();
-  
+
   return useQuery({
     queryKey: ['user_print_requests', user?.id],
     queryFn: async () => {
@@ -17,6 +17,38 @@ export const useUserPrintRequests = () => {
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
+    },
+    enabled: !!user
+  });
+};
+
+// Fetch user's quotes
+// Note: quotes table exists but types may not be regenerated
+export const useUserQuotes = (limit = 10) => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['user_quotes', user?.id, limit],
+    queryFn: async () => {
+      if (!user) return [];
+      // Using explicit any to handle quotes table not in generated types
+      const { data, error } = await (supabase as any)
+        .from('quotes')
+        .select('id, material, quality, quantity, total_cad, status, expires_at, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      if (error) throw error;
+      return data as Array<{
+        id: string;
+        material: string;
+        quality: string;
+        quantity: number;
+        total_cad: number;
+        status: string;
+        expires_at: string;
+        created_at: string;
+      }>;
     },
     enabled: !!user
   });
