@@ -794,25 +794,21 @@ export default function QuoteConfigurator() {
                                             </div>
                                         </div>
 
-                                        {/* Phase 3B Honest Notice */}
-                                        <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                                            <div className="flex items-start gap-3">
-                                                <AlertCircle className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-                                                <div className="text-sm">
-                                                    <p className="font-medium text-foreground mb-1">Payment Not Yet Active</p>
-                                                    <p className="text-muted-foreground">
-                                                        Online payments are launching soon. Your quote has been saved.
-                                                        Contact us at <a href="mailto:orders@3d3d.ca" className="text-secondary hover:underline">orders@3d3d.ca</a> to
-                                                        place your order now, or check back when payments go live.
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Quote ID for Reference */}
+                                        {/* Proceed to Checkout */}
                                         {quoteResponse?.quote_id && (
-                                            <div className="text-center text-sm text-muted-foreground">
-                                                Quote Reference: <span className="font-mono text-foreground">{quoteResponse.quote_id.slice(0, 8).toUpperCase()}</span>
+                                            <div className="space-y-4">
+                                                <NeonButton
+                                                    variant="primary"
+                                                    className="w-full"
+                                                    onClick={() => navigate(`/checkout/${quoteResponse.quote_id}`)}
+                                                >
+                                                    <Shield className="w-4 h-4 mr-2" />
+                                                    Proceed to Checkout
+                                                </NeonButton>
+
+                                                <div className="text-center text-sm text-muted-foreground">
+                                                    Quote Reference: <span className="font-mono text-foreground">{quoteResponse.quote_id.slice(0, 8).toUpperCase()}</span>
+                                                </div>
                                             </div>
                                         )}
                                     </div>

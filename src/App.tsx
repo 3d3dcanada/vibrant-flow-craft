@@ -44,6 +44,8 @@ import PrintResponsibility from "./pages/PrintResponsibility";
 import Store from "./pages/Store";
 import StoreModels from "./pages/StoreModels";
 import StorePrinted from "./pages/StorePrinted";
+import Checkout from "./pages/Checkout";
+import OrderConfirmation from "./pages/OrderConfirmation";
 
 // Maker Dashboard pages
 import MakerOverview from "./pages/maker/MakerOverview";
@@ -99,6 +101,10 @@ const App = () => (
             <Route path="/store" element={<Store />} />
             <Route path="/store/models" element={<StoreModels />} />
             <Route path="/store/printed" element={<StorePrinted />} />
+
+            {/* Checkout routes */}
+            <Route path="/checkout/:quoteId" element={<Checkout />} />
+            <Route path="/order/:orderId" element={<OrderConfirmation />} />
 
             {/* Dashboard routes */}
             <Route path="/dashboard" element={<Dashboard />} />

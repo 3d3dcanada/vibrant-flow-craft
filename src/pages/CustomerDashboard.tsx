@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile, useSubscription, useCreditWallet, usePointWallet, useReferralCode, usePointTransactions } from '@/hooks/useUserData';
-import { useUserPrintRequests, useUserQuotes } from '@/hooks/useCustomerData';
+import { useUserPrintRequests, useUserQuotes, useUserOrders } from '@/hooks/useCustomerData';
 import { ParticleBackground } from '@/components/ui/ParticleBackground';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 import { NeonButton } from '@/components/ui/NeonButton';
@@ -12,7 +12,7 @@ import {
   Coins, Recycle, Gift, Settings, LogOut,
   Sparkles, Crown, Zap, Star, Package, FileText, Search,
   CreditCard, Lightbulb, Box, Layers, Target, Shield, Copy, Check,
-  Loader2
+  Loader2, ShoppingBag
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatCad, CAD_PER_CREDIT } from '@/config/credits';
@@ -31,6 +31,7 @@ const CustomerDashboard = () => {
   const { data: recentActivity } = usePointTransactions(5);
   const { data: printRequests, isLoading: requestsLoading } = useUserPrintRequests();
   const { data: quotes, isLoading: quotesLoading } = useUserQuotes(5);
+  const { data: orders, isLoading: ordersLoading } = useUserOrders(5);
 
   const handleSignOut = async () => {
     await signOut();
@@ -350,9 +351,9 @@ const CustomerDashboard = () => {
                           </div>
                         </div>
                         <span className={`text-xs px-2 py-1 rounded-full font-medium ${isExpired ? 'bg-destructive/20 text-destructive' :
-                            quote.status === 'active' ? 'bg-success/20 text-success' :
-                              quote.status === 'ordered' ? 'bg-secondary/20 text-secondary' :
-                                'bg-muted/20 text-muted-foreground'
+                          quote.status === 'active' ? 'bg-success/20 text-success' :
+                            quote.status === 'ordered' ? 'bg-secondary/20 text-secondary' :
+                              'bg-muted/20 text-muted-foreground'
                           }`}>
                           {isExpired ? 'Expired' : quote.status}
                         </span>
@@ -366,6 +367,57 @@ const CustomerDashboard = () => {
                   <p>No quotes yet</p>
                   <Link to="/quote" className="text-secondary text-sm hover:underline">
                     Get your first quote
+                  </Link>
+                </div>
+              )}
+            </GlowCard>
+          </div>
+
+          {/* My Orders Section */}
+          <div className="mb-8 animate-fade-in" style={{ animationDelay: '575ms' }}>
+            <GlowCard className="p-6">
+              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <ShoppingBag className="w-5 h-5 text-secondary" />
+                My Orders
+              </h3>
+
+              {ordersLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-secondary" />
+                </div>
+              ) : orders && orders.length > 0 ? (
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {orders.map((order) => (
+                    <Link
+                      key={order.id}
+                      to={`/order/${order.id}`}
+                      className="flex items-center justify-between p-3 rounded-lg bg-background/50 border border-primary/10 hover:border-secondary/30 transition-colors"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-foreground truncate font-mono">
+                          {order.order_number}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          ${order.total_cad.toFixed(2)} CAD • {new Date(order.created_at).toLocaleDateString('en-CA')}
+                        </div>
+                      </div>
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${order.status === 'paid' || order.status === 'delivered' ? 'bg-success/20 text-success' :
+                          order.status === 'awaiting_payment' || order.status === 'pending_payment' ? 'bg-warning/20 text-warning' :
+                            order.status === 'in_production' || order.status === 'shipped' ? 'bg-secondary/20 text-secondary' :
+                              order.status === 'cancelled' ? 'bg-destructive/20 text-destructive' :
+                                'bg-muted/20 text-muted-foreground'
+                        }`}>
+                        {order.status.replace(/_/g, ' ')}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <ShoppingBag className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p>No orders yet</p>
+                  <Link to="/quote" className="text-secondary text-sm hover:underline">
+                    Get a quote to place your first order
                   </Link>
                 </div>
               )}
