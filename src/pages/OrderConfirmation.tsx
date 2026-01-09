@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/ui/Navbar';
@@ -7,8 +7,8 @@ import Footer from '@/components/sections/Footer';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { NeonButton } from '@/components/ui/NeonButton';
 import {
-    CheckCircle, Clock, Package, CreditCard, Building2,
-    AlertCircle, Loader2, Copy, Check, ArrowRight, Mail
+    CheckCircle, Clock, Package, Bitcoin, FileText, Coins,
+    AlertCircle, Loader2, Copy, Check, ArrowRight, Mail, AlertTriangle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -20,17 +20,17 @@ interface Order {
     quote_snapshot: any;
     total_cad: number;
     currency: string;
-    payment_method: 'stripe' | 'etransfer' | 'credits';
-    stripe_checkout_session_id?: string;
+    payment_method: 'bitcoin' | 'invoice' | 'credits';
     payment_confirmed_at?: string;
     shipping_address: any;
     status: string;
     created_at: string;
+    notes?: string;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
     'pending_payment': { label: 'Pending Payment', color: 'text-warning', icon: Clock },
-    'awaiting_payment': { label: 'Awaiting e-Transfer', color: 'text-blue-400', icon: Building2 },
+    'awaiting_payment': { label: 'Awaiting Payment', color: 'text-blue-400', icon: Clock },
     'paid': { label: 'Paid', color: 'text-success', icon: CheckCircle },
     'in_production': { label: 'In Production', color: 'text-secondary', icon: Package },
     'shipped': { label: 'Shipped', color: 'text-primary', icon: Package },
@@ -48,17 +48,22 @@ const MATERIAL_NAMES: Record<string, string> = {
     'ABS_ASA': 'ABS/ASA',
 };
 
-// e-Transfer configuration
-const ETRANSFER_CONFIG = {
-    recipient: 'payments@3d3d.ca',
-    securityQuestion: 'What service is this payment for?',
-    securityAnswer: '3dprint',
+// Bitcoin payment configuration
+const BITCOIN_CONFIG = {
+    address: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh', // 3D3D BTC address
+    networkWarning: 'Bitcoin network fees are paid by the sender. Confirmations typically take 10-60 minutes.',
+    verificationNote: 'Our team will manually verify your Bitcoin payment. Orders begin production after confirmation (typically 1-3 business days).',
+};
+
+// Invoice configuration
+const INVOICE_CONFIG = {
+    email: 'orders@3d3d.ca',
+    responseTime: 'within 24 hours',
 };
 
 export default function OrderConfirmation() {
     const navigate = useNavigate();
     const { orderId } = useParams();
-    const [searchParams] = useSearchParams();
     const { user, loading: authLoading } = useAuth();
     const { toast } = useToast();
 
@@ -66,7 +71,6 @@ export default function OrderConfirmation() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState<string | null>(null);
-    const [verifyingPayment, setVerifyingPayment] = useState(false);
 
     // Redirect if not authenticated
     useEffect(() => {
@@ -75,7 +79,7 @@ export default function OrderConfirmation() {
         }
     }, [user, authLoading, navigate, orderId]);
 
-    // Load order and verify Stripe payment if returning from checkout
+    // Load order
     useEffect(() => {
         const loadOrder = async () => {
             if (!user || !orderId) return;
@@ -98,46 +102,6 @@ export default function OrderConfirmation() {
                 }
 
                 setOrder(data);
-
-                // Check if returning from Stripe checkout
-                const stripeSuccess = searchParams.get('stripe_success');
-                const sessionId = searchParams.get('session_id');
-
-                if (stripeSuccess === '1' && sessionId && data.status === 'pending_payment') {
-                    // Verify the payment
-                    setVerifyingPayment(true);
-
-                    const { data: verifyResult, error: verifyError } = await supabase.functions.invoke(
-                        'verify-checkout-session',
-                        { body: { session_id: sessionId, order_id: orderId } }
-                    );
-
-                    if (verifyError) {
-                        console.error('Verification error:', verifyError);
-                        toast({
-                            title: 'Payment verification pending',
-                            description: 'We are confirming your payment. Please refresh in a moment.',
-                        });
-                    } else if (verifyResult?.verified && verifyResult?.status === 'paid') {
-                        // Payment confirmed - update local order state
-                        setOrder(prev => prev ? { ...prev, status: 'paid', payment_confirmed_at: new Date().toISOString() } : null);
-                        toast({
-                            title: 'Payment confirmed!',
-                            description: 'Your order is now being processed.',
-                        });
-                    } else if (verifyResult?.status === 'unpaid') {
-                        toast({
-                            title: 'Payment incomplete',
-                            description: 'Your payment was not completed. Please try again.',
-                            variant: 'destructive',
-                        });
-                    }
-
-                    setVerifyingPayment(false);
-
-                    // Clean up URL params
-                    window.history.replaceState({}, '', `/order/${orderId}`);
-                }
             } catch (err) {
                 console.error('Error loading order:', err);
                 setError('Failed to load order. Please try again.');
@@ -147,7 +111,7 @@ export default function OrderConfirmation() {
         };
 
         loadOrder();
-    }, [user, orderId, searchParams, toast]);
+    }, [user, orderId]);
 
     const copyToClipboard = (text: string, field: string) => {
         navigator.clipboard.writeText(text);
@@ -166,6 +130,13 @@ export default function OrderConfirmation() {
             hour: '2-digit',
             minute: '2-digit',
         });
+    };
+
+    // Calculate BTC amount (rough estimate - would need live rate in production)
+    const estimateBtcAmount = (cadAmount: number) => {
+        // Using a placeholder rate - in production this would be fetched from an API
+        const btcRate = 85000; // Rough CAD per BTC as of Jan 2026 - for display only
+        return (cadAmount / btcRate).toFixed(8);
     };
 
     if (authLoading || loading) {
@@ -203,6 +174,7 @@ export default function OrderConfirmation() {
 
     const statusConfig = STATUS_CONFIG[order.status] || STATUS_CONFIG['pending_payment'];
     const StatusIcon = statusConfig.icon;
+    const isPaid = order.status === 'paid';
 
     return (
         <div className="min-h-screen bg-background">
@@ -211,52 +183,32 @@ export default function OrderConfirmation() {
                 <div className="max-w-3xl mx-auto">
                     {/* Success Header */}
                     <div className="text-center mb-8">
-                        {verifyingPayment ? (
-                            <>
-                                <div className="w-20 h-20 mx-auto rounded-full bg-secondary/10 flex items-center justify-center mb-4">
-                                    <Loader2 className="w-10 h-10 text-secondary animate-spin" />
-                                </div>
-                                <h1 className="text-3xl font-display font-bold gradient-text mb-2">
-                                    Verifying Payment...
-                                </h1>
-                                <p className="text-muted-foreground">
-                                    Please wait while we confirm your payment.
-                                </p>
-                            </>
-                        ) : order.status === 'paid' ? (
+                        {isPaid ? (
                             <>
                                 <div className="w-20 h-20 mx-auto rounded-full bg-success/10 flex items-center justify-center mb-4">
                                     <CheckCircle className="w-10 h-10 text-success" />
                                 </div>
                                 <h1 className="text-3xl font-display font-bold gradient-text mb-2">
-                                    Payment Confirmed!
+                                    {order.payment_method === 'credits' ? 'Order Confirmed!' : 'Payment Confirmed!'}
                                 </h1>
                                 <p className="text-muted-foreground">
-                                    Thank you! Your order is now being processed.
+                                    Your order is now being processed.
                                 </p>
                             </>
-                        ) : order.status === 'pending_payment' ? (
+                        ) : (
                             <>
                                 <div className="w-20 h-20 mx-auto rounded-full bg-warning/10 flex items-center justify-center mb-4">
                                     <Clock className="w-10 h-10 text-warning" />
                                 </div>
                                 <h1 className="text-3xl font-display font-bold gradient-text mb-2">
-                                    Payment Pending
+                                    Order Created
                                 </h1>
                                 <p className="text-muted-foreground">
-                                    Your order is awaiting payment confirmation.
-                                </p>
-                            </>
-                        ) : (
-                            <>
-                                <div className="w-20 h-20 mx-auto rounded-full bg-success/10 flex items-center justify-center mb-4">
-                                    <CheckCircle className="w-10 h-10 text-success" />
-                                </div>
-                                <h1 className="text-3xl font-display font-bold gradient-text mb-2">
-                                    Order Placed!
-                                </h1>
-                                <p className="text-muted-foreground">
-                                    Thank you for your order. Here are your order details.
+                                    {order.payment_method === 'bitcoin'
+                                        ? 'Please complete Bitcoin payment below.'
+                                        : order.payment_method === 'invoice'
+                                            ? 'We will send payment instructions to your email.'
+                                            : 'Awaiting payment confirmation.'}
                                 </p>
                             </>
                         )}
@@ -276,88 +228,145 @@ export default function OrderConfirmation() {
                         </div>
                     </GlassPanel>
 
-                    {/* e-Transfer Instructions (if applicable) */}
-                    {order.payment_method === 'etransfer' && order.status === 'awaiting_payment' && (
-                        <GlassPanel variant="elevated" className="mb-6 border-blue-500/30">
+                    {/* Bitcoin Payment Instructions */}
+                    {order.payment_method === 'bitcoin' && order.status === 'awaiting_payment' && (
+                        <GlassPanel variant="elevated" className="mb-6 border-orange-500/30">
                             <div className="flex items-start gap-3 mb-4">
-                                <Building2 className="w-6 h-6 text-blue-400 shrink-0 mt-1" />
+                                <Bitcoin className="w-6 h-6 text-orange-500 shrink-0 mt-1" />
                                 <div>
                                     <h2 className="text-lg font-tech font-bold text-foreground">
-                                        e-Transfer Instructions
+                                        Bitcoin Payment
                                     </h2>
                                     <p className="text-sm text-muted-foreground">
-                                        Please complete your payment via Interac e-Transfer
+                                        Send the exact amount to the address below
                                     </p>
                                 </div>
                             </div>
 
                             <div className="space-y-4 bg-background/50 rounded-lg p-4">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-xs text-muted-foreground">Send to</p>
-                                        <p className="font-mono text-foreground">{ETRANSFER_CONFIG.recipient}</p>
-                                    </div>
-                                    <button
-                                        onClick={() => copyToClipboard(ETRANSFER_CONFIG.recipient, 'Email')}
-                                        className="p-2 hover:bg-muted rounded-lg transition-colors"
-                                    >
-                                        {copied === 'Email' ? (
-                                            <Check className="w-4 h-4 text-success" />
-                                        ) : (
-                                            <Copy className="w-4 h-4 text-muted-foreground" />
-                                        )}
-                                    </button>
+                                <div>
+                                    <p className="text-xs text-muted-foreground mb-1">Amount (CAD equivalent)</p>
+                                    <p className="font-mono text-lg font-bold text-secondary">
+                                        {formatCurrency(order.total_cad)}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        ≈ {estimateBtcAmount(order.total_cad)} BTC (approximate — verify current rate)
+                                    </p>
                                 </div>
 
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-xs text-muted-foreground">Amount</p>
-                                        <p className="font-mono text-lg font-bold text-secondary">
-                                            {formatCurrency(order.total_cad)}
-                                        </p>
+                                <div>
+                                    <p className="text-xs text-muted-foreground mb-1">Send to BTC Address</p>
+                                    <div className="flex items-center gap-2">
+                                        <code className="font-mono text-sm text-foreground bg-muted/50 px-2 py-1 rounded break-all">
+                                            {BITCOIN_CONFIG.address}
+                                        </code>
+                                        <button
+                                            onClick={() => copyToClipboard(BITCOIN_CONFIG.address, 'BTC Address')}
+                                            className="p-2 hover:bg-muted rounded-lg transition-colors shrink-0"
+                                        >
+                                            {copied === 'BTC Address' ? (
+                                                <Check className="w-4 h-4 text-success" />
+                                            ) : (
+                                                <Copy className="w-4 h-4 text-muted-foreground" />
+                                            )}
+                                        </button>
                                     </div>
-                                    <button
-                                        onClick={() => copyToClipboard(order.total_cad.toFixed(2), 'Amount')}
-                                        className="p-2 hover:bg-muted rounded-lg transition-colors"
-                                    >
-                                        {copied === 'Amount' ? (
-                                            <Check className="w-4 h-4 text-success" />
-                                        ) : (
-                                            <Copy className="w-4 h-4 text-muted-foreground" />
-                                        )}
-                                    </button>
                                 </div>
 
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-xs text-muted-foreground">Message / Memo</p>
-                                        <p className="font-mono text-foreground">3D3D Order {order.order_number}</p>
-                                    </div>
+                                <div className="flex items-center gap-2">
+                                    <p className="text-xs text-muted-foreground">Include in memo/note:</p>
+                                    <code className="font-mono text-xs text-foreground bg-muted/50 px-2 py-1 rounded">
+                                        {order.order_number}
+                                    </code>
                                     <button
-                                        onClick={() => copyToClipboard(`3D3D Order ${order.order_number}`, 'Memo')}
-                                        className="p-2 hover:bg-muted rounded-lg transition-colors"
+                                        onClick={() => copyToClipboard(order.order_number, 'Order Number')}
+                                        className="p-1 hover:bg-muted rounded transition-colors"
                                     >
-                                        {copied === 'Memo' ? (
-                                            <Check className="w-4 h-4 text-success" />
+                                        {copied === 'Order Number' ? (
+                                            <Check className="w-3 h-3 text-success" />
                                         ) : (
-                                            <Copy className="w-4 h-4 text-muted-foreground" />
+                                            <Copy className="w-3 h-3 text-muted-foreground" />
                                         )}
                                     </button>
-                                </div>
-
-                                <div className="border-t border-border pt-4">
-                                    <p className="text-xs text-muted-foreground mb-1">Security Question</p>
-                                    <p className="font-mono text-foreground">{ETRANSFER_CONFIG.securityQuestion}</p>
-                                    <p className="text-xs text-muted-foreground mt-2 mb-1">Answer</p>
-                                    <p className="font-mono text-secondary">{ETRANSFER_CONFIG.securityAnswer}</p>
                                 </div>
                             </div>
 
-                            <div className="mt-4 p-3 bg-warning/10 border border-warning/30 rounded-lg">
-                                <p className="text-sm text-warning">
-                                    <strong>Important:</strong> Your order will begin production once payment is confirmed,
-                                    typically within 1 business day of receiving your e-Transfer.
+                            <div className="mt-4 space-y-3">
+                                <div className="p-3 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+                                    <div className="flex items-start gap-2">
+                                        <AlertTriangle className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
+                                        <div className="text-sm text-muted-foreground">
+                                            <p className="font-medium text-orange-200 mb-1">Important</p>
+                                            <p>{BITCOIN_CONFIG.networkWarning}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="p-3 bg-muted/20 border border-border rounded-lg">
+                                    <p className="text-sm text-muted-foreground">
+                                        {BITCOIN_CONFIG.verificationNote}
+                                    </p>
+                                </div>
+                            </div>
+                        </GlassPanel>
+                    )}
+
+                    {/* Invoice Payment Instructions */}
+                    {order.payment_method === 'invoice' && order.status === 'awaiting_payment' && (
+                        <GlassPanel variant="elevated" className="mb-6 border-blue-500/30">
+                            <div className="flex items-start gap-3 mb-4">
+                                <FileText className="w-6 h-6 text-blue-400 shrink-0 mt-1" />
+                                <div>
+                                    <h2 className="text-lg font-tech font-bold text-foreground">
+                                        Invoice Payment
+                                    </h2>
+                                    <p className="text-sm text-muted-foreground">
+                                        We will send payment instructions to your email
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4 bg-background/50 rounded-lg p-4">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground">Amount Due</span>
+                                    <span className="font-mono text-lg font-bold text-secondary">
+                                        {formatCurrency(order.total_cad)}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground">Expected Response</span>
+                                    <span className="text-foreground">{INVOICE_CONFIG.responseTime}</span>
+                                </div>
+                            </div>
+
+                            <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                                <p className="text-sm text-muted-foreground">
+                                    Questions? Contact us at{' '}
+                                    <a href={`mailto:${INVOICE_CONFIG.email}`} className="text-secondary hover:underline">
+                                        {INVOICE_CONFIG.email}
+                                    </a>
                                 </p>
+                            </div>
+                        </GlassPanel>
+                    )}
+
+                    {/* Credits Payment Confirmation */}
+                    {order.payment_method === 'credits' && isPaid && (
+                        <GlassPanel variant="elevated" className="mb-6 border-success/30">
+                            <div className="flex items-start gap-3">
+                                <Coins className="w-6 h-6 text-success shrink-0 mt-1" />
+                                <div>
+                                    <h2 className="text-lg font-tech font-bold text-foreground">
+                                        Paid with Credits
+                                    </h2>
+                                    <p className="text-sm text-muted-foreground">
+                                        Your platform credits have been applied to this order.
+                                    </p>
+                                    {order.notes && (
+                                        <p className="text-sm text-muted-foreground mt-2">
+                                            {order.notes}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                         </GlassPanel>
                     )}
@@ -369,7 +378,7 @@ export default function OrderConfirmation() {
                             <div className="text-sm">
                                 <p className="text-foreground font-medium mb-1">Email Confirmations</p>
                                 <p className="text-muted-foreground">
-                                    Email confirmations are not yet enabled. Your order is saved and visible in your dashboard.
+                                    Email confirmations are not yet automated. Your order is saved and visible in your dashboard.
                                     We're working on adding email notifications soon.
                                 </p>
                             </div>
@@ -431,9 +440,11 @@ export default function OrderConfirmation() {
                             <div>
                                 <p className="text-muted-foreground">Payment Method</p>
                                 <p className="text-foreground capitalize flex items-center gap-2">
-                                    {order.payment_method === 'stripe' && <CreditCard className="w-4 h-4" />}
-                                    {order.payment_method === 'etransfer' && <Building2 className="w-4 h-4" />}
-                                    {order.payment_method === 'stripe' ? 'Credit Card' : 'e-Transfer'}
+                                    {order.payment_method === 'bitcoin' && <Bitcoin className="w-4 h-4 text-orange-500" />}
+                                    {order.payment_method === 'invoice' && <FileText className="w-4 h-4 text-blue-400" />}
+                                    {order.payment_method === 'credits' && <Coins className="w-4 h-4 text-secondary" />}
+                                    {order.payment_method === 'bitcoin' ? 'Bitcoin' :
+                                        order.payment_method === 'invoice' ? 'Invoice' : 'Platform Credits'}
                                 </p>
                             </div>
                             <div>

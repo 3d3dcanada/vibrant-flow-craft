@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useCreditWallet } from '@/hooks/useUserData';
 import Navbar from '@/components/ui/Navbar';
 import Footer from '@/components/sections/Footer';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { NeonButton } from '@/components/ui/NeonButton';
 import {
-    CreditCard, Building2, ArrowLeft, Clock, Shield,
-    AlertCircle, Loader2, CheckCircle, Package
+    Bitcoin, FileText, Coins, ArrowLeft, Clock, Shield,
+    AlertCircle, Loader2, CheckCircle, Package, AlertTriangle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -51,20 +52,35 @@ const MATERIAL_NAMES: Record<string, string> = {
     'ABS_ASA': 'ABS/ASA',
 };
 
+// Bitcoin payment configuration
+const BITCOIN_CONFIG = {
+    address: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh', // 3D3D BTC address - replace in production
+    networkWarning: 'Bitcoin payments require on-chain confirmation. Network fees apply and are paid by sender.',
+    confirmationNote: 'Payment will be manually verified by our team. Orders begin production after confirmation (typically 1-3 business days for Bitcoin).',
+};
+
+// Invoice configuration
+const INVOICE_CONFIG = {
+    email: 'orders@3d3d.ca',
+    responseTime: 'within 24 hours',
+    note: 'We will send you an invoice with payment instructions via email.',
+};
+
 export default function Checkout() {
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
     const { quoteId } = useParams();
     const { user, loading: authLoading } = useAuth();
     const { toast } = useToast();
+    const { data: creditWallet, isLoading: creditsLoading } = useCreditWallet();
 
     const [quote, setQuote] = useState<Quote | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [processing, setProcessing] = useState(false);
 
-    const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'etransfer'>('stripe');
-    const [stripeAvailable, setStripeAvailable] = useState(false);
+    // Payment method: 'bitcoin' | 'invoice' | 'credits'
+    const [paymentMethod, setPaymentMethod] = useState<'bitcoin' | 'invoice' | 'credits'>('invoice');
+    const [useCredits, setUseCredits] = useState(false);
 
     const [shippingAddress, setShippingAddress] = useState<ShippingAddress>({
         fullName: '',
@@ -78,14 +94,12 @@ export default function Checkout() {
 
     const [addressErrors, setAddressErrors] = useState<Partial<ShippingAddress>>({});
 
-    // Check if Stripe is configured
-    useEffect(() => {
-        const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
-        setStripeAvailable(!!stripeKey);
-        if (!stripeKey) {
-            setPaymentMethod('etransfer');
-        }
-    }, []);
+    // Credits calculation
+    const creditsBalance = creditWallet?.balance || 0;
+    const orderTotal = quote?.total_cad || 0;
+    const creditsToApply = useCredits ? Math.min(creditsBalance, orderTotal) : 0;
+    const remainingBalance = orderTotal - creditsToApply;
+    const fullyCoveredByCredits = remainingBalance <= 0;
 
     // Redirect if not authenticated
     useEffect(() => {
@@ -201,6 +215,18 @@ export default function Checkout() {
         try {
             const orderNumber = generateOrderNumber();
 
+            // Determine final payment method and status
+            let finalPaymentMethod: string;
+            let orderStatus: string;
+
+            if (fullyCoveredByCredits && useCredits) {
+                finalPaymentMethod = 'credits';
+                orderStatus = 'paid'; // Fully covered by credits = paid
+            } else {
+                finalPaymentMethod = paymentMethod;
+                orderStatus = 'awaiting_payment';
+            }
+
             // Create order record
             const orderData = {
                 user_id: user.id,
@@ -217,7 +243,7 @@ export default function Checkout() {
                 },
                 total_cad: quote.total_cad,
                 currency: 'CAD',
-                payment_method: paymentMethod,
+                payment_method: finalPaymentMethod,
                 shipping_address: {
                     fullName: shippingAddress.fullName,
                     addressLine1: shippingAddress.addressLine1,
@@ -228,7 +254,10 @@ export default function Checkout() {
                     phone: shippingAddress.phone,
                     country: 'Canada',
                 },
-                status: paymentMethod === 'stripe' ? 'pending_payment' : 'awaiting_payment',
+                status: orderStatus,
+                notes: useCredits && creditsToApply > 0
+                    ? `Credits applied: $${creditsToApply.toFixed(2)}. ${remainingBalance > 0 ? `Remaining: $${remainingBalance.toFixed(2)} via ${paymentMethod}` : 'Fully paid with credits.'}`
+                    : undefined,
             };
 
             const { data: order, error: orderError } = await (supabase as any)
@@ -248,40 +277,16 @@ export default function Checkout() {
                 .update({ status: 'ordered' })
                 .eq('id', quote.id);
 
-            // Handle payment method
-            if (paymentMethod === 'stripe') {
-                // Call edge function to create Stripe checkout session
-                const { data: sessionData, error: sessionError } = await supabase.functions.invoke(
-                    'create-checkout-session',
-                    { body: { order_id: order.id } }
-                );
-
-                if (sessionError || !sessionData?.checkout_url) {
-                    // Stripe not configured or error - show message and go to order page
-                    const errorCode = sessionData?.code || sessionError?.message;
-                    if (errorCode === 'STRIPE_NOT_CONFIGURED') {
-                        toast({
-                            title: 'Card payments unavailable',
-                            description: 'Online card payments are not yet configured. Your order has been saved. Please use e-Transfer or contact us.',
-                            variant: 'destructive',
-                        });
-                    } else {
-                        toast({
-                            title: 'Payment error',
-                            description: 'Could not connect to payment processor. Your order has been saved.',
-                            variant: 'destructive',
-                        });
-                    }
-                    navigate(`/order/${order.id}`);
-                    return;
-                }
-
-                // Redirect to Stripe Checkout
-                window.location.href = sessionData.checkout_url;
-            } else {
-                // e-Transfer - go to order page with instructions
-                navigate(`/order/${order.id}`);
+            // If credits were used, deduct from wallet (this would normally be a server-side operation)
+            // For now, we just record in notes - actual deduction requires admin/backend action
+            if (useCredits && creditsToApply > 0) {
+                // Note: In production, this should be a server-side transaction
+                // For MVP, credits are deducted manually by admin after verification
+                console.log(`Credits to deduct: ${creditsToApply} from user ${user.id}`);
             }
+
+            // Navigate to order confirmation
+            navigate(`/order/${order.id}`);
 
         } catch (err) {
             console.error('Checkout error:', err);
@@ -304,7 +309,7 @@ export default function Checkout() {
         return Math.max(0, Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
     };
 
-    if (authLoading || loading) {
+    if (authLoading || loading || creditsLoading) {
         return (
             <div className="min-h-screen bg-background">
                 <Navbar />
@@ -485,72 +490,176 @@ export default function Checkout() {
                                 </p>
                             </GlassPanel>
 
-                            {/* Payment Method */}
-                            <GlassPanel variant="elevated">
-                                <h2 className="text-xl font-tech font-bold text-foreground mb-4">
-                                    Payment Method
-                                </h2>
-                                <div className="space-y-3">
-                                    {/* Stripe Option */}
-                                    <button
-                                        onClick={() => stripeAvailable && setPaymentMethod('stripe')}
-                                        disabled={!stripeAvailable}
-                                        className={`w-full p-4 rounded-lg border text-left transition-all ${paymentMethod === 'stripe' && stripeAvailable
-                                            ? 'border-secondary bg-secondary/10 ring-2 ring-secondary/50'
-                                            : stripeAvailable
-                                                ? 'border-border hover:border-secondary/50'
-                                                : 'border-border opacity-50 cursor-not-allowed'
-                                            }`}
-                                    >
+                            {/* Credits Section */}
+                            {creditsBalance > 0 && (
+                                <GlassPanel variant="elevated" className="border-secondary/30">
+                                    <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3">
-                                            <CreditCard className="w-6 h-6 text-secondary" />
-                                            <div className="flex-1">
-                                                <div className="font-tech font-bold text-foreground">
-                                                    Credit / Debit Card
-                                                </div>
-                                                <div className="text-sm text-muted-foreground">
-                                                    {stripeAvailable
-                                                        ? 'Secure payment via Stripe'
-                                                        : 'Coming soon — not yet configured'}
-                                                </div>
+                                            <Coins className="w-6 h-6 text-secondary" />
+                                            <div>
+                                                <p className="font-tech font-bold text-foreground">
+                                                    Platform Credits
+                                                </p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    Available balance: <span className="text-secondary font-bold">{formatCurrency(creditsBalance)}</span>
+                                                </p>
                                             </div>
-                                            {stripeAvailable && (
-                                                <Shield className="w-5 h-5 text-success" />
+                                        </div>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={useCredits}
+                                                onChange={(e) => setUseCredits(e.target.checked)}
+                                                className="w-5 h-5 rounded border-border text-secondary focus:ring-secondary"
+                                            />
+                                            <span className="text-sm text-foreground">Apply credits</span>
+                                        </label>
+                                    </div>
+
+                                    {useCredits && (
+                                        <div className="mt-4 p-3 bg-secondary/10 rounded-lg">
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-muted-foreground">Credits applied:</span>
+                                                <span className="text-success font-bold">-{formatCurrency(creditsToApply)}</span>
+                                            </div>
+                                            {remainingBalance > 0 && (
+                                                <div className="flex justify-between text-sm mt-1">
+                                                    <span className="text-muted-foreground">Remaining to pay:</span>
+                                                    <span className="text-foreground font-bold">{formatCurrency(remainingBalance)}</span>
+                                                </div>
+                                            )}
+                                            {fullyCoveredByCredits && (
+                                                <p className="text-success text-sm mt-2 flex items-center gap-2">
+                                                    <CheckCircle className="w-4 h-4" />
+                                                    Fully covered by credits!
+                                                </p>
                                             )}
                                         </div>
-                                    </button>
+                                    )}
+                                </GlassPanel>
+                            )}
 
-                                    {/* e-Transfer Option */}
-                                    <button
-                                        onClick={() => setPaymentMethod('etransfer')}
-                                        className={`w-full p-4 rounded-lg border text-left transition-all ${paymentMethod === 'etransfer'
-                                            ? 'border-secondary bg-secondary/10 ring-2 ring-secondary/50'
-                                            : 'border-border hover:border-secondary/50'
-                                            }`}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <Building2 className="w-6 h-6 text-blue-400" />
-                                            <div className="flex-1">
-                                                <div className="font-tech font-bold text-foreground">
-                                                    Interac e-Transfer
+                            {/* Payment Method - Only show if not fully covered by credits */}
+                            {!fullyCoveredByCredits && (
+                                <GlassPanel variant="elevated">
+                                    <h2 className="text-xl font-tech font-bold text-foreground mb-4">
+                                        Payment Method
+                                    </h2>
+                                    <div className="space-y-3">
+                                        {/* Invoice / Email Option */}
+                                        <button
+                                            onClick={() => setPaymentMethod('invoice')}
+                                            className={`w-full p-4 rounded-lg border text-left transition-all ${paymentMethod === 'invoice'
+                                                    ? 'border-secondary bg-secondary/10 ring-2 ring-secondary/50'
+                                                    : 'border-border hover:border-secondary/50'
+                                                }`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <FileText className="w-6 h-6 text-blue-400" />
+                                                <div className="flex-1">
+                                                    <div className="font-tech font-bold text-foreground">
+                                                        Invoice / Email Payment
+                                                    </div>
+                                                    <div className="text-sm text-muted-foreground">
+                                                        We'll send payment instructions to your email
+                                                    </div>
                                                 </div>
-                                                <div className="text-sm text-muted-foreground">
-                                                    Pay via your bank — instructions provided after order
+                                            </div>
+                                        </button>
+
+                                        {/* Bitcoin Option */}
+                                        <button
+                                            onClick={() => setPaymentMethod('bitcoin')}
+                                            className={`w-full p-4 rounded-lg border text-left transition-all ${paymentMethod === 'bitcoin'
+                                                    ? 'border-secondary bg-secondary/10 ring-2 ring-secondary/50'
+                                                    : 'border-border hover:border-secondary/50'
+                                                }`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <Bitcoin className="w-6 h-6 text-orange-500" />
+                                                <div className="flex-1">
+                                                    <div className="font-tech font-bold text-foreground">
+                                                        Bitcoin
+                                                    </div>
+                                                    <div className="text-sm text-muted-foreground">
+                                                        Pay with BTC — manual verification required
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </button>
+
+                                        {/* Credits-only Option (if user has credits but not enough) */}
+                                        {creditsBalance > 0 && !useCredits && (
+                                            <button
+                                                onClick={() => {
+                                                    setUseCredits(true);
+                                                    setPaymentMethod('credits');
+                                                }}
+                                                className="w-full p-4 rounded-lg border border-border text-left transition-all hover:border-secondary/50"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <Coins className="w-6 h-6 text-secondary" />
+                                                    <div className="flex-1">
+                                                        <div className="font-tech font-bold text-foreground">
+                                                            Use Platform Credits
+                                                        </div>
+                                                        <div className="text-sm text-muted-foreground">
+                                                            Apply your {formatCurrency(creditsBalance)} balance
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* Payment Method Info */}
+                                    {paymentMethod === 'invoice' && (
+                                        <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                                            <p className="text-sm text-muted-foreground mb-2">
+                                                {INVOICE_CONFIG.note}
+                                            </p>
+                                            <p className="text-sm text-muted-foreground">
+                                                Expect a response <strong className="text-foreground">{INVOICE_CONFIG.responseTime}</strong>.
+                                                Contact: <a href={`mailto:${INVOICE_CONFIG.email}`} className="text-secondary hover:underline">{INVOICE_CONFIG.email}</a>
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {paymentMethod === 'bitcoin' && (
+                                        <div className="mt-4 space-y-3">
+                                            <div className="p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+                                                <div className="flex items-start gap-3">
+                                                    <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+                                                    <div className="text-sm">
+                                                        <p className="text-orange-200 font-medium mb-1">Important Bitcoin Information</p>
+                                                        <p className="text-muted-foreground">{BITCOIN_CONFIG.networkWarning}</p>
+                                                        <p className="text-muted-foreground mt-2">{BITCOIN_CONFIG.confirmationNote}</p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </button>
-                                </div>
+                                    )}
+                                </GlassPanel>
+                            )}
 
-                                {paymentMethod === 'etransfer' && (
-                                    <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                                        <p className="text-sm text-muted-foreground">
-                                            After placing your order, you'll receive e-Transfer instructions.
-                                            Your order will begin production once payment is confirmed (typically within 1 business day).
-                                        </p>
+                            {/* How Credits Work (if no credits) */}
+                            {creditsBalance === 0 && (
+                                <GlassPanel variant="elevated" className="border-muted/30">
+                                    <div className="flex items-start gap-3">
+                                        <Coins className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+                                        <div className="text-sm">
+                                            <p className="text-foreground font-medium mb-1">Platform Credits</p>
+                                            <p className="text-muted-foreground">
+                                                You can purchase credits using gift cards from trusted providers.
+                                                Credits can be applied to any order.
+                                                <a href="/dashboard/credits" className="text-secondary hover:underline ml-1">
+                                                    Learn more →
+                                                </a>
+                                            </p>
+                                        </div>
                                     </div>
-                                )}
-                            </GlassPanel>
+                                </GlassPanel>
+                            )}
                         </div>
 
                         {/* Order Summary Sidebar */}
@@ -582,27 +691,13 @@ export default function Checkout() {
                                 {quote.price_breakdown && (
                                     <div className="space-y-2 text-sm">
                                         <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Platform Fee</span>
-                                            <span className="text-foreground">{formatCurrency(quote.price_breakdown.platform_fee || 0)}</span>
+                                            <span className="text-muted-foreground">Subtotal</span>
+                                            <span className="text-foreground">{formatCurrency(quote.total_cad)}</span>
                                         </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Bed Rental</span>
-                                            <span className="text-foreground">{formatCurrency(quote.price_breakdown.bed_rental || 0)}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Filament</span>
-                                            <span className="text-foreground">{formatCurrency(quote.price_breakdown.filament_cost || 0)}</span>
-                                        </div>
-                                        {quote.price_breakdown.rush_surcharge > 0 && (
-                                            <div className="flex justify-between text-primary">
-                                                <span>Rush Delivery</span>
-                                                <span>{formatCurrency(quote.price_breakdown.rush_surcharge)}</span>
-                                            </div>
-                                        )}
-                                        {quote.price_breakdown.quantity_discount > 0 && (
+                                        {useCredits && creditsToApply > 0 && (
                                             <div className="flex justify-between text-success">
-                                                <span>Bulk Discount</span>
-                                                <span>-{formatCurrency(quote.price_breakdown.quantity_discount)}</span>
+                                                <span>Credits Applied</span>
+                                                <span>-{formatCurrency(creditsToApply)}</span>
                                             </div>
                                         )}
                                     </div>
@@ -611,9 +706,19 @@ export default function Checkout() {
                                 <div className="border-t border-border my-4" />
 
                                 <div className="flex justify-between text-lg font-tech font-bold">
-                                    <span className="text-foreground">Total</span>
-                                    <span className="text-secondary">{formatCurrency(quote.total_cad)}</span>
+                                    <span className="text-foreground">Total Due</span>
+                                    <span className="text-secondary">
+                                        {fullyCoveredByCredits && useCredits
+                                            ? formatCurrency(0)
+                                            : formatCurrency(remainingBalance > 0 ? remainingBalance : quote.total_cad)}
+                                    </span>
                                 </div>
+
+                                {fullyCoveredByCredits && useCredits && (
+                                    <p className="text-success text-sm mt-2 text-center">
+                                        ✓ Paid with credits
+                                    </p>
+                                )}
 
                                 <p className="text-xs text-muted-foreground mt-2">
                                     Shipping calculated based on your location.
@@ -640,7 +745,9 @@ export default function Checkout() {
                                     ) : (
                                         <>
                                             <Package className="w-4 h-4 mr-2" />
-                                            Place Order — {formatCurrency(quote.total_cad)}
+                                            {fullyCoveredByCredits && useCredits
+                                                ? 'Place Order (Credits)'
+                                                : `Place Order — ${formatCurrency(remainingBalance > 0 ? remainingBalance : quote.total_cad)}`}
                                         </>
                                     )}
                                 </NeonButton>
@@ -658,6 +765,10 @@ export default function Checkout() {
                                     <div className="flex items-center gap-2">
                                         <CheckCircle className="w-3 h-3 text-success" />
                                         <span>Quality guaranteed</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Shield className="w-3 h-3 text-secondary" />
+                                        <span>Non-custodial payments</span>
                                     </div>
                                 </div>
                             </GlassPanel>
