@@ -128,8 +128,8 @@ const AdminPayments = () => {
         queryFn: async () => {
             const { data, error } = await supabase
                 .from('maker_profiles')
-                .select('maker_id, display_name, city, province, status')
-                .eq('status', 'active');
+                .select('maker_id, display_name, location, active')
+                .eq('active', true);
 
             if (error) throw error;
             return data || [];
@@ -634,7 +634,7 @@ const AdminPayments = () => {
                                             <option value="">Select a maker...</option>
                                             {makers.map((maker: any) => (
                                                 <option key={maker.maker_id} value={maker.maker_id}>
-                                                    {maker.display_name} ({maker.city}, {maker.province})
+                                                    {maker.display_name} ({maker.location || 'Location not provided'})
                                                 </option>
                                             ))}
                                         </select>
