@@ -106,12 +106,12 @@ BEGIN
         p_order_id,
         p_maker_id,
         'assigned',
-        'Admin reason: ' || p_reason
+        'Admin reason: ' || COALESCE(p_reason, '')
     ) ON CONFLICT (order_id) DO UPDATE
     SET maker_id = p_maker_id,
         status = 'assigned',
         assigned_at = now(),
-        notes = 'Reassigned by admin. Reason: ' || p_reason,
+        notes = 'Reassigned by admin. Reason: ' || COALESCE(p_reason, ''),
         updated_at = now()
     RETURNING id INTO v_maker_order_id;
 
@@ -203,6 +203,16 @@ BEGIN
     v_admin_id := auth.uid();
     IF NOT EXISTS (SELECT 1 FROM user_roles WHERE user_id = v_admin_id AND role = 'admin') THEN
         RETURN json_build_object('success', false, 'error', 'Admin access required');
+    END IF;
+
+    -- Validate status input before casting
+    IF p_new_status NOT IN (
+        SELECT unnest(enum_range(NULL::order_status))::TEXT
+    ) THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', 'Invalid order status: ' || p_new_status
+        );
     END IF;
 
     -- Get current order state
