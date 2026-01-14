@@ -14,7 +14,7 @@ import { NeonButton } from '@/components/ui/NeonButton';
 import FulfillmentTimeline from '@/components/orders/FulfillmentTimeline';
 import {
     CheckCircle, Clock, Package, FileText, Coins,
-    AlertCircle, Loader2, ArrowRight, Mail, Info
+    AlertCircle, Loader2, ArrowRight, Mail, Info, ShieldCheck, MapPin, UserCheck
 } from 'lucide-react';
 
 interface Order {
@@ -342,8 +342,7 @@ export default function OrderConfirmation() {
                             <div className="text-sm">
                                 <p className="text-foreground font-medium mb-1">Email Confirmations</p>
                                 <p className="text-muted-foreground">
-                                    Email confirmations are not yet automated. Your order is saved and visible in your dashboard.
-                                    We're working on adding email notifications soon.
+                                    Your order is saved and visible in your dashboard. We will also send updates by email as they become available.
                                 </p>
                             </div>
                         </div>
@@ -355,7 +354,7 @@ export default function OrderConfirmation() {
                             <div>
                                 <h2 className="text-lg font-tech font-bold text-foreground">Fulfillment Status</h2>
                                 <p className="text-sm text-muted-foreground">
-                                    Fulfillment is handled manually by our maker network. Maker identity is kept private.
+                                    Fulfillment is handled by our verified maker network. Maker identity stays private for security.
                                 </p>
                             </div>
                             {fulfillmentLoading && (
@@ -375,6 +374,37 @@ export default function OrderConfirmation() {
                                 statusHistory={fulfillmentSnapshot.status_history}
                                 makerOrder={makerOrderSnapshot}
                             />
+                        </div>
+                        <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+                            <p>Your order is being produced by a verified local maker.</p>
+                            <p>Tracking will appear here as soon as your order ships.</p>
+                        </div>
+                    </GlassPanel>
+
+                    <GlassPanel variant="elevated" className="mb-6">
+                        <h3 className="font-tech font-bold text-foreground mb-3">Why you can trust this process</h3>
+                        <div className="grid gap-3 md:grid-cols-3 text-sm">
+                            <div className="flex items-start gap-3">
+                                <ShieldCheck className="w-5 h-5 text-success mt-0.5" />
+                                <div>
+                                    <p className="font-medium text-foreground">Verified makers</p>
+                                    <p className="text-muted-foreground">Every order is reviewed by vetted local makers.</p>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <UserCheck className="w-5 h-5 text-secondary mt-0.5" />
+                                <div>
+                                    <p className="font-medium text-foreground">Human oversight</p>
+                                    <p className="text-muted-foreground">Admins confirm delivery to keep payouts accurate.</p>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <MapPin className="w-5 h-5 text-primary mt-0.5" />
+                                <div>
+                                    <p className="font-medium text-foreground">Tracking visibility</p>
+                                    <p className="text-muted-foreground">Carrier info appears the moment a shipment is created.</p>
+                                </div>
+                            </div>
                         </div>
                     </GlassPanel>
 
@@ -400,7 +430,7 @@ export default function OrderConfirmation() {
                             </div>
                         ) : (
                             <p className="text-sm text-muted-foreground">
-                                Tracking details will appear once your order ships.
+                                Tracking details will appear once your order ships. Until then, your maker is preparing your print.
                             </p>
                         )}
                     </GlassPanel>

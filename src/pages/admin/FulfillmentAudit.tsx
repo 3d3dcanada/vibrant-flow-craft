@@ -45,6 +45,27 @@ type GuardrailsResponse = {
 
 const actorKeys = ['changed_by', 'changed_by_role', 'admin_id', 'maker_id', 'user_id'];
 
+const CHECK_CATEGORIES = [
+  {
+    key: 'privacy',
+    title: 'Privacy',
+    helper: 'Why this matters: customer-facing payloads must never expose admin or maker identifiers.',
+    checks: ['sanitized-history', 'tracking-gate'],
+  },
+  {
+    key: 'guardrails',
+    title: 'Guardrails',
+    helper: 'Why this matters: fulfillment writes must be RPC-only for launch safety.',
+    checks: ['maker-policy', 'maker-orders-privs', 'maker-earnings-privs'],
+  },
+  {
+    key: 'lifecycle',
+    title: 'Lifecycle',
+    helper: 'Why this matters: delivery confirmation stays admin-controlled to protect earnings accuracy.',
+    checks: ['delivered-guard'],
+  },
+];
+
 const FulfillmentAudit = () => {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -316,6 +337,7 @@ const FulfillmentAudit = () => {
             <p className="text-muted-foreground mt-1">
               Live launch-readiness checks for fulfillment, privacy, and guardrails.
             </p>
+            <p className="text-xs text-muted-foreground mt-2">This system is launch-locked under Phase 3H.</p>
             <p className="text-xs text-muted-foreground mt-2">
               Runtime checks require preview seed data. If no data is present, run the Phase 3G preview seed locally.
             </p>
@@ -340,52 +362,66 @@ const FulfillmentAudit = () => {
             </div>
           </GlowCard>
 
-          <GlowCard className="p-5">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-muted-foreground border-b border-border">
-                    <th className="py-2">Check</th>
-                    <th className="py-2">Status</th>
-                    <th className="py-2">Details</th>
-                    <th className="py-2">Last Run</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {checks.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="py-6 text-center text-muted-foreground">
-                        No checks run yet. Use “Re-run Checks” to generate results.
-                      </td>
-                    </tr>
-                  )}
-                  {checks.map((check) => (
-                    <tr key={check.id} className="border-b border-border/50">
-                      <td className="py-3 pr-4 font-medium text-foreground">{check.label}</td>
-                      <td className="py-3 pr-4">
-                        <span
-                          className={`inline-flex items-center gap-2 rounded-full px-2 py-1 text-xs font-semibold ${
-                            check.status === 'pass'
-                              ? 'bg-success/15 text-success'
-                              : 'bg-destructive/15 text-destructive'
-                          }`}
-                        >
-                          {check.status === 'pass' ? (
-                            <CheckCircle className="w-3 h-3" />
-                          ) : (
-                            <XCircle className="w-3 h-3" />
-                          )}
-                          {check.status.toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="py-3 pr-4 text-muted-foreground">{check.details}</td>
-                      <td className="py-3 text-muted-foreground">{check.lastRun}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </GlowCard>
+          <div className="space-y-4">
+            {checks.length === 0 ? (
+              <GlowCard className="p-5">
+                <div className="text-center text-muted-foreground py-6">
+                  No checks run yet. Use “Re-run Checks” to generate results.
+                </div>
+              </GlowCard>
+            ) : (
+              CHECK_CATEGORIES.map((category) => {
+                const categoryChecks = checks.filter((check) => category.checks.includes(check.id));
+                if (categoryChecks.length === 0) return null;
+
+                return (
+                  <GlowCard key={category.key} className="p-5">
+                    <div className="mb-4">
+                      <h3 className="text-lg font-semibold text-foreground">{category.title}</h3>
+                      <p className="text-sm text-muted-foreground">{category.helper}</p>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-muted-foreground border-b border-border">
+                            <th className="py-2">Check</th>
+                            <th className="py-2">Status</th>
+                            <th className="py-2">Details</th>
+                            <th className="py-2">Last Run</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {categoryChecks.map((check) => (
+                            <tr key={check.id} className="border-b border-border/50">
+                              <td className="py-3 pr-4 font-medium text-foreground">{check.label}</td>
+                              <td className="py-3 pr-4">
+                                <span
+                                  className={`inline-flex items-center gap-2 rounded-full px-2 py-1 text-xs font-semibold ${
+                                    check.status === 'pass'
+                                      ? 'bg-success/15 text-success'
+                                      : 'bg-destructive/15 text-destructive'
+                                  }`}
+                                >
+                                  {check.status === 'pass' ? (
+                                    <CheckCircle className="w-3 h-3" />
+                                  ) : (
+                                    <XCircle className="w-3 h-3" />
+                                  )}
+                                  {check.status.toUpperCase()}
+                                </span>
+                              </td>
+                              <td className="py-3 pr-4 text-muted-foreground">{check.details}</td>
+                              <td className="py-3 text-muted-foreground">{check.lastRun}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </GlowCard>
+                );
+              })
+            )}
+          </div>
         </div>
       </AdminGuard>
     </DashboardLayout>

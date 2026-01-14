@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
     DollarSign, Package, Clock, CheckCircle, XCircle, Loader2,
     AlertTriangle, FileText, Truck, Eye, ChevronDown, ChevronUp,
@@ -297,6 +298,18 @@ const AdminPayments = () => {
     });
 
     const getStatusConfig = (status: string) => ORDER_STATUSES.find(s => s.value === status) || ORDER_STATUSES[0];
+    const statusDescriptions: Record<string, string> = {
+        awaiting_payment: 'Waiting on invoice verification.',
+        paid: 'Payment confirmed. Assign a maker to begin.',
+        in_production: 'Maker is printing. Awaiting shipment.',
+        shipped: 'Shipped. Ready for delivery confirmation.',
+        delivered: 'Delivery confirmed.',
+        cancelled: 'Order cancelled.',
+        refunded: 'Refund completed.',
+    };
+
+    const blockedByShipment = orders?.filter((order) => order.status === 'in_production').length || 0;
+    const readyForDelivery = orders?.filter((order) => order.status === 'shipped').length || 0;
 
     return (
         <DashboardLayout>
@@ -310,7 +323,29 @@ const AdminPayments = () => {
                         <p className="text-muted-foreground mt-1">
                             Verify payments, manage order lifecycle, and control fulfillment
                         </p>
+                        <p className="text-xs text-muted-foreground mt-2">This system is launch-locked under Phase 3H.</p>
                     </motion.div>
+
+                    <GlowCard className="p-5 mb-6">
+                        <div className="flex flex-wrap items-start justify-between gap-4">
+                            <div>
+                                <h2 className="text-lg font-tech font-bold text-foreground">Fulfillment attention</h2>
+                                <p className="text-sm text-muted-foreground">
+                                    Quickly spot orders waiting on shipment details or delivery confirmation.
+                                </p>
+                            </div>
+                            <div className="flex flex-wrap gap-3">
+                                <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-2">
+                                    <div className="text-xs text-muted-foreground">Blocked by missing shipment</div>
+                                    <div className="text-lg font-semibold text-warning">{blockedByShipment}</div>
+                                </div>
+                                <div className="rounded-lg border border-secondary/40 bg-secondary/10 px-4 py-2">
+                                    <div className="text-xs text-muted-foreground">Ready for delivery confirmation</div>
+                                    <div className="text-lg font-semibold text-secondary">{readyForDelivery}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </GlowCard>
 
                     {/* Filters */}
                     <div className="flex flex-wrap gap-4 mb-6">
@@ -363,13 +398,16 @@ const AdminPayments = () => {
                                     <GlowCard key={order.id} className="p-4">
                                         <div className="flex flex-wrap items-center gap-4">
                                             {/* Status Badge */}
-                                            <div className={`flex items-center gap-2 px-3 py-1 rounded-full bg-background border ${statusConfig.color}`}>
-                                                <StatusIcon className="w-4 h-4" />
-                                                <span className="text-sm font-medium">{statusConfig.label}</span>
-                                            </div>
+                                        <div className={`flex items-center gap-2 px-3 py-1 rounded-full bg-background border ${statusConfig.color}`}>
+                                            <StatusIcon className="w-4 h-4" />
+                                            <span className="text-sm font-medium">{statusConfig.label}</span>
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                            {statusDescriptions[order.status] || 'Status update in progress.'}
+                                        </div>
 
-                                            {/* Order Info */}
-                                            <div className="flex-1 min-w-[200px]">
+                                        {/* Order Info */}
+                                        <div className="flex-1 min-w-[200px]">
                                                 <div className="font-mono font-bold text-foreground">{order.order_number}</div>
                                                 <div className="text-sm text-muted-foreground">
                                                     {order.profiles?.full_name || order.profiles?.email || 'Unknown'}
@@ -404,17 +442,29 @@ const AdminPayments = () => {
                                                 )}
                                                 {/* Phase 3F: Assign Maker button for paid orders */}
                                                 {order.status === 'paid' && (
-                                                    <NeonButton
-                                                        size="sm"
-                                                        variant={getOrderAssignment(order.id) ? 'secondary' : 'default'}
-                                                        onClick={() => setAssignModal({
-                                                            orderId: order.id,
-                                                            orderNumber: order.order_number
-                                                        })}
-                                                    >
-                                                        <UserCheck className="w-4 h-4 mr-1" />
-                                                        {getOrderAssignment(order.id) ? 'Reassign Maker' : 'Assign Maker'}
-                                                    </NeonButton>
+                                                    <TooltipProvider delayDuration={150}>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <NeonButton
+                                                                    size="sm"
+                                                                    variant={getOrderAssignment(order.id) ? 'secondary' : 'default'}
+                                                                    onClick={() => setAssignModal({
+                                                                        orderId: order.id,
+                                                                        orderNumber: order.order_number
+                                                                    })}
+                                                                    disabled={makers.length === 0}
+                                                                >
+                                                                    <UserCheck className="w-4 h-4 mr-1" />
+                                                                    {getOrderAssignment(order.id) ? 'Reassign Maker' : 'Assign Maker'}
+                                                                </NeonButton>
+                                                            </TooltipTrigger>
+                                                            {makers.length === 0 && (
+                                                                <TooltipContent side="top">
+                                                                    No active makers available to assign.
+                                                                </TooltipContent>
+                                                            )}
+                                                        </Tooltip>
+                                                    </TooltipProvider>
                                                 )}
                                                 <NeonButton
                                                     size="sm"

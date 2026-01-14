@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  Package, Clock, Download, Loader2, ArrowRight, Truck
+  Package, Clock, Download, Loader2, ArrowRight, Truck, AlertTriangle, Info
 } from 'lucide-react';
 import {
   Dialog,
@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import MakerGuard from '@/components/guards/MakerGuard';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface MakerOrder {
   id: string;
@@ -210,6 +211,51 @@ const MakerJobs = () => {
     );
   };
 
+  const getActionBadge = (makerOrder: MakerOrder) => {
+    const trackingInfo = makerOrder.tracking_info as Record<string, any> | undefined;
+    const hasTracking = Boolean(trackingInfo?.tracking_number && trackingInfo?.carrier);
+
+    if (makerOrder.status === 'assigned') {
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full bg-warning/15 text-warning border border-warning/40 px-2 py-0.5 text-xs font-semibold">
+          <Clock className="h-3 w-3" />
+          Awaiting action
+        </span>
+      );
+    }
+
+    if (makerOrder.status === 'in_production') {
+      return hasTracking ? (
+        <span className="inline-flex items-center gap-1 rounded-full bg-secondary/15 text-secondary border border-secondary/40 px-2 py-0.5 text-xs font-semibold">
+          <Truck className="h-3 w-3" />
+          Ready to ship
+        </span>
+      ) : (
+        <span className="inline-flex items-center gap-1 rounded-full bg-destructive/15 text-destructive border border-destructive/40 px-2 py-0.5 text-xs font-semibold">
+          <AlertTriangle className="h-3 w-3" />
+          Blocked (missing tracking)
+        </span>
+      );
+    }
+
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-success/15 text-success border border-success/40 px-2 py-0.5 text-xs font-semibold">
+        <Truck className="h-3 w-3" />
+        In transit
+      </span>
+    );
+  };
+
+  const getNextStepCopy = (status: MakerOrder['status']) => {
+    if (status === 'assigned') {
+      return 'Next step: start production when you begin printing. Files are ready to download.';
+    }
+    if (status === 'in_production') {
+      return 'Next step: add tracking to mark shipped. Customers see tracking once you submit it.';
+    }
+    return 'Delivery confirmation is handled by the admin team once the carrier confirms drop-off.';
+  };
+
   const MakerOrderCard = ({ makerOrder }: { makerOrder: MakerOrder }) => {
     const { orders, status } = makerOrder;
     const quoteData = orders.quote_snapshot;
@@ -223,6 +269,7 @@ const MakerJobs = () => {
               <div className="flex items-center gap-2 mb-2">
                 <h3 className="font-tech font-bold text-lg">{orders.order_number}</h3>
                 {getStatusBadge(status)}
+                {getActionBadge(makerOrder)}
               </div>
               <p className="text-sm text-muted-foreground">
                 Assigned {new Date(makerOrder.assigned_at).toLocaleDateString()}
@@ -253,6 +300,16 @@ const MakerJobs = () => {
               <p className="font-semibold">
                 {orders.shipping_address?.city}, {orders.shipping_address?.province}
               </p>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-primary/10 bg-background/40 px-4 py-3 mb-4">
+            <div className="flex items-start gap-2 text-sm text-foreground">
+              <Info className="h-4 w-4 text-secondary mt-0.5" />
+              <div>
+                <p className="font-medium">What happens next</p>
+                <p className="text-muted-foreground">{getNextStepCopy(status)}</p>
+              </div>
             </div>
           </div>
 
@@ -323,30 +380,46 @@ const MakerJobs = () => {
               <DialogHeader>
                 <DialogTitle>Update Order Status</DialogTitle>
                 <DialogDescription>
-                  {selectedMakerOrder?.status === 'assigned' && 'Mark this order as in production'}
-                  {selectedMakerOrder?.status === 'in_production' && 'Mark this order as shipped and add tracking information'}
+                  {selectedMakerOrder?.status === 'assigned' && 'Move this order into production once printing begins.'}
+                  {selectedMakerOrder?.status === 'in_production' && 'Add tracking to mark shipped so customers can follow delivery.'}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 {selectedMakerOrder?.status === 'in_production' && (
                   <>
                     <div>
-                      <Label htmlFor="tracking">Tracking Number (optional)</Label>
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="tracking">Tracking Number (required to mark as shipped)</Label>
+                        <TooltipProvider delayDuration={150}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="text-muted-foreground">
+                                <Info className="h-4 w-4" />
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="right">
+                              Tracking is required so customers can verify shipment and delivery.
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                       <Input
                         id="tracking"
                         value={trackingNumber}
                         onChange={(e) => setTrackingNumber(e.target.value)}
                         placeholder="e.g., 123456789"
                       />
+                      <p className="text-xs text-muted-foreground mt-1">Required to unlock the shipped status.</p>
                     </div>
                     <div>
-                      <Label htmlFor="carrier">Shipping Carrier (optional)</Label>
+                      <Label htmlFor="carrier">Shipping Carrier (required to mark as shipped)</Label>
                       <Input
                         id="carrier"
                         value={shippingCarrier}
                         onChange={(e) => setShippingCarrier(e.target.value)}
                         placeholder="e.g., Canada Post, UPS, etc."
                       />
+                      <p className="text-xs text-muted-foreground mt-1">Helps customers locate their package quickly.</p>
                     </div>
                   </>
                 )}
@@ -359,6 +432,23 @@ const MakerJobs = () => {
                     placeholder="Add any relevant notes about this status change"
                     rows={3}
                   />
+                  {selectedMakerOrder?.status === 'in_production' && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
+                      <TooltipProvider delayDuration={150}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="text-secondary">
+                              <Info className="h-4 w-4" />
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">
+                            Delivered status is admin-only to protect customer experience and earnings accuracy.
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      Delivered confirmation is admin-only after carrier validation.
+                    </div>
+                  )}
                 </div>
               </div>
               <DialogFooter>

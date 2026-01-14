@@ -33,23 +33,23 @@ const FulfillmentTimeline = ({
     {
       key: 'payment',
       label: 'Payment confirmed',
-      description: 'We have confirmed your payment and queued the order.',
+      description: 'Payment is verified and your order is queued for production.',
       complete: isPaymentConfirmed,
       current: !isPaymentConfirmed,
       icon: CheckCircle,
     },
     {
       key: 'production',
-      label: 'In production',
-      description: 'A vetted maker is preparing your print.',
+      label: 'Maker in production',
+      description: 'A verified local maker is printing and preparing your order.',
       complete: isInProduction,
       current: isPaymentConfirmed && !isInProduction,
       icon: Package,
     },
     {
       key: 'shipped',
-      label: 'Shipped',
-      description: 'Tracking details appear once the maker ships.',
+      label: 'Shipped with tracking',
+      description: 'Tracking appears after the maker hands off to the carrier.',
       complete: isShipped,
       current: isInProduction && !isShipped,
       icon: Truck,
@@ -57,7 +57,7 @@ const FulfillmentTimeline = ({
     {
       key: 'delivered',
       label: 'Delivered',
-      description: 'Marked delivered after carrier confirmation.',
+      description: 'Delivery is confirmed after the carrier marks it complete.',
       complete: isDelivered,
       current: isShipped && !isDelivered,
       icon: CheckCircle,
@@ -99,7 +99,7 @@ const FulfillmentTimeline = ({
                     ? 'Complete'
                     : step.current
                       ? 'In progress'
-                      : 'Pending'}
+                      : 'Up next'}
                 </div>
                 {index < steps.length - 1 && (
                   <div className="ml-1 mt-3 h-4 w-px bg-border" />

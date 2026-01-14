@@ -88,7 +88,7 @@ const MakerEarnings = () => {
         <div className="p-6 space-y-6">
           <div>
             <h1 className="text-2xl font-tech font-bold text-foreground">Earnings & Payouts</h1>
-            <p className="text-muted-foreground">Track your earnings and payment status</p>
+            <p className="text-muted-foreground">Track what’s pending, what’s paid, and what’s coming next.</p>
           </div>
 
           {/* Stats Cards */}
@@ -135,7 +135,15 @@ const MakerEarnings = () => {
             <h3 className="font-semibold mb-4">Earnings History</h3>
             {earnings.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                No earnings records found. Complete orders to start earning!
+                <div className="flex flex-col items-center gap-3">
+                  <DollarSign className="w-8 h-8 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium text-foreground">No earnings yet</p>
+                    <p className="text-sm text-muted-foreground">
+                      Earnings appear after you mark orders shipped and delivery is confirmed.
+                    </p>
+                  </div>
+                </div>
               </div>
             ) : (
               <Table>
@@ -153,9 +161,16 @@ const MakerEarnings = () => {
                       <TableCell className="font-mono">{earning.orders.order_number}</TableCell>
                       <TableCell>{new Date(earning.created_at).toLocaleDateString()}</TableCell>
                       <TableCell>
-                        <Badge variant={earning.status === 'paid' ? 'default' : 'secondary'}>
-                          {earning.status.toUpperCase()}
-                        </Badge>
+                        <div className="space-y-1">
+                          <Badge variant={earning.status === 'paid' ? 'default' : 'secondary'}>
+                            {earning.status === 'paid' ? 'Paid' : 'Pending'}
+                          </Badge>
+                          <p className="text-xs text-muted-foreground">
+                            {earning.status === 'paid'
+                              ? 'Released to your payout method.'
+                              : 'Queued until delivery is confirmed.'}
+                          </p>
+                        </div>
                       </TableCell>
                       <TableCell className="text-right font-medium">
                         {formatCurrency(Number(earning.payout_amount_cad))}
