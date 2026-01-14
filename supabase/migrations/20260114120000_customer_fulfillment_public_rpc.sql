@@ -16,7 +16,7 @@ DECLARE
     v_maker_order RECORD;
     v_tracking_info JSONB;
     v_sanitized_history JSONB;
-    v_entry JSONB;
+    v_entry_rec RECORD;
 BEGIN
     v_user_id := auth.uid();
     IF v_user_id IS NULL THEN
@@ -52,13 +52,16 @@ BEGIN
     -- Only keep safe fields: from, to, reason, changed_at
     v_sanitized_history := '[]'::jsonb;
     IF v_order.status_history IS NOT NULL AND jsonb_typeof(v_order.status_history) = 'array' THEN
-        FOR v_entry IN SELECT jsonb_array_elements(v_order.status_history)
+        FOR v_entry_rec IN
+            SELECT jsonb_array_elements(v_order.status_history) AS entry
         LOOP
-            v_sanitized_history := v_sanitized_history || jsonb_build_object(
-                'from', v_entry->>'from',
-                'to', v_entry->>'to',
-                'reason', v_entry->>'reason',
-                'changed_at', v_entry->>'changed_at'
+            v_sanitized_history := v_sanitized_history || jsonb_build_array(
+                jsonb_build_object(
+                    'from', v_entry_rec.entry->>'from',
+                    'to', v_entry_rec.entry->>'to',
+                    'reason', v_entry_rec.entry->>'reason',
+                    'changed_at', v_entry_rec.entry->>'changed_at'
+                )
             );
         END LOOP;
     END IF;
