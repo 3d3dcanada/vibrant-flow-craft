@@ -4,9 +4,20 @@ import { GlowCard } from '@/components/ui/GlowCard';
 import { NeonButton } from '@/components/ui/NeonButton';
 import { usePendingRequests, useMakerRequests, useMakerJobs, useMakerPrinters, useMakerFilament, useMakerPayouts } from '@/hooks/useMakerData';
 import { useProfile } from '@/hooks/useUserData';
-import { 
-  ClipboardList, Printer, Package, DollarSign, AlertTriangle, 
-  CheckCircle, Clock, Wifi, WifiOff, Droplets, TrendingUp, Zap
+import {
+  ClipboardList,
+  Printer,
+  Package,
+  DollarSign,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Wifi,
+  WifiOff,
+  Droplets,
+  TrendingUp,
+  Zap,
+  Truck,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
@@ -142,6 +153,32 @@ const MakerOverview = () => {
             )}
           </div>
         </GlowCard>
+      </div>
+
+      {/* Launch Preview Links */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Link to="/dashboard/maker/jobs">
+          <GlowCard className="p-5 hover:border-secondary/50 transition-colors">
+            <div className="flex items-center gap-3">
+              <Truck className="w-6 h-6 text-secondary" />
+              <div>
+                <div className="font-semibold text-foreground">Jobs</div>
+                <div className="text-xs text-muted-foreground">Track assigned orders and update status.</div>
+              </div>
+            </div>
+          </GlowCard>
+        </Link>
+        <Link to="/dashboard/maker/earnings">
+          <GlowCard className="p-5 hover:border-secondary/50 transition-colors">
+            <div className="flex items-center gap-3">
+              <DollarSign className="w-6 h-6 text-secondary" />
+              <div>
+                <div className="font-semibold text-foreground">Earnings</div>
+                <div className="text-xs text-muted-foreground">Review payouts and earnings history.</div>
+              </div>
+            </div>
+          </GlowCard>
+        </Link>
       </div>
 
       {/* Quick Actions */}

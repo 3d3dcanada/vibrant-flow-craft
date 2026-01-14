@@ -4,9 +4,19 @@ import DashboardLayout from '@/components/layouts/DashboardLayout';
 import AdminGuard from '@/components/guards/AdminGuard';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { useAdminStats } from '@/hooks/useAdminData';
-import { 
-  LayoutDashboard, Package, Users, Coins, Wrench, 
-  FileText, ShoppingBag, CreditCard, Settings, Loader2 
+import {
+  LayoutDashboard,
+  Package,
+  Users,
+  Coins,
+  Wrench,
+  FileText,
+  ShoppingBag,
+  CreditCard,
+  Settings,
+  Loader2,
+  ClipboardCheck,
+  Truck,
 } from 'lucide-react';
 
 const AdminOverview = () => {
@@ -27,6 +37,27 @@ const AdminOverview = () => {
     { label: 'Maker Manager', icon: Users, href: '/dashboard/admin/makers', desc: 'Verify makers' },
     { label: 'Operations', icon: Settings, href: '/dashboard/admin/ops', desc: 'Requests & payouts' },
     { label: 'Buyback Requests', icon: Package, href: '/dashboard/admin/buyback', desc: 'Printer & filament quotes' },
+  ];
+
+  const launchPreviewLinks = [
+    {
+      label: 'Payments & Orders',
+      icon: Truck,
+      href: '/dashboard/admin/payments',
+      desc: 'Confirm payments, assign makers, update status.',
+    },
+    {
+      label: 'Makers',
+      icon: Users,
+      href: '/dashboard/admin/makers',
+      desc: 'Review and verify maker profiles.',
+    },
+    {
+      label: 'Fulfillment Audit',
+      icon: ClipboardCheck,
+      href: '/dashboard/admin/fulfillment-audit',
+      desc: 'Run live launch-readiness checks.',
+    },
   ];
 
   return (
@@ -70,6 +101,27 @@ const AdminOverview = () => {
               ))}
             </div>
           )}
+
+          {/* Launch Preview */}
+          <h2 className="text-xl font-tech font-bold text-foreground mb-4">Launch Preview</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            {launchPreviewLinks.map((link, i) => (
+              <motion.div
+                key={link.label}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + i * 0.05 }}
+              >
+                <Link to={link.href}>
+                  <GlowCard className="p-5 hover:border-secondary/50 transition-colors h-full">
+                    <link.icon className="w-8 h-8 text-secondary mb-3" />
+                    <div className="font-medium text-foreground">{link.label}</div>
+                    <div className="text-xs text-muted-foreground mt-1">{link.desc}</div>
+                  </GlowCard>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
 
           {/* Quick Links */}
           <h2 className="text-xl font-tech font-bold text-foreground mb-4">Quick Actions</h2>
