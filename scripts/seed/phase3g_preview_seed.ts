@@ -7,10 +7,14 @@ type SeedUser = {
   created: boolean;
 };
 
-const previewEnabled = process.env.PREVIEW_MODE === 'true' || process.env.NODE_ENV !== 'production';
+const previewEnabled =
+  process.env.PREVIEW_MODE === 'true' ||
+  ['development', 'test', 'staging'].includes(process.env.NODE_ENV || '');
 
 if (!previewEnabled) {
-  console.error('Preview seed blocked. Required env vars: PREVIEW_MODE=true (or NODE_ENV!=production), SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SEED_CUSTOMER_EMAIL.');
+  console.error(
+    'Preview seed blocked. Required env vars: PREVIEW_MODE=true or NODE_ENV in [development,test,staging], plus SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SEED_CUSTOMER_EMAIL.'
+  );
   process.exit(1);
 }
 

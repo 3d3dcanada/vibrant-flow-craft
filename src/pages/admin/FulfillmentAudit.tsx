@@ -46,12 +46,20 @@ const FulfillmentAudit = () => {
   const [checks, setChecks] = useState<AuditCheck[]>([]);
   const [running, setRunning] = useState(false);
 
-  const copyReport = useCallback(() => {
+  const copyReport = useCallback(async () => {
     const report = checks
       .map((check) => `${check.status.toUpperCase()} | ${check.label} | ${check.details} | ${check.lastRun}`)
       .join('\n');
-    navigator.clipboard.writeText(report);
-    toast({ title: 'Copied', description: 'Audit report copied to clipboard.' });
+    try {
+      await navigator.clipboard.writeText(report);
+      toast({ title: 'Copied', description: 'Audit report copied to clipboard.' });
+    } catch (error: any) {
+      toast({
+        title: 'Copy failed',
+        description: error?.message ?? 'Unable to copy to clipboard.',
+        variant: 'destructive',
+      });
+    }
   }, [checks, toast]);
 
   const runChecks = useCallback(async () => {
