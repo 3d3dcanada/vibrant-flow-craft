@@ -1711,3 +1711,41 @@ Phase 3F implemented the distributed maker fulfillment system, enabling the plat
 ---
 
 STOP — awaiting next step.
+
+---
+
+# Phase 3G Gate 0 Session Report
+
+**Session:** Phase 3G Gate 0 Launch Hardening  
+**Status:** ✅ COMPLETE  
+**Commit:** (see git history)
+
+---
+
+## Executive Summary
+
+Phase 3G Gate 0 hardening focused on launch readiness without redesign. The work added stricter RPC safeguards, removed remaining maker direct-update paths, and documented compliance checks for customer-safe fulfillment payloads. This aligns with audit/compliance needs while preserving existing behavior.
+
+---
+
+## What Was Hardened
+
+- **Customer fulfillment RPC stability:** reinforced that customer payloads remain sanitized and stable, with SQL self-check queries documented for regression review.
+- **Maker RPC-only integrity:** removed remaining maker update policy and revoked authenticated write access to maker fulfillment tables to enforce RPC-only writes.
+- **Concurrency & structured errors:** admin assignment and status update RPCs now return structured JSON for unexpected failures and handle concurrent access cleanly.
+- **Lifecycle guardrail:** delivered status update now fails cleanly when maker assignment is missing, in addition to shipped-only enforcement.
+
+---
+
+## Why (Audit/Compliance)
+
+- Prevents leakage of actor identifiers in customer-facing payloads.
+- Ensures makers cannot bypass RPCs with direct table writes, aligning with separation-of-duties requirements.
+- Guarantees structured error responses for admin RPCs, avoiding database constraint leakage to clients.
+
+---
+
+## Manual / Not Executed
+
+- Runtime verification of SQL self-check queries (documented for execution in the Phase 3G report).
+- End-to-end fulfillment flow validation in staging.
