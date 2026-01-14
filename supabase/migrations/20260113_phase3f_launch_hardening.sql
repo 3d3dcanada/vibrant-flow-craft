@@ -101,12 +101,14 @@ BEGIN
         order_id,
         maker_id,
         status,
-        notes
+        notes,
+        assigned_at
     ) VALUES (
         p_order_id,
         p_maker_id,
         'assigned',
-        'Admin reason: ' || COALESCE(p_reason, '')
+        'Admin reason: ' || COALESCE(p_reason, ''),
+        now()
     ) ON CONFLICT (order_id) DO UPDATE
     SET maker_id = p_maker_id,
         status = 'assigned',
@@ -131,7 +133,15 @@ BEGIN
         (v_order.total_cad * 0.30),
         (v_order.total_cad * 0.70),
         'pending'
-    );
+    )
+    ON CONFLICT (order_id) DO NOTHING;
+
+    IF NOT FOUND THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', 'Order cannot be reassigned after earnings creation'
+        );
+    END IF;
 
     -- Update order status to in_production
     UPDATE orders
