@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  Package, Clock, Download, Loader2, ArrowRight, Truck
+  Package, Clock, Download, Loader2, ArrowRight, Truck, Info
 } from 'lucide-react';
 import {
   Dialog,
@@ -23,6 +23,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import MakerGuard from '@/components/guards/MakerGuard';
+import FulfillmentTimeline from '@/components/fulfillment/FulfillmentTimeline';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface MakerOrder {
   id: string;
@@ -38,6 +40,8 @@ interface MakerOrder {
     quote_snapshot: any;
     shipping_address: any;
     created_at: string;
+    status_history?: any;
+    payment_confirmed_at?: string;
   };
 }
 
@@ -52,6 +56,7 @@ const MakerJobs = () => {
   const [trackingNumber, setTrackingNumber] = useState('');
   const [shippingCarrier, setShippingCarrier] = useState('');
   const [downloadingFile, setDownloadingFile] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'assigned' | 'in_production' | 'shipped'>('all');
 
   // Fetch maker orders (CORRECTED: uses maker_orders, no accept/decline)
   const { data: makerOrders = [], isLoading } = useQuery({
@@ -72,7 +77,9 @@ const MakerJobs = () => {
             total_cad,
             quote_snapshot,
             shipping_address,
-            created_at
+            created_at,
+            status_history,
+            payment_confirmed_at
           )
         `)
         .eq('maker_id', user?.id)
@@ -190,6 +197,9 @@ const MakerJobs = () => {
     return new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(amount);
   };
 
+  const trackingRequired = selectedMakerOrder?.status === 'in_production';
+  const trackingReady = trackingNumber.trim().length > 0 && shippingCarrier.trim().length > 0;
+
   const getStatusBadge = (status: string) => {
     const badges: Record<string, { label: string; variant: any; icon: any }> = {
       assigned: { label: 'Assigned', variant: 'default', icon: Clock },
@@ -204,6 +214,24 @@ const MakerJobs = () => {
       </Badge>
     );
   };
+
+  const getNextAction = (status: MakerOrder['status']) => {
+    if (status === 'assigned') {
+      return 'Next action: start production when you are ready to begin printing.';
+    }
+    if (status === 'in_production') {
+      return 'Next action: add tracking and mark shipped once the package is handed to the carrier.';
+    }
+    if (status === 'shipped') {
+      return 'Next action: wait for the admin to confirm delivery.';
+    }
+    return 'Next action: no further steps required.';
+  };
+
+  const filteredMakerOrders = makerOrders.filter((makerOrder) => {
+    if (statusFilter === 'all') return true;
+    return makerOrder.status === statusFilter;
+  });
 
   const MakerOrderCard = ({ makerOrder }: { makerOrder: MakerOrder }) => {
     const { orders, status } = makerOrder;
@@ -251,12 +279,40 @@ const MakerJobs = () => {
             </div>
           </div>
 
+          <div className="mb-4 rounded-lg border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
+            {getNextAction(status)}
+          </div>
+
+          <div className="mb-4">
+            <h4 className="text-sm font-semibold text-foreground mb-2">Fulfillment Timeline</h4>
+            <FulfillmentTimeline
+              orderStatus={orders.status}
+              statusHistory={orders.status_history}
+              paymentConfirmedAt={orders.payment_confirmed_at}
+              makerOrder={makerOrder}
+            />
+          </div>
+
           {/* Actions */}
           <div className="flex gap-2 flex-wrap">
-            <NeonButton onClick={() => handleDownloadFile(makerOrder)} disabled={downloadingFile}>
-              {downloadingFile ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 mr-1" />}
-              Download File
-            </NeonButton>
+            <div className="flex items-center gap-2">
+              <NeonButton onClick={() => handleDownloadFile(makerOrder)} disabled={downloadingFile}>
+                {downloadingFile ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 mr-1" />}
+                Download File
+              </NeonButton>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex items-center text-muted-foreground">
+                      <Info className="w-4 h-4" />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    Signed URL expires in 10 minutes.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
 
             {status === 'assigned' && (
               <NeonButton onClick={() => handleUpdateStatus(makerOrder)} disabled={updateStatusMutation.isPending}>
@@ -298,7 +354,20 @@ const MakerJobs = () => {
             <p className="text-muted-foreground">Manage your assigned print jobs</p>
           </div>
 
-          {makerOrders.length === 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {(['all', 'assigned', 'in_production', 'shipped'] as const).map((filter) => (
+              <NeonButton
+                key={filter}
+                size="sm"
+                variant={statusFilter === filter ? 'primary' : 'secondary'}
+                onClick={() => setStatusFilter(filter)}
+              >
+                {filter === 'all' ? 'All' : filter.replace(/_/g, ' ')}
+              </NeonButton>
+            ))}
+          </div>
+
+          {filteredMakerOrders.length === 0 ? (
             <GlowCard className="p-12 text-center">
               <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
               <h3 className="font-semibold mb-2">No active jobs</h3>
@@ -306,7 +375,7 @@ const MakerJobs = () => {
             </GlowCard>
           ) : (
             <div className="grid gap-4">
-              {makerOrders.map((makerOrder) => (
+              {filteredMakerOrders.map((makerOrder) => (
                 <MakerOrderCard key={makerOrder.id} makerOrder={makerOrder} />
               ))}
             </div>
@@ -326,7 +395,21 @@ const MakerJobs = () => {
                 {selectedMakerOrder?.status === 'in_production' && (
                   <>
                     <div>
-                      <Label htmlFor="tracking">Tracking Number (optional)</Label>
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="tracking">Tracking Number *</Label>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="inline-flex items-center text-muted-foreground">
+                                <Info className="w-3.5 h-3.5" />
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="text-xs">
+                              Tracking required to ship.
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                       <Input
                         id="tracking"
                         value={trackingNumber}
@@ -335,7 +418,21 @@ const MakerJobs = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="carrier">Shipping Carrier (optional)</Label>
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="carrier">Shipping Carrier *</Label>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="inline-flex items-center text-muted-foreground">
+                                <Info className="w-3.5 h-3.5" />
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="text-xs">
+                              Tracking required to ship.
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                       <Input
                         id="carrier"
                         value={shippingCarrier}
@@ -343,6 +440,9 @@ const MakerJobs = () => {
                         placeholder="e.g., Canada Post, UPS, etc."
                       />
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                      Tracking details are required before marking a job shipped.
+                    </p>
                   </>
                 )}
                 <div>
@@ -358,7 +458,10 @@ const MakerJobs = () => {
               </div>
               <DialogFooter>
                 <NeonButton variant="secondary" onClick={() => setStatusDialogOpen(false)}>Cancel</NeonButton>
-                <NeonButton onClick={confirmStatusUpdate} disabled={updateStatusMutation.isPending}>
+                <NeonButton
+                  onClick={confirmStatusUpdate}
+                  disabled={updateStatusMutation.isPending || (trackingRequired && !trackingReady)}
+                >
                   {updateStatusMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Update Status'}
                 </NeonButton>
               </DialogFooter>

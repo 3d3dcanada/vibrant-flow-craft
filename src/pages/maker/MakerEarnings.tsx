@@ -6,6 +6,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, DollarSign, Clock, CheckCircle } from 'lucide-react';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import MakerGuard from '@/components/guards/MakerGuard';
+import { NeonButton } from '@/components/ui/NeonButton';
+import { useToast } from '@/hooks/use-toast';
 import {
   Table,
   TableBody,
@@ -18,6 +20,8 @@ import {
 interface MakerEarning {
   id: string;
   order_id: string;
+  gross_amount_cad: number;
+  platform_fee_cad: number;
   payout_amount_cad: number;
   status: 'pending' | 'paid';
   created_at: string;
@@ -30,6 +34,7 @@ interface MakerEarning {
 
 const MakerEarnings = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const { data: earnings = [], isLoading } = useQuery({
     queryKey: ['maker-earnings'],
@@ -39,6 +44,8 @@ const MakerEarnings = () => {
         .select(`
           id,
           order_id,
+          gross_amount_cad,
+          platform_fee_cad,
           payout_amount_cad,
           status,
           created_at,
@@ -59,6 +66,48 @@ const MakerEarnings = () => {
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(amount);
+  };
+
+  const formatDate = (dateString?: string | null) => {
+    if (!dateString) return 'Not yet recorded';
+    return new Date(dateString).toLocaleDateString('en-CA');
+  };
+
+  const handleExportCsv = () => {
+    const headers = [
+      'Order #',
+      'Gross CAD',
+      'Fee CAD',
+      'Payout CAD',
+      'Status',
+      'Created At',
+      'Paid At',
+    ];
+
+    const rows = earnings.map((earning) => [
+      earning.orders.order_number,
+      Number(earning.gross_amount_cad).toFixed(2),
+      Number(earning.platform_fee_cad).toFixed(2),
+      Number(earning.payout_amount_cad).toFixed(2),
+      earning.status,
+      earning.created_at,
+      earning.paid_at || '',
+    ]);
+
+    const csvContent = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/\"/g, '""')}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'maker-earnings.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast({ title: 'Export ready', description: 'Your earnings CSV has been downloaded.' });
   };
 
   // Calculate stats
@@ -95,23 +144,11 @@ const MakerEarnings = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <GlowCard className="p-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-secondary/10 rounded-full">
-                  <DollarSign className="w-6 h-6 text-secondary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Lifetime Earnings</p>
-                  <p className="text-2xl font-bold">{formatCurrency(totalEarned)}</p>
-                </div>
-              </div>
-            </GlowCard>
-
-            <GlowCard className="p-6">
-              <div className="flex items-center gap-4">
                 <div className="p-3 bg-yellow-500/10 rounded-full">
                   <Clock className="w-6 h-6 text-yellow-500" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Pending Payout</p>
+                  <p className="text-sm text-muted-foreground">Pending Payouts</p>
                   <p className="text-2xl font-bold">{formatCurrency(totalPending)}</p>
                 </div>
               </div>
@@ -123,8 +160,20 @@ const MakerEarnings = () => {
                   <CheckCircle className="w-6 h-6 text-green-500" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Paid</p>
+                  <p className="text-sm text-muted-foreground">Paid Out</p>
                   <p className="text-2xl font-bold">{formatCurrency(totalPaid)}</p>
+                </div>
+              </div>
+            </GlowCard>
+
+            <GlowCard className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-secondary/10 rounded-full">
+                  <DollarSign className="w-6 h-6 text-secondary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Lifetime Earnings</p>
+                  <p className="text-2xl font-bold">{formatCurrency(totalEarned)}</p>
                 </div>
               </div>
             </GlowCard>
@@ -132,7 +181,12 @@ const MakerEarnings = () => {
 
           {/* Earnings Table */}
           <GlowCard className="p-6">
-            <h3 className="font-semibold mb-4">Earnings History</h3>
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+              <h3 className="font-semibold">Earnings History</h3>
+              <NeonButton size="sm" variant="secondary" onClick={handleExportCsv}>
+                Export CSV
+              </NeonButton>
+            </div>
             {earnings.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 No earnings records found. Complete orders to start earning!
@@ -142,24 +196,28 @@ const MakerEarnings = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Order #</TableHead>
-                    <TableHead>Date</TableHead>
+                    <TableHead>Gross</TableHead>
+                    <TableHead>Fee</TableHead>
+                    <TableHead>Payout</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Payout Amount</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Paid at</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {earnings.map((earning) => (
                     <TableRow key={earning.id}>
                       <TableCell className="font-mono">{earning.orders.order_number}</TableCell>
-                      <TableCell>{new Date(earning.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>{formatCurrency(Number(earning.gross_amount_cad))}</TableCell>
+                      <TableCell>{formatCurrency(Number(earning.platform_fee_cad))}</TableCell>
+                      <TableCell>{formatCurrency(Number(earning.payout_amount_cad))}</TableCell>
                       <TableCell>
                         <Badge variant={earning.status === 'paid' ? 'default' : 'secondary'}>
                           {earning.status.toUpperCase()}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right font-medium">
-                        {formatCurrency(Number(earning.payout_amount_cad))}
-                      </TableCell>
+                      <TableCell>{formatDate(earning.created_at)}</TableCell>
+                      <TableCell>{formatDate(earning.paid_at)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

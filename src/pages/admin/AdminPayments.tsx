@@ -5,6 +5,7 @@ import AdminGuard from '@/components/guards/AdminGuard';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { NeonButton } from '@/components/ui/NeonButton';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -15,8 +16,9 @@ import { Textarea } from '@/components/ui/textarea';
 import {
     DollarSign, Package, Clock, CheckCircle, XCircle, Loader2,
     AlertTriangle, FileText, Truck, Eye, ChevronDown, ChevronUp,
-    Search, Filter, RefreshCw, UserCheck
+    Search, Filter, RefreshCw, UserCheck, Copy
 } from 'lucide-react';
+import FulfillmentTimeline from '@/components/fulfillment/FulfillmentTimeline';
 
 interface Order {
     id: string;
@@ -33,7 +35,16 @@ interface Order {
     created_at: string;
     updated_at: string;
     payment_confirmed_at?: string;
+    status_history?: any;
     profiles?: { email?: string; full_name?: string };
+}
+
+interface MakerAssignment {
+    order_id: string;
+    maker_id: string;
+    status: string;
+    assigned_at?: string;
+    tracking_info?: any;
 }
 
 const ORDER_STATUSES = [
@@ -64,6 +75,7 @@ const AdminPayments = () => {
     const [confirmReference, setConfirmReference] = useState('');
     const [confirmNewStatus, setConfirmNewStatus] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
+    const [actionError, setActionError] = useState<string | null>(null);
 
     // Maker assignment modal states (Phase 3F)
     const [assignModal, setAssignModal] = useState<{
@@ -116,9 +128,12 @@ const AdminPayments = () => {
             setConfirmModal(null);
             setConfirmReason('');
             setConfirmReference('');
+            setActionError(null);
         },
         onError: (error: any) => {
-            toast({ title: 'Error', description: error.message, variant: 'destructive' });
+            const message = error.message || 'Failed to confirm payment';
+            setActionError(message);
+            toast({ title: 'Error', description: message, variant: 'destructive' });
         }
     });
 
@@ -142,7 +157,7 @@ const AdminPayments = () => {
         queryFn: async () => {
             const { data, error } = await supabase
                 .from('maker_orders')
-                .select('order_id, maker_id, status');
+                .select('order_id, maker_id, status, assigned_at, tracking_info');
 
             if (error) throw error;
             return data || [];
@@ -150,7 +165,7 @@ const AdminPayments = () => {
     });
 
     const getOrderAssignment = (orderId: string) => {
-        return assignments.find((a: any) => a.order_id === orderId);
+        return (assignments as MakerAssignment[]).find((a) => a.order_id === orderId);
     };
 
     // Assign order to maker mutation (Phase 3F)
@@ -180,9 +195,12 @@ const AdminPayments = () => {
             setSelectedMakerId('');
             setAssignReason('');
             setAssignNotes('');
+            setActionError(null);
         },
         onError: (error: any) => {
-            toast({ title: 'Error', description: error.message, variant: 'destructive' });
+            const message = error.message || 'Failed to assign maker';
+            setActionError(message);
+            toast({ title: 'Error', description: message, variant: 'destructive' });
         }
     });
 
@@ -230,9 +248,12 @@ const AdminPayments = () => {
             setConfirmModal(null);
             setConfirmReason('');
             setConfirmNewStatus('');
+            setActionError(null);
         },
         onError: (error: any) => {
-            toast({ title: 'Error', description: error.message, variant: 'destructive' });
+            const message = error.message || 'Failed to update status';
+            setActionError(message);
+            toast({ title: 'Error', description: message, variant: 'destructive' });
         }
     });
 
@@ -292,6 +313,29 @@ const AdminPayments = () => {
     });
 
     const getStatusConfig = (status: string) => ORDER_STATUSES.find(s => s.value === status) || ORDER_STATUSES[0];
+
+    const buildFulfillmentSummary = (order: Order, assignment?: MakerAssignment) => {
+        const lines = [
+            `Order: ${order.order_number} (${order.id})`,
+            `Status: ${order.status}`,
+            `Payment confirmed: ${order.payment_confirmed_at ? formatDate(order.payment_confirmed_at) : 'Not yet recorded'}`,
+            `Assigned: ${assignment?.assigned_at ? formatDate(assignment.assigned_at) : 'Not yet recorded'}`,
+            `Maker status: ${assignment?.status || 'Unassigned'}`,
+            `Tracking carrier: ${assignment?.tracking_info?.carrier || 'Not yet recorded'}`,
+            `Tracking number: ${assignment?.tracking_info?.tracking_number || 'Not yet recorded'}`,
+            `Shipped at: ${assignment?.tracking_info?.shipped_at ? formatDate(assignment.tracking_info.shipped_at) : 'Not yet recorded'}`,
+        ];
+        return lines.join('\n');
+    };
+
+    const handleCopySummary = async (order: Order, assignment?: MakerAssignment) => {
+        try {
+            await navigator.clipboard.writeText(buildFulfillmentSummary(order, assignment));
+            toast({ title: 'Copied', description: 'Fulfillment summary copied to clipboard.' });
+        } catch (error: any) {
+            toast({ title: 'Copy failed', description: error.message || 'Unable to copy summary.', variant: 'destructive' });
+        }
+    };
 
     return (
         <DashboardLayout>
@@ -353,6 +397,7 @@ const AdminPayments = () => {
                                 const statusConfig = getStatusConfig(order.status);
                                 const StatusIcon = statusConfig.icon;
                                 const isExpanded = expandedOrder === order.id;
+                                const assignment = getOrderAssignment(order.id);
 
                                 return (
                                     <GlowCard key={order.id} className="p-4">
@@ -368,6 +413,17 @@ const AdminPayments = () => {
                                                 <div className="font-mono font-bold text-foreground">{order.order_number}</div>
                                                 <div className="text-sm text-muted-foreground">
                                                     {order.profiles?.full_name || order.profiles?.email || 'Unknown'}
+                                                </div>
+                                                <div className="mt-2 flex flex-wrap items-center gap-2">
+                                                    {assignment ? (
+                                                        <Badge variant="secondary" className="text-xs">
+                                                            Assigned • {assignment.status.replace(/_/g, ' ')}
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge variant="outline" className="text-xs text-muted-foreground">
+                                                            Unassigned
+                                                        </Badge>
+                                                    )}
                                                 </div>
                                             </div>
 
@@ -387,11 +443,14 @@ const AdminPayments = () => {
                                                 {order.status === 'awaiting_payment' && (
                                                     <NeonButton
                                                         size="sm"
-                                                        onClick={() => setConfirmModal({
-                                                            type: 'payment',
-                                                            orderId: order.id,
-                                                            orderNumber: order.order_number
-                                                        })}
+                                                        onClick={() => {
+                                                            setActionError(null);
+                                                            setConfirmModal({
+                                                                type: 'payment',
+                                                                orderId: order.id,
+                                                                orderNumber: order.order_number
+                                                            });
+                                                        }}
                                                     >
                                                         <CheckCircle className="w-4 h-4 mr-1" />
                                                         Confirm Payment
@@ -402,10 +461,13 @@ const AdminPayments = () => {
                                                     <NeonButton
                                                         size="sm"
                                                         variant={getOrderAssignment(order.id) ? 'secondary' : 'default'}
-                                                        onClick={() => setAssignModal({
-                                                            orderId: order.id,
-                                                            orderNumber: order.order_number
-                                                        })}
+                                                        onClick={() => {
+                                                            setActionError(null);
+                                                            setAssignModal({
+                                                                orderId: order.id,
+                                                                orderNumber: order.order_number
+                                                            });
+                                                        }}
                                                     >
                                                         <UserCheck className="w-4 h-4 mr-1" />
                                                         {getOrderAssignment(order.id) ? 'Reassign Maker' : 'Assign Maker'}
@@ -414,12 +476,15 @@ const AdminPayments = () => {
                                                 <NeonButton
                                                     size="sm"
                                                     variant="secondary"
-                                                    onClick={() => setConfirmModal({
-                                                        type: 'status',
-                                                        orderId: order.id,
-                                                        orderNumber: order.order_number,
-                                                        currentStatus: order.status
-                                                    })}
+                                                    onClick={() => {
+                                                        setActionError(null);
+                                                        setConfirmModal({
+                                                            type: 'status',
+                                                            orderId: order.id,
+                                                            orderNumber: order.order_number,
+                                                            currentStatus: order.status
+                                                        });
+                                                    }}
                                                 >
                                                     Update Status
                                                 </NeonButton>
@@ -485,6 +550,31 @@ const AdminPayments = () => {
                                                     </div>
                                                 </div>
 
+                                                <div className="mt-6 grid md:grid-cols-[2fr,1fr] gap-4">
+                                                    <div>
+                                                        <h4 className="font-bold text-foreground mb-3">Fulfillment Timeline</h4>
+                                                        <FulfillmentTimeline
+                                                            orderStatus={order.status}
+                                                            statusHistory={order.status_history}
+                                                            paymentConfirmedAt={order.payment_confirmed_at}
+                                                            makerOrder={assignment || null}
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-3">
+                                                        <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
+                                                            Copy a concise fulfillment snapshot for support or audit follow-ups.
+                                                        </div>
+                                                        <NeonButton
+                                                            variant="secondary"
+                                                            size="sm"
+                                                            onClick={() => handleCopySummary(order, assignment)}
+                                                        >
+                                                            <Copy className="w-4 h-4 mr-1" />
+                                                            Copy Fulfillment Summary
+                                                        </NeonButton>
+                                                    </div>
+                                                </div>
+
                                                 {/* IDs for reference */}
                                                 <div className="mt-4 pt-4 border-t border-border/50 flex flex-wrap gap-4 text-xs text-muted-foreground">
                                                     <span>Order ID: {order.id}</span>
@@ -537,6 +627,11 @@ const AdminPayments = () => {
                                                 rows={3}
                                             />
                                         </div>
+                                        {actionError && (
+                                            <div className="text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg p-2">
+                                                {actionError}
+                                            </div>
+                                        )}
                                     </div>
                                 ) : (
                                     <div className="space-y-4">
@@ -564,6 +659,11 @@ const AdminPayments = () => {
                                                 rows={3}
                                             />
                                         </div>
+                                        {actionError && (
+                                            <div className="text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg p-2">
+                                                {actionError}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
@@ -580,6 +680,7 @@ const AdminPayments = () => {
                                             setConfirmReason('');
                                             setConfirmReference('');
                                             setConfirmNewStatus('');
+                                            setActionError(null);
                                         }}
                                         disabled={isProcessing}
                                     >
@@ -662,10 +763,15 @@ const AdminPayments = () => {
                                             rows={2}
                                         />
                                     </div>
+                                    {actionError && (
+                                        <div className="text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg p-2">
+                                            {actionError}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="text-xs text-muted-foreground mt-4 p-3 bg-muted/30 rounded-lg">
-                                    ⚠️ The maker will be notified and must accept the assignment before downloading files.
+                                    ⚠️ Assignment is manual. Makers see the job in their dashboard once assigned.
                                 </div>
 
                                 <div className="flex gap-3 mt-6">
@@ -677,6 +783,7 @@ const AdminPayments = () => {
                                             setSelectedMakerId('');
                                             setAssignReason('');
                                             setAssignNotes('');
+                                            setActionError(null);
                                         }}
                                         disabled={isProcessing}
                                     >
