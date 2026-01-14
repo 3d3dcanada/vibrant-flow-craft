@@ -171,7 +171,7 @@ const CustomerDashboard = () => {
               <Zap className="w-5 h-5 text-secondary" />
               Quick Actions
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <Link to="/#quote">
                 <GlowCard className="p-4 hover:border-secondary/50 transition-colors cursor-pointer h-full">
                   <FileText className="w-8 h-8 text-secondary mb-2" />
@@ -202,6 +202,13 @@ const CustomerDashboard = () => {
                   <Gift className="w-8 h-8 text-purple-500 mb-2" />
                   <div className="font-medium text-foreground">Redeem Code</div>
                   <div className="text-xs text-muted-foreground">Gift cards & coupons</div>
+                </GlowCard>
+              </Link>
+              <Link to="/dashboard/customer#my-orders">
+                <GlowCard className="p-4 hover:border-secondary/50 transition-colors cursor-pointer h-full">
+                  <Package className="w-8 h-8 text-secondary mb-2" />
+                  <div className="font-medium text-foreground">My Orders</div>
+                  <div className="text-xs text-muted-foreground">Track fulfillment and shipping.</div>
                 </GlowCard>
               </Link>
             </div>
@@ -374,7 +381,7 @@ const CustomerDashboard = () => {
           </div>
 
           {/* My Orders Section */}
-          <div className="mb-8 animate-fade-in" style={{ animationDelay: '575ms' }}>
+          <div id="my-orders" className="mb-8 animate-fade-in" style={{ animationDelay: '575ms' }}>
             <GlowCard className="p-6">
               <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                 <ShoppingBag className="w-5 h-5 text-secondary" />

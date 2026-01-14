@@ -66,6 +66,7 @@ import AdminOperations from "./pages/admin/AdminOperations";
 import AdminPayments from "./pages/admin/AdminPayments";
 import AdminCredits from "./pages/admin/AdminCredits";
 import AdminAuditLog from "./pages/admin/AdminAuditLog";
+import FulfillmentAudit from "./pages/admin/FulfillmentAudit";
 
 
 const queryClient = new QueryClient();
@@ -144,6 +145,7 @@ const App = () => (
             <Route path="/dashboard/admin/payments" element={<AdminPayments />} />
             <Route path="/dashboard/admin/credits" element={<AdminCredits />} />
             <Route path="/dashboard/admin/audit" element={<AdminAuditLog />} />
+            <Route path="/dashboard/admin/fulfillment-audit" element={<FulfillmentAudit />} />
 
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
