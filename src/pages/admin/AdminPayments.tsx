@@ -1,3 +1,8 @@
+/**
+ * 🔒 LAUNCH-FROZEN (Phase 3H)
+ * Admin payments UI is frozen for launch readiness.
+ * Any changes require a new phase review and explicit approval.
+ */
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
