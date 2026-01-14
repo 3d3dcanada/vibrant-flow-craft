@@ -1,17 +1,20 @@
--- Phase 3F Governance Fixes
+-- Phase 3F Launch Hardening
 -- Date: 2026-01-13
--- Purpose: Close audit-blocking gaps in maker fulfillment
+-- Purpose: Close audit and governance gaps for maker fulfillment
 
 -- 1) RLS: enforce RPC-only writes for makers on maker_orders
 DROP POLICY IF EXISTS "Makers can update own assigned orders" ON public.maker_orders;
 
 -- 2) Earnings ledger immutability + audit before-state
 CREATE OR REPLACE FUNCTION public.admin_assign_order_to_maker(
-        p_order_id UUID,
-        p_maker_id UUID,
-        p_reason TEXT
-    ) RETURNS JSON LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = public AS $$
+    p_order_id UUID,
+    p_maker_id UUID,
+    p_reason TEXT
+) RETURNS JSON
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
     v_admin_id UUID;
     v_order RECORD;
@@ -25,13 +28,11 @@ BEGIN
         SELECT 1
         FROM user_roles
         WHERE user_id = v_admin_id
-            AND role = 'admin'
+          AND role = 'admin'
     ) THEN
         RETURN json_build_object(
-            'success',
-            false,
-            'error',
-            'Admin access required'
+            'success', false,
+            'error', 'Admin access required'
         );
     END IF;
 
@@ -47,10 +48,8 @@ BEGIN
 
     IF v_order.status != 'paid' THEN
         RETURN json_build_object(
-            'success',
-            false,
-            'error',
-            'Order must be paid before assignment'
+            'success', false,
+            'error', 'Order must be paid before assignment'
         );
     END IF;
 
@@ -59,7 +58,7 @@ BEGIN
         SELECT 1
         FROM user_roles
         WHERE user_id = p_maker_id
-            AND role = 'maker'
+          AND role = 'maker'
     ) THEN
         RETURN json_build_object('success', false, 'error', 'User is not a maker');
     END IF;
@@ -71,10 +70,8 @@ BEGIN
 
     IF NOT FOUND THEN
         RETURN json_build_object(
-            'success',
-            false,
-            'error',
-            'Maker profile not found'
+            'success', false,
+            'error', 'Maker profile not found'
         );
     END IF;
 
@@ -94,28 +91,23 @@ BEGIN
         WHERE order_id = p_order_id
     ) THEN
         RETURN json_build_object(
-            'success',
-            false,
-            'error',
-            'Order cannot be reassigned after earnings creation'
+            'success', false,
+            'error', 'Order cannot be reassigned after earnings creation'
         );
     END IF;
 
     -- Upsert maker_orders (allows assignment)
     INSERT INTO maker_orders (
-            order_id,
-            maker_id,
-            status,
-            notes
-        )
-    VALUES (
-            p_order_id,
-            p_maker_id,
-            'assigned',
-            'Admin reason: ' || p_reason
-        )
-    ON CONFLICT (order_id) DO
-    UPDATE
+        order_id,
+        maker_id,
+        status,
+        notes
+    ) VALUES (
+        p_order_id,
+        p_maker_id,
+        'assigned',
+        'Admin reason: ' || p_reason
+    ) ON CONFLICT (order_id) DO UPDATE
     SET maker_id = p_maker_id,
         status = 'assigned',
         assigned_at = now(),
@@ -126,21 +118,20 @@ BEGIN
     -- Create earnings record at assignment (per spec option)
     -- Using 70% payout as default (can be configured later)
     INSERT INTO maker_earnings (
-            maker_id,
-            order_id,
-            gross_amount_cad,
-            platform_fee_cad,
-            payout_amount_cad,
-            status
-        )
-    VALUES (
-            p_maker_id,
-            p_order_id,
-            v_order.total_cad,
-            (v_order.total_cad * 0.30),
-            (v_order.total_cad * 0.70),
-            'pending'
-        );
+        maker_id,
+        order_id,
+        gross_amount_cad,
+        platform_fee_cad,
+        payout_amount_cad,
+        status
+    ) VALUES (
+        p_maker_id,
+        p_order_id,
+        v_order.total_cad,
+        (v_order.total_cad * 0.30),
+        (v_order.total_cad * 0.70),
+        'pending'
+    );
 
     -- Update order status to in_production
     UPDATE orders
@@ -149,59 +140,47 @@ BEGIN
 
     -- Log to audit
     INSERT INTO admin_audit_log (
-            admin_id,
-            action_type,
-            target_type,
-            target_id,
-            before_state,
-            after_state,
-            reason
-        )
-    VALUES (
-            v_admin_id,
-            'order_assignment',
-            'maker_order',
-            v_maker_order_id,
-            CASE
-                WHEN v_existing_maker_order.id IS NULL THEN
-                    jsonb_build_object('order_id', p_order_id, 'previous_maker', NULL)
-                ELSE
-                    jsonb_build_object(
-                        'order_id',
-                        p_order_id,
-                        'previous_maker',
-                        v_existing_maker_order.maker_id,
-                        'previous_status',
-                        v_existing_maker_order.status
-                    )
-            END,
-            jsonb_build_object(
-                'order_id',
-                p_order_id,
-                'maker_id',
-                p_maker_id,
-                'status',
-                'assigned'
-            ),
-            p_reason
-        );
+        admin_id,
+        action_type,
+        target_type,
+        target_id,
+        before_state,
+        after_state,
+        reason
+    ) VALUES (
+        v_admin_id,
+        'order_assignment',
+        'maker_order',
+        v_maker_order_id,
+        CASE
+            WHEN v_existing_maker_order.id IS NULL THEN
+                jsonb_build_object('order_id', p_order_id, 'previous_maker', NULL)
+            ELSE
+                jsonb_build_object(
+                    'order_id', p_order_id,
+                    'previous_maker', v_existing_maker_order.maker_id,
+                    'previous_status', v_existing_maker_order.status
+                )
+        END,
+        jsonb_build_object(
+            'order_id', p_order_id,
+            'maker_id', p_maker_id,
+            'status', 'assigned'
+        ),
+        p_reason
+    );
 
     RETURN json_build_object(
-        'success',
-        true,
-        'maker_order_id',
-        v_maker_order_id,
-        'order_id',
-        p_order_id,
-        'maker_id',
-        p_maker_id,
-        'message',
-        'Order assigned to maker successfully'
+        'success', true,
+        'maker_order_id', v_maker_order_id,
+        'order_id', p_order_id,
+        'maker_id', p_maker_id,
+        'message', 'Order assigned to maker successfully'
     );
 END;
 $$;
 
--- 3) Lifecycle source of truth: prevent delivered unless shipped by maker
+-- 3) Single source of truth: prevent delivered unless shipped by maker
 CREATE OR REPLACE FUNCTION public.admin_update_order_status(
     p_order_id UUID,
     p_new_status TEXT,
@@ -240,10 +219,8 @@ BEGIN
 
         IF v_maker_status IS DISTINCT FROM 'shipped' THEN
             RETURN json_build_object(
-                'success',
-                false,
-                'error',
-                'Order cannot be marked delivered before maker shipment'
+                'success', false,
+                'error', 'Order cannot be marked delivered before maker shipment'
             );
         END IF;
     END IF;
