@@ -6,6 +6,7 @@ import Navbar from '@/components/ui/Navbar';
 import Footer from '@/components/sections/Footer';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { NeonButton } from '@/components/ui/NeonButton';
+import FulfillmentTimeline from '@/components/fulfillment/FulfillmentTimeline';
 import {
     CheckCircle, Clock, Package, FileText, Coins,
     AlertCircle, Loader2, ArrowRight, Mail, Info
@@ -26,6 +27,12 @@ interface Order {
     status: string;
     created_at: string;
     notes?: string;
+    status_history?: any;
+    maker_orders?: Array<{
+        status?: string;
+        assigned_at?: string;
+        tracking_info?: any;
+    }>;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
@@ -82,7 +89,7 @@ export default function OrderConfirmation() {
             try {
                 const { data, error: fetchError } = await (supabase as any)
                     .from('orders')
-                    .select('*')
+                    .select('*, maker_orders (status, assigned_at, tracking_info)')
                     .eq('id', orderId)
                     .eq('user_id', user.id)
                     .single();
@@ -153,6 +160,7 @@ export default function OrderConfirmation() {
     const statusConfig = STATUS_CONFIG[order.status] || STATUS_CONFIG['pending_payment'];
     const StatusIcon = statusConfig.icon;
     const isPaid = order.status === 'paid';
+    const makerOrder = order.maker_orders?.[0] || null;
 
     return (
         <div className="min-h-screen bg-background">
@@ -351,6 +359,29 @@ export default function OrderConfirmation() {
                                 <p className="text-foreground font-mono">{order.quote_id?.slice(0, 8).toUpperCase()}</p>
                             </div>
                         </div>
+                    </GlassPanel>
+
+                    {/* Fulfillment Timeline */}
+                    <GlassPanel variant="elevated" className="mb-6">
+                        <h3 className="font-tech font-bold text-foreground mb-4">Fulfillment Status</h3>
+                        <FulfillmentTimeline
+                            orderStatus={order.status}
+                            statusHistory={order.status_history}
+                            paymentConfirmedAt={order.payment_confirmed_at}
+                            makerOrder={makerOrder}
+                            showTracking
+                        />
+                        {['shipped', 'delivered'].includes(order.status) && (
+                            <div className="mt-4 rounded-lg border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
+                                <p className="text-foreground font-medium mb-2">Tracking Details</p>
+                                <div>Carrier: {makerOrder?.tracking_info?.carrier || 'Not yet recorded'}</div>
+                                <div>Tracking #: {makerOrder?.tracking_info?.tracking_number || 'Not yet recorded'}</div>
+                                <div>Shipped at: {makerOrder?.tracking_info?.shipped_at ? formatDate(makerOrder.tracking_info.shipped_at) : 'Not yet recorded'}</div>
+                            </div>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-4">
+                            Fulfillment is performed by independent makers; assignment and delivery confirmation are manual.
+                        </p>
                     </GlassPanel>
 
                     {/* Actions */}
