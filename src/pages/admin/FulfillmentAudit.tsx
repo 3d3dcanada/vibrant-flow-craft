@@ -53,16 +53,16 @@ const CHECK_CATEGORIES = [
     checks: ['sanitized-history', 'tracking-gate'],
   },
   {
-    key: 'guardrails',
-    title: 'Guardrails',
-    helper: 'Why this matters: fulfillment writes must be RPC-only for launch safety.',
-    checks: ['maker-policy', 'maker-orders-privs', 'maker-earnings-privs'],
-  },
-  {
     key: 'lifecycle',
     title: 'Lifecycle',
     helper: 'Why this matters: delivery confirmation stays admin-controlled to protect earnings accuracy.',
     checks: ['delivered-guard'],
+  },
+  {
+    key: 'guardrails',
+    title: 'Guardrails',
+    helper: 'Why this matters: fulfillment writes must be RPC-only for launch safety.',
+    checks: ['maker-policy', 'maker-orders-privs', 'maker-earnings-privs'],
   },
 ];
 
@@ -398,8 +398,8 @@ const FulfillmentAudit = () => {
                                 <span
                                   className={`inline-flex items-center gap-2 rounded-full px-2 py-1 text-xs font-semibold ${
                                     check.status === 'pass'
-                                      ? 'bg-success/15 text-success'
-                                      : 'bg-destructive/15 text-destructive'
+                                      ? 'bg-success/10 text-success border border-success/30'
+                                      : 'bg-destructive/25 text-destructive border border-destructive/50'
                                   }`}
                                 >
                                   {check.status === 'pass' ? (

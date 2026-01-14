@@ -21,6 +21,8 @@ const FulfillmentTimeline = ({
   const isPaymentConfirmed =
     Boolean(paymentConfirmedAt) ||
     ['paid', 'in_production', 'shipped', 'delivered'].includes(orderStatus);
+  const hasMakerAssignment = Boolean(makerOrder?.status);
+  const isAssigned = makerOrder?.status === 'assigned';
   const isInProduction =
     ['in_production', 'shipped', 'delivered'].includes(orderStatus) ||
     ['in_production', 'shipped', 'completed'].includes(makerOrder?.status || '');
@@ -75,6 +77,17 @@ const FulfillmentTimeline = ({
             : step.current
               ? 'bg-secondary/15 text-secondary border-secondary/50'
               : 'bg-muted/40 text-muted-foreground border-border';
+          const waitingMessage = step.key === 'payment'
+            ? 'Waiting on payment confirmation.'
+            : step.key === 'production'
+              ? !hasMakerAssignment
+                ? 'Waiting on maker assignment.'
+                : isAssigned
+                  ? 'Waiting on maker to start production.'
+                  : 'Waiting on production start.'
+              : step.key === 'shipped'
+                ? 'Waiting on shipment.'
+                : 'Waiting on delivery confirmation.';
 
           return (
             <li key={step.key} className="flex items-start gap-3">
@@ -98,7 +111,7 @@ const FulfillmentTimeline = ({
                   {step.complete
                     ? 'Complete'
                     : step.current
-                      ? 'In progress'
+                      ? waitingMessage
                       : 'Up next'}
                 </div>
                 {index < steps.length - 1 && (

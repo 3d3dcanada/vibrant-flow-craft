@@ -385,7 +385,8 @@ const AdminPayments = () => {
                     ) : filteredOrders?.length === 0 ? (
                         <div className="text-center py-12 text-muted-foreground">
                             <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                            <p>No orders found</p>
+                            <p className="font-medium text-foreground">No orders found</p>
+                            <p className="text-sm text-muted-foreground">Try adjusting your filters or search terms.</p>
                         </div>
                     ) : (
                         <div className="space-y-4">
@@ -405,6 +406,16 @@ const AdminPayments = () => {
                                         <div className="text-xs text-muted-foreground">
                                             {statusDescriptions[order.status] || 'Status update in progress.'}
                                         </div>
+                                        {order.status === 'in_production' && (
+                                            <div className="text-xs text-warning">
+                                                ⚠️ Blocked: waiting on maker shipment
+                                            </div>
+                                        )}
+                                        {order.status === 'shipped' && (
+                                            <div className="text-xs text-success">
+                                                ✅ Ready for delivery confirmation
+                                            </div>
+                                        )}
 
                                         {/* Order Info */}
                                         <div className="flex-1 min-w-[200px]">

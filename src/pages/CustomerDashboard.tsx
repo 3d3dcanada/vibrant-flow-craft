@@ -93,6 +93,8 @@ const CustomerDashboard = () => {
     refunded: 'Refund completed.',
   };
 
+  const hasShippedOrders = orders?.some((order) => ['shipped', 'delivered'].includes(order.status));
+
   return (
     <div className="min-h-screen bg-background relative">
       <ParticleBackground />
@@ -410,8 +412,13 @@ const CustomerDashboard = () => {
                 My Orders
               </h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Track every step of fulfillment. Tracking appears once your maker ships.
+                Track every step of fulfillment. Tracking appears after the maker hands off to the carrier.
               </p>
+              {orders && orders.length > 0 && !hasShippedOrders && (
+                <div className="rounded-lg border border-secondary/30 bg-secondary/10 px-4 py-3 text-sm text-foreground mb-4">
+                  Your maker is preparing your order. Tracking appears after the maker hands off to the carrier.
+                </div>
+              )}
 
               {ordersLoading ? (
                 <div className="flex items-center justify-center py-8">
@@ -452,8 +459,8 @@ const CustomerDashboard = () => {
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <ShoppingBag className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p>No orders yet</p>
-                  <p className="text-sm">We’ll show fulfillment updates here as soon as you place an order.</p>
+                  <p className="font-medium text-foreground">No orders yet</p>
+                  <p className="text-sm">Start with a quote and we’ll guide you through every fulfillment step.</p>
                   <Link to="/quote" className="text-secondary text-sm hover:underline">
                     Get a quote to place your first order
                   </Link>

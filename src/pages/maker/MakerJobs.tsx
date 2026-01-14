@@ -58,6 +58,7 @@ const MakerJobs = () => {
   const [trackingNumber, setTrackingNumber] = useState('');
   const [shippingCarrier, setShippingCarrier] = useState('');
   const [downloadingFile, setDownloadingFile] = useState(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
 
   // Fetch maker orders (CORRECTED: uses maker_orders, no accept/decline)
   const { data: makerOrders = [], isLoading } = useQuery({
@@ -115,6 +116,7 @@ const MakerJobs = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maker-orders'] });
       toast({ title: 'Status updated', description: 'Order status has been updated successfully' });
+      setUpdateError(null);
       setStatusDialogOpen(false);
       setSelectedMakerOrder(null);
       setStatusNotes('');
@@ -123,6 +125,7 @@ const MakerJobs = () => {
     },
     onError: (error: any) => {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      setUpdateError(error.message || 'Status update failed. Please try again.');
     },
   });
 
@@ -150,6 +153,7 @@ const MakerJobs = () => {
   const handleUpdateStatus = (makerOrder: MakerOrder) => {
     setSelectedMakerOrder(makerOrder);
     setStatusDialogOpen(true);
+    setUpdateError(null);
   };
 
   const confirmStatusUpdate = () => {
@@ -360,6 +364,12 @@ const MakerJobs = () => {
             <p className="text-muted-foreground">Manage your assigned print jobs</p>
           </div>
 
+          {updateError && (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {updateError}
+            </div>
+          )}
+
           {makerOrders.length === 0 ? (
             <GlowCard className="p-12 text-center">
               <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
@@ -453,10 +463,27 @@ const MakerJobs = () => {
               </div>
               <DialogFooter>
                 <NeonButton variant="secondary" onClick={() => setStatusDialogOpen(false)}>Cancel</NeonButton>
-                <NeonButton onClick={confirmStatusUpdate} disabled={updateStatusMutation.isPending}>
+                <NeonButton
+                  onClick={confirmStatusUpdate}
+                  disabled={
+                    updateStatusMutation.isPending ||
+                    (selectedMakerOrder?.status === 'in_production' &&
+                      (!trackingNumber.trim() || !shippingCarrier.trim()))
+                  }
+                >
                   {updateStatusMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Update Status'}
                 </NeonButton>
               </DialogFooter>
+              {updateStatusMutation.isPending && (
+                <p className="text-xs text-muted-foreground">Updating status…</p>
+              )}
+              {selectedMakerOrder?.status === 'in_production' &&
+                !updateStatusMutation.isPending &&
+                (!trackingNumber.trim() || !shippingCarrier.trim()) && (
+                  <p className="text-xs text-muted-foreground">
+                    Tracking number and carrier are required before marking as shipped.
+                  </p>
+                )}
             </DialogContent>
           </Dialog>
         </div>
