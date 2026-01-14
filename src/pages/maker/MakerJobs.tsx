@@ -153,18 +153,16 @@ const MakerJobs = () => {
     setStatusDialogOpen(true);
   };
 
+  const getTargetStatus = (status?: MakerOrder['status']) => {
+    if (status === 'assigned') return 'in_production';
+    if (status === 'in_production') return 'shipped';
+    return '';
+  };
+
   const confirmStatusUpdate = () => {
     if (!selectedMakerOrder) return;
 
-    const currentStatus = selectedMakerOrder.status;
-    let targetStatus = '';
-
-    // Status flow: assigned → in_production → shipped
-    if (currentStatus === 'assigned') {
-      targetStatus = 'in_production';
-    } else if (currentStatus === 'in_production') {
-      targetStatus = 'shipped';
-    }
+    const targetStatus = getTargetStatus(selectedMakerOrder.status);
 
     if (!targetStatus) {
       toast({ title: 'Error', description: 'Invalid status transition', variant: 'destructive' });
@@ -197,7 +195,8 @@ const MakerJobs = () => {
     return new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(amount);
   };
 
-  const trackingRequired = selectedMakerOrder?.status === 'in_production';
+  const selectedTargetStatus = getTargetStatus(selectedMakerOrder?.status);
+  const trackingRequired = selectedTargetStatus === 'shipped';
   const trackingReady = trackingNumber.trim().length > 0 && shippingCarrier.trim().length > 0;
 
   const getStatusBadge = (status: string) => {
