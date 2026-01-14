@@ -28,6 +28,16 @@ type FulfillmentRpcResponse = {
   error?: string;
 };
 
+type GuardrailsResponse = {
+  success: boolean;
+  data?: {
+    maker_orders_has_authenticated_update_policy: boolean;
+    maker_orders_write_privileges_revoked_for_authenticated: boolean;
+    maker_earnings_write_privileges_revoked_for_authenticated: boolean;
+  };
+  error?: string;
+};
+
 const actorKeys = ['changed_by', 'changed_by_role', 'admin_id', 'maker_id', 'user_id'];
 
 const FulfillmentAudit = () => {
@@ -163,38 +173,75 @@ const FulfillmentAudit = () => {
     }
 
     try {
-      const { data: policies, error } = await supabase
-        .schema('pg_catalog')
-        .from('pg_policies')
-        .select('policyname, roles, cmd')
-        .eq('schemaname', 'public')
-        .eq('tablename', 'maker_orders');
-
+      const { data, error } = await (supabase.rpc as any)('admin_get_fulfillment_guardrails');
       if (error) {
         throw error;
       }
+      const payload = data as GuardrailsResponse;
+      if (!payload.success || !payload.data) {
+        throw new Error(payload.error || 'Guardrail RPC error');
+      }
 
-      const hasMakerUpdatePolicy = (policies || []).some((policy: any) => {
-        const roles = Array.isArray(policy.roles) ? policy.roles : String(policy.roles || '');
-        const roleList = Array.isArray(roles) ? roles : roles.split(',');
-        return policy.cmd === 'UPDATE' && roleList.map((r) => r.trim()).includes('authenticated');
-      });
+      const {
+        maker_orders_has_authenticated_update_policy,
+        maker_orders_write_privileges_revoked_for_authenticated,
+        maker_earnings_write_privileges_revoked_for_authenticated,
+      } = payload.data;
 
       results.push({
         id: 'maker-policy',
         label: 'maker_orders has no maker UPDATE policy (RPC-only)',
-        status: hasMakerUpdatePolicy ? 'fail' : 'pass',
-        details: hasMakerUpdatePolicy ? 'UPDATE policy still present.' : 'No authenticated UPDATE policy found.',
+        status: maker_orders_has_authenticated_update_policy ? 'fail' : 'pass',
+        details: maker_orders_has_authenticated_update_policy
+          ? 'Authenticated UPDATE policy detected.'
+          : 'No authenticated UPDATE policy found.',
+        lastRun: timestamp,
+      });
+
+      results.push({
+        id: 'maker-orders-privs',
+        label: 'maker_orders write privileges revoked for authenticated',
+        status: maker_orders_write_privileges_revoked_for_authenticated ? 'pass' : 'fail',
+        details: maker_orders_write_privileges_revoked_for_authenticated
+          ? 'Authenticated write privileges revoked.'
+          : 'Authenticated write privileges still present.',
+        lastRun: timestamp,
+      });
+
+      results.push({
+        id: 'maker-earnings-privs',
+        label: 'maker_earnings write privileges revoked for authenticated',
+        status: maker_earnings_write_privileges_revoked_for_authenticated ? 'pass' : 'fail',
+        details: maker_earnings_write_privileges_revoked_for_authenticated
+          ? 'Authenticated write privileges revoked.'
+          : 'Authenticated write privileges still present.',
         lastRun: timestamp,
       });
     } catch (error: any) {
-      results.push({
-        id: 'maker-policy',
-        label: 'maker_orders has no maker UPDATE policy (RPC-only)',
-        status: 'fail',
-        details: error.message,
-        lastRun: timestamp,
-      });
+      const message = error.message || 'Guardrail RPC failed';
+      results.push(
+        {
+          id: 'maker-policy',
+          label: 'maker_orders has no maker UPDATE policy (RPC-only)',
+          status: 'fail',
+          details: message,
+          lastRun: timestamp,
+        },
+        {
+          id: 'maker-orders-privs',
+          label: 'maker_orders write privileges revoked for authenticated',
+          status: 'fail',
+          details: message,
+          lastRun: timestamp,
+        },
+        {
+          id: 'maker-earnings-privs',
+          label: 'maker_earnings write privileges revoked for authenticated',
+          status: 'fail',
+          details: message,
+          lastRun: timestamp,
+        }
+      );
     }
 
     if (!unshippedOrder) {
@@ -207,11 +254,8 @@ const FulfillmentAudit = () => {
       });
     } else {
       try {
-        const { data, error } = await (supabase.rpc as any)('admin_update_order_status', {
+        const { data, error } = await (supabase.rpc as any)('admin_simulate_delivered_guard', {
           p_order_id: unshippedOrder.id,
-          p_new_status: 'delivered',
-          p_reason: 'Audit guard check',
-          p_admin_notes: null,
         });
         if (error) {
           throw error;
@@ -221,7 +265,7 @@ const FulfillmentAudit = () => {
           id: 'delivered-guard',
           label: 'Delivered guard rejects unshipped orders',
           status: payload.success === false ? 'pass' : 'fail',
-          details: payload.success === false ? payload.error || 'Guard enforced.' : 'Order advanced unexpectedly.',
+          details: payload.success === false ? payload.error || 'Guard enforced.' : 'Guard unexpectedly passed.',
           lastRun: timestamp,
         });
       } catch (error: any) {

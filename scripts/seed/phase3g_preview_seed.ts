@@ -4,12 +4,13 @@ import { randomUUID } from 'crypto';
 type SeedUser = {
   id: string;
   email?: string;
+  created: boolean;
 };
 
 const previewEnabled = process.env.PREVIEW_MODE === 'true' || process.env.NODE_ENV !== 'production';
 
 if (!previewEnabled) {
-  console.error('Preview seed blocked. Set PREVIEW_MODE=true or run in non-production NODE_ENV.');
+  console.error('Preview seed blocked. Required env vars: PREVIEW_MODE=true (or NODE_ENV!=production), SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SEED_CUSTOMER_EMAIL.');
   process.exit(1);
 }
 
@@ -20,13 +21,8 @@ const makerEmail = process.env.SEED_MAKER_EMAIL || 'maker-preview@3d3d.local';
 const adminEmail = process.env.SEED_ADMIN_EMAIL || customerEmail;
 const defaultPassword = process.env.SEED_DEFAULT_PASSWORD || 'PreviewPass!234';
 
-if (!supabaseUrl || !serviceRoleKey) {
-  console.error('Missing SUPABASE_URL/VITE_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.');
-  process.exit(1);
-}
-
-if (!customerEmail) {
-  console.error('Missing SEED_CUSTOMER_EMAIL for preview seed ownership.');
+if (!supabaseUrl || !serviceRoleKey || !customerEmail) {
+  console.error('Missing required env vars: SUPABASE_URL (or VITE_SUPABASE_URL), SUPABASE_SERVICE_ROLE_KEY, SEED_CUSTOMER_EMAIL.');
   process.exit(1);
 }
 
@@ -38,7 +34,7 @@ const findUserByEmail = async (email: string): Promise<SeedUser | null> => {
   const { data, error } = await supabase.auth.admin.listUsers({ perPage: 1000 });
   if (error) throw error;
   const user = data.users.find((entry) => entry.email?.toLowerCase() === email.toLowerCase());
-  return user ? { id: user.id, email: user.email } : null;
+  return user ? { id: user.id, email: user.email, created: false } : null;
 };
 
 const ensureUser = async (email: string): Promise<SeedUser> => {
@@ -52,7 +48,7 @@ const ensureUser = async (email: string): Promise<SeedUser> => {
   if (error || !data.user) {
     throw error || new Error('Failed to create user.');
   }
-  return { id: data.user.id, email: data.user.email };
+  return { id: data.user.id, email: data.user.email, created: true };
 };
 
 const ensureRole = async (userId: string, role: string) => {
@@ -71,7 +67,7 @@ const ensureOrder = async (payload: Record<string, unknown>) => {
     .maybeSingle();
 
   if (error) throw error;
-  if (existing?.id) return existing.id as string;
+  if (existing?.id) return { id: existing.id as string, created: false };
 
   const { data, error: insertError } = await supabase
     .from('orders')
@@ -82,7 +78,7 @@ const ensureOrder = async (payload: Record<string, unknown>) => {
   if (insertError || !data) {
     throw insertError || new Error('Failed to insert order.');
   }
-  return data.id as string;
+  return { id: data.id as string, created: true };
 };
 
 const main = async () => {
@@ -113,7 +109,7 @@ const main = async () => {
   const orderNumberA = '3D-PREVIEW-A';
   const orderNumberB = '3D-PREVIEW-B';
 
-  const orderAId = await ensureOrder({
+  const orderA = await ensureOrder({
     id: randomUUID(),
     user_id: customerUser.id,
     order_number: orderNumberA,
@@ -157,7 +153,7 @@ const main = async () => {
     notes: 'Preview seed order (in production)',
   });
 
-  const orderBId = await ensureOrder({
+  const orderB = await ensureOrder({
     id: randomUUID(),
     user_id: customerUser.id,
     order_number: orderNumberB,
@@ -212,7 +208,7 @@ const main = async () => {
   const { error: makerOrdersError } = await supabase.from('maker_orders').upsert(
     [
       {
-        order_id: orderAId,
+        order_id: orderA.id,
         maker_id: makerUser.id,
         status: 'in_production',
         assigned_at: paidAt.toISOString(),
@@ -220,7 +216,7 @@ const main = async () => {
         notes: 'Preview seed assignment',
       },
       {
-        order_id: orderBId,
+        order_id: orderB.id,
         maker_id: makerUser.id,
         status: 'shipped',
         assigned_at: paidAt.toISOString(),
@@ -240,7 +236,7 @@ const main = async () => {
     [
       {
         maker_id: makerUser.id,
-        order_id: orderAId,
+        order_id: orderA.id,
         gross_amount_cad: 42.0,
         platform_fee_cad: 12.6,
         payout_amount_cad: 29.4,
@@ -248,7 +244,7 @@ const main = async () => {
       },
       {
         maker_id: makerUser.id,
-        order_id: orderBId,
+        order_id: orderB.id,
         gross_amount_cad: 96.5,
         platform_fee_cad: 28.95,
         payout_amount_cad: 67.55,
@@ -261,10 +257,21 @@ const main = async () => {
   if (earningsError) throw earningsError;
 
   console.log('Preview seed complete.');
-  console.log(`Customer user: ${customerUser.email}`);
-  console.log(`Maker user: ${makerUser.email}`);
-  console.log(`Admin user: ${adminUser.email}`);
-  console.log(`Default password (if created): ${defaultPassword}`);
+  console.log(`Customer user: ${customerUser.email} (${customerUser.created ? 'created' : 'existing'})`);
+  console.log(`Maker user: ${makerUser.email} (${makerUser.created ? 'created' : 'existing'})`);
+  console.log(`Admin user: ${adminUser.email} (${adminUser.created ? 'created' : 'existing'})`);
+  if (customerUser.created || makerUser.created || adminUser.created) {
+    console.log(`Default password (if created): ${defaultPassword}`);
+  }
+  console.log('Orders:');
+  console.log(`- ${orderNumberA}: ${orderA.id} (in_production) ${orderA.created ? 'created' : 'existing'}`);
+  console.log(`- ${orderNumberB}: ${orderB.id} (shipped) ${orderB.created ? 'created' : 'existing'}`);
+  console.log('');
+  console.log('NEXT: click these pages');
+  console.log('1) /dashboard/admin → Launch Preview → Fulfillment Audit → Re-run Checks');
+  console.log('2) /dashboard/admin/payments (see seeded orders)');
+  console.log('3) /dashboard/maker/jobs and /dashboard/maker/earnings');
+  console.log('4) /dashboard/customer#my-orders → open 3D-PREVIEW-B');
 };
 
 main().catch((error) => {
