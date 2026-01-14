@@ -207,7 +207,7 @@ BEGIN
 
     -- Validate status input before casting
     IF p_new_status NOT IN (
-        SELECT unnest(enum_range(NULL::order_status))::TEXT
+        SELECT unnest(enum_range(NULL::order_status))::text
     ) THEN
         RETURN json_build_object(
             'success', false,
