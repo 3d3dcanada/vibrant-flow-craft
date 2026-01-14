@@ -15,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import {
     DollarSign, Package, Clock, CheckCircle, XCircle, Loader2,
     AlertTriangle, FileText, Truck, Eye, ChevronDown, ChevronUp,
-    Search, Filter, RefreshCw
+    Search, Filter, RefreshCw, UserCheck
 } from 'lucide-react';
 
 interface Order {
@@ -65,6 +65,15 @@ const AdminPayments = () => {
     const [confirmNewStatus, setConfirmNewStatus] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
 
+    // Maker assignment modal states (Phase 3F)
+    const [assignModal, setAssignModal] = useState<{
+        orderId: string;
+        orderNumber: string;
+    } | null>(null);
+    const [selectedMakerId, setSelectedMakerId] = useState('');
+    const [assignReason, setAssignReason] = useState('');
+    const [assignNotes, setAssignNotes] = useState('');
+
     // Fetch orders with user info
     const { data: orders, isLoading, refetch } = useQuery({
         queryKey: ['admin_orders', statusFilter],
@@ -112,6 +121,93 @@ const AdminPayments = () => {
             toast({ title: 'Error', description: error.message, variant: 'destructive' });
         }
     });
+
+    // Fetch active makers (Phase 3F)
+    const { data: makers = [] } = useQuery({
+        queryKey: ['active_makers'],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('maker_profiles')
+                .select('maker_id, display_name, city, province, status')
+                .eq('status', 'active');
+
+            if (error) throw error;
+            return data || [];
+        }
+    });
+
+    // Check if order has existing assignment (Phase 3F - CORRECTED)
+    const { data: assignments = [] } = useQuery({
+        queryKey: ['maker_orders'],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('maker_orders')
+                .select('order_id, maker_id, status');
+
+            if (error) throw error;
+            return data || [];
+        }
+    });
+
+    const getOrderAssignment = (orderId: string) => {
+        return assignments.find((a: any) => a.order_id === orderId);
+    };
+
+    // Assign order to maker mutation (Phase 3F)
+    const assignMaker = useMutation({
+        mutationFn: async ({ orderId, makerId, reason, notes }: {
+            orderId: string;
+            makerId: string;
+            reason: string;
+            notes: string;
+        }) => {
+            const { data, error } = await (supabase.rpc as any)('admin_assign_order_to_maker', {
+                p_order_id: orderId,
+                p_maker_id: makerId,
+                p_reason: reason,
+                p_admin_notes: notes || null
+            });
+            if (error) throw error;
+            const result = data as { success: boolean; error?: string };
+            if (!result.success) throw new Error(result.error || 'Failed to assign maker');
+            return result;
+        },
+        onSuccess: () => {
+            toast({ title: 'Maker Assigned', description: 'Order has been assigned to the selected maker.' });
+            queryClient.invalidateQueries({ queryKey: ['admin_orders'] });
+            queryClient.invalidateQueries({ queryKey: ['maker_orders'] });
+            setAssignModal(null);
+            setSelectedMakerId('');
+            setAssignReason('');
+            setAssignNotes('');
+        },
+        onError: (error: any) => {
+            toast({ title: 'Error', description: error.message, variant: 'destructive' });
+        }
+    });
+
+    const handleAssignMaker = async () => {
+        if (!assignModal) return;
+        if (!selectedMakerId) {
+            toast({ title: 'Maker Required', description: 'Please select a maker.', variant: 'destructive' });
+            return;
+        }
+        if (!assignReason.trim()) {
+            toast({ title: 'Reason Required', description: 'Please provide a reason for the assignment.', variant: 'destructive' });
+            return;
+        }
+        setIsProcessing(true);
+        try {
+            await assignMaker.mutateAsync({
+                orderId: assignModal.orderId,
+                makerId: selectedMakerId,
+                reason: assignReason,
+                notes: assignNotes
+            });
+        } finally {
+            setIsProcessing(false);
+        }
+    };
 
     // Status update mutation
     const updateStatus = useMutation({
@@ -301,6 +397,20 @@ const AdminPayments = () => {
                                                         Confirm Payment
                                                     </NeonButton>
                                                 )}
+                                                {/* Phase 3F: Assign Maker button for paid orders */}
+                                                {order.status === 'paid' && (
+                                                    <NeonButton
+                                                        size="sm"
+                                                        variant={getOrderAssignment(order.id) ? 'secondary' : 'default'}
+                                                        onClick={() => setAssignModal({
+                                                            orderId: order.id,
+                                                            orderNumber: order.order_number
+                                                        })}
+                                                    >
+                                                        <UserCheck className="w-4 h-4 mr-1" />
+                                                        {getOrderAssignment(order.id) ? 'Reassign Maker' : 'Assign Maker'}
+                                                    </NeonButton>
+                                                )}
                                                 <NeonButton
                                                     size="sm"
                                                     variant="secondary"
@@ -488,6 +598,103 @@ const AdminPayments = () => {
                                             </>
                                         ) : (
                                             'Confirm'
+                                        )}
+                                    </NeonButton>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+
+                    {/* Assign Maker Modal (Phase 3F) */}
+                    {assignModal && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="bg-background border border-border rounded-xl p-6 max-w-md w-full shadow-2xl"
+                            >
+                                <h3 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                                    <UserCheck className="w-5 h-5 text-secondary" />
+                                    Assign Maker
+                                </h3>
+
+                                <p className="text-muted-foreground mb-4">
+                                    Order: <strong className="text-foreground">{assignModal.orderNumber}</strong>
+                                </p>
+
+                                <div className="space-y-4">
+                                    <div>
+                                        <Label htmlFor="maker">Select Maker *</Label>
+                                        <select
+                                            id="maker"
+                                            value={selectedMakerId}
+                                            onChange={(e) => setSelectedMakerId(e.target.value)}
+                                            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground"
+                                        >
+                                            <option value="">Select a maker...</option>
+                                            {makers.map((maker: any) => (
+                                                <option key={maker.maker_id} value={maker.maker_id}>
+                                                    {maker.display_name} ({maker.city}, {maker.province})
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {makers.length === 0 && (
+                                            <p className="text-xs text-muted-foreground mt-1">No active makers found</p>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="assignReason">Reason (required)</Label>
+                                        <Textarea
+                                            id="assignReason"
+                                            placeholder="Why is this maker being assigned?"
+                                            value={assignReason}
+                                            onChange={(e) => setAssignReason(e.target.value)}
+                                            rows={2}
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="assignNotes">Admin Notes (optional)</Label>
+                                        <Textarea
+                                            id="assignNotes"
+                                            placeholder="Any special instructions for this maker?"
+                                            value={assignNotes}
+                                            onChange={(e) => setAssignNotes(e.target.value)}
+                                            rows={2}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="text-xs text-muted-foreground mt-4 p-3 bg-muted/30 rounded-lg">
+                                    ⚠️ The maker will be notified and must accept the assignment before downloading files.
+                                </div>
+
+                                <div className="flex gap-3 mt-6">
+                                    <NeonButton
+                                        variant="secondary"
+                                        className="flex-1"
+                                        onClick={() => {
+                                            setAssignModal(null);
+                                            setSelectedMakerId('');
+                                            setAssignReason('');
+                                            setAssignNotes('');
+                                        }}
+                                        disabled={isProcessing}
+                                    >
+                                        Cancel
+                                    </NeonButton>
+                                    <NeonButton
+                                        variant="primary"
+                                        className="flex-1"
+                                        onClick={handleAssignMaker}
+                                        disabled={isProcessing || makers.length === 0}
+                                    >
+                                        {isProcessing ? (
+                                            <>
+                                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                Assigning...
+                                            </>
+                                        ) : (
+                                            'Assign'
                                         )}
                                     </NeonButton>
                                 </div>
