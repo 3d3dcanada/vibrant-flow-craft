@@ -6,11 +6,11 @@ import Navbar from '@/components/ui/Navbar';
 import Footer from '@/components/sections/Footer';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { NeonButton } from '@/components/ui/NeonButton';
+import FulfillmentTimeline from '@/components/orders/FulfillmentTimeline';
 import {
     CheckCircle, Clock, Package, FileText, Coins,
     AlertCircle, Loader2, ArrowRight, Mail, Info
 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 
 interface Order {
     id: string;
@@ -24,8 +24,24 @@ interface Order {
     payment_confirmed_at?: string;
     shipping_address: any;
     status: string;
+    status_history?: any;
     created_at: string;
     notes?: string;
+}
+
+interface FulfillmentData {
+    order_id: string;
+    order_status: string;
+    payment_confirmed_at?: string | null;
+    status_history?: any;
+    maker_stage?: string | null;
+    tracking_info?: any | null;
+}
+
+interface FulfillmentResponse {
+    success: boolean;
+    data?: FulfillmentData;
+    error?: string;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
@@ -58,11 +74,13 @@ export default function OrderConfirmation() {
     const navigate = useNavigate();
     const { orderId } = useParams();
     const { user, loading: authLoading } = useAuth();
-    const { toast } = useToast();
 
     const [order, setOrder] = useState<Order | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [fulfillment, setFulfillment] = useState<FulfillmentData | null>(null);
+    const [fulfillmentLoading, setFulfillmentLoading] = useState(false);
+    const [fulfillmentError, setFulfillmentError] = useState<string | null>(null);
 
     // Redirect if not authenticated
     useEffect(() => {
@@ -78,6 +96,8 @@ export default function OrderConfirmation() {
 
             setLoading(true);
             setError(null);
+            setFulfillment(null);
+            setFulfillmentError(null);
 
             try {
                 const { data, error: fetchError } = await (supabase as any)
@@ -94,10 +114,28 @@ export default function OrderConfirmation() {
                 }
 
                 setOrder(data);
+
+                setFulfillmentLoading(true);
+                const { data: fulfillmentData, error: fulfillmentFetchError } = await (supabase.rpc as any)(
+                    'customer_get_order_fulfillment',
+                    { p_order_id: orderId }
+                );
+                if (fulfillmentFetchError) {
+                    console.error('Fulfillment fetch error:', fulfillmentFetchError);
+                    setFulfillmentError('Fulfillment updates are temporarily unavailable.');
+                } else {
+                    const result = fulfillmentData as FulfillmentResponse;
+                    if (!result.success) {
+                        setFulfillmentError(result.error || 'Fulfillment updates are temporarily unavailable.');
+                    } else {
+                        setFulfillment(result.data || null);
+                    }
+                }
             } catch (err) {
                 console.error('Error loading order:', err);
                 setError('Failed to load order. Please try again.');
             } finally {
+                setFulfillmentLoading(false);
                 setLoading(false);
             }
         };
@@ -153,6 +191,26 @@ export default function OrderConfirmation() {
     const statusConfig = STATUS_CONFIG[order.status] || STATUS_CONFIG['pending_payment'];
     const StatusIcon = statusConfig.icon;
     const isPaid = order.status === 'paid';
+    const fulfillmentSnapshot = fulfillment || {
+        order_status: order.status,
+        payment_confirmed_at: order.payment_confirmed_at,
+        status_history: order.status_history,
+        maker_stage: null,
+        tracking_info: null,
+        order_id: order.id,
+    };
+    const makerOrderSnapshot = fulfillment
+        ? {
+            status: fulfillment.maker_stage ?? null,
+            tracking_info: fulfillment.tracking_info ?? null,
+        }
+        : null;
+    const trackingInfo =
+        fulfillmentSnapshot.tracking_info &&
+            typeof fulfillmentSnapshot.tracking_info === 'object' &&
+            Object.keys(fulfillmentSnapshot.tracking_info).length > 0
+            ? fulfillmentSnapshot.tracking_info
+            : null;
 
     return (
         <div className="min-h-screen bg-background">
@@ -284,6 +342,62 @@ export default function OrderConfirmation() {
                                 </p>
                             </div>
                         </div>
+                    </GlassPanel>
+
+                    {/* Fulfillment Timeline */}
+                    <GlassPanel variant="elevated" className="mb-6">
+                        <div className="flex flex-wrap items-start justify-between gap-4">
+                            <div>
+                                <h2 className="text-lg font-tech font-bold text-foreground">Fulfillment Status</h2>
+                                <p className="text-sm text-muted-foreground">
+                                    Fulfillment is handled manually by our maker network. Maker identity is kept private.
+                                </p>
+                            </div>
+                            {fulfillmentLoading && (
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Updating
+                                </div>
+                            )}
+                        </div>
+                        {fulfillmentError && (
+                            <p className="mt-3 text-sm text-destructive">{fulfillmentError}</p>
+                        )}
+                        <div className="mt-4">
+                            <FulfillmentTimeline
+                                orderStatus={fulfillmentSnapshot.order_status}
+                                paymentConfirmedAt={fulfillmentSnapshot.payment_confirmed_at}
+                                statusHistory={fulfillmentSnapshot.status_history}
+                                makerOrder={makerOrderSnapshot}
+                            />
+                        </div>
+                    </GlassPanel>
+
+                    {/* Tracking */}
+                    <GlassPanel variant="elevated" className="mb-6">
+                        <h3 className="font-tech font-bold text-foreground mb-3">Tracking</h3>
+                        {trackingInfo ? (
+                            <div className="space-y-2 text-sm">
+                                <div className="flex justify-between gap-4">
+                                    <span className="text-muted-foreground">Carrier</span>
+                                    <span className="text-foreground">{trackingInfo.carrier || '—'}</span>
+                                </div>
+                                <div className="flex justify-between gap-4">
+                                    <span className="text-muted-foreground">Tracking Number</span>
+                                    <span className="text-foreground font-mono">{trackingInfo.tracking_number || '—'}</span>
+                                </div>
+                                {trackingInfo.shipped_at && (
+                                    <div className="flex justify-between gap-4">
+                                        <span className="text-muted-foreground">Shipped</span>
+                                        <span className="text-foreground">{formatDate(trackingInfo.shipped_at)}</span>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-muted-foreground">
+                                Tracking details will appear once your order ships.
+                            </p>
+                        )}
                     </GlassPanel>
 
                     {/* Order Details */}
