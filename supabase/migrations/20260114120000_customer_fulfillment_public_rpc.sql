@@ -1,3 +1,6 @@
+-- 🔒 LAUNCH-FROZEN (Phase 3H)
+-- This fulfillment RPC contract is frozen for launch readiness.
+-- Any changes require a new phase review and explicit approval.
 -- Customer fulfillment RPC (Phase 3F safe exposure)
 -- Date: 2026-01-14
 -- Purpose: Provide customer-safe fulfillment data without exposing maker identity

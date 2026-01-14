@@ -1,3 +1,8 @@
+/**
+ * 🔒 LAUNCH-FROZEN (Phase 3H)
+ * Order confirmation UI is frozen for launch readiness.
+ * Any changes require a new phase review and explicit approval.
+ */
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';

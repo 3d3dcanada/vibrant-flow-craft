@@ -71,3 +71,9 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+## Phase 3 reports
+
+- [Phase 3G Gate 0 Report](docs/phase3/PHASE_3G_GATE0_REPORT.md)
+- [Phase 3G Gate 2 Report](docs/phase3/PHASE_3G_GATE2_REPORT.md)
+- [Phase 3H Launch Contract](docs/phase3/PHASE_3H_LAUNCH_CONTRACT.md)

@@ -1,3 +1,8 @@
+/**
+ * 🔒 LAUNCH-FROZEN (Phase 3H)
+ * Fulfillment audit UI is frozen for launch readiness.
+ * Any changes require a new phase review and explicit approval.
+ */
 import { useCallback, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
