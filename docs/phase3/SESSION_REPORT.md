@@ -1749,3 +1749,60 @@ Phase 3G Gate 0 hardening focused on launch readiness without redesign. The work
 
 - Runtime verification of SQL self-check queries (documented for execution in the Phase 3G report).
 - End-to-end fulfillment flow validation in staging.
+
+---
+
+# Phase 3G Gate 3 — Runtime Verification (Operator-Executed)
+
+**Status:** ⚠️ OPERATOR-EXECUTED  
+**Reason:** Secrets not available in CI/review context.
+
+## Required environment variables
+
+- `PREVIEW_MODE=true`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SEED_CUSTOMER_EMAIL`
+- `SEED_MAKER_EMAIL`
+- `SEED_ADMIN_EMAIL`
+- `SEED_DEFAULT_PASSWORD`
+
+## One-command seed invocation
+
+```bash
+PREVIEW_MODE=true \
+SUPABASE_URL=https://<project>.supabase.co \
+SUPABASE_SERVICE_ROLE_KEY=<service_role_key> \
+SEED_CUSTOMER_EMAIL=you@example.com \
+SEED_MAKER_EMAIL=maker-preview@example.com \
+SEED_ADMIN_EMAIL=admin-preview@example.com \
+SEED_DEFAULT_PASSWORD='PreviewPass!234' \
+pnpm seed:preview
+```
+
+## 60-second click-path
+
+1. Admin Dashboard → Launch Preview → Fulfillment Audit → Re-run Checks.
+2. Admin Dashboard → Payments & Orders (verify seeded orders).
+3. Maker Dashboard → Jobs/Earnings (verify seeded assignments).
+4. Customer Dashboard → My Orders → open shipped order (timeline + tracking).
+
+## PASS criteria
+
+- Preview seed completes without errors and outputs created/existing users and orders.
+- Fulfillment Audit checks pass with no failures.
+- Admin/Maker/Customer views show the expected seeded orders and statuses.
+
+## FAIL criteria
+
+- Seed script exits with error or missing env vars.
+- Fulfillment Audit shows failures caused by missing data or guardrail regressions.
+- Click-path cannot find seeded orders or shows missing tracking/timeline data.
+
+**Mandatory before launch:** Gate 3 must be executed by an operator with secrets before production release.
+
+---
+
+Phase 3G Gate 3: ⚠️ BLOCKED (Secrets Required)  
+Resolution: Converted to operator-executed gate with documented procedure.  
+Launch Impact: None, provided operator executes Gate 3 before production release.

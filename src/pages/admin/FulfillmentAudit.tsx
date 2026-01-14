@@ -311,6 +311,9 @@ const FulfillmentAudit = () => {
             <p className="text-muted-foreground mt-1">
               Live launch-readiness checks for fulfillment, privacy, and guardrails.
             </p>
+            <p className="text-xs text-muted-foreground mt-2">
+              Runtime checks require preview seed data. If no data is present, run the Phase 3G preview seed locally.
+            </p>
           </motion.div>
 
           <GlowCard className="p-5">
