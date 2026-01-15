@@ -10,7 +10,19 @@ import {
   Box, Heart, Flame, Crown, Lock, Sparkles
 } from 'lucide-react';
 
-const iconMap: Record<string, any> = {
+type Achievement = {
+  id: string;
+  icon: string;
+  name: string;
+  description: string;
+  points_reward: number;
+};
+
+type UserAchievement = {
+  achievement_id: string;
+};
+
+const iconMap: Record<string, typeof Trophy> = {
   printer: Printer,
   recycle: Recycle,
   users: Users,
@@ -33,7 +45,7 @@ const Achievements = () => {
     }
   }, [user, authLoading, navigate]);
 
-  const unlockedIds = new Set(userAchievements?.map((ua: any) => ua.achievement_id) || []);
+  const unlockedIds = new Set(userAchievements?.map((ua: UserAchievement) => ua.achievement_id) || []);
 
   return (
     <div className="min-h-screen bg-background relative">
@@ -73,7 +85,7 @@ const Achievements = () => {
 
           {/* Achievements Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {achievements?.map((achievement: any, index: number) => {
+            {achievements?.map((achievement: Achievement, index: number) => {
               const isUnlocked = unlockedIds.has(achievement.id);
               const Icon = iconMap[achievement.icon] || Trophy;
               

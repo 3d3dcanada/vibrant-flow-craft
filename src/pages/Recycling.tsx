@@ -17,6 +17,16 @@ import {
   Award, TrendingUp, Sparkles
 } from 'lucide-react';
 
+type RecyclingDrop = {
+  id: string;
+  weight_grams: number;
+  verified: boolean;
+  points_earned: number;
+  created_at: string;
+  material_type: string;
+  location: string;
+};
+
 const Recycling = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
@@ -80,9 +90,9 @@ const Recycling = () => {
       
       setForm({ weight_grams: '', material_type: 'PLA', location: '' });
       refetch();
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Handle specific error types from edge function
-      const errorMessage = err?.message || err?.error?.message || "Failed to log recycling drop";
+      const errorMessage = err instanceof Error ? err.message : "Failed to log recycling drop";
       toast({
         title: "Error",
         description: errorMessage,
@@ -103,9 +113,9 @@ const Recycling = () => {
     );
   }
 
-  const totalRecycled = recyclingDrops?.reduce((sum: number, drop: any) => sum + drop.weight_grams, 0) || 0;
-  const totalPoints = recyclingDrops?.reduce((sum: number, drop: any) => drop.verified ? sum + drop.points_earned : sum, 0) || 0;
-  const pendingPoints = recyclingDrops?.reduce((sum: number, drop: any) => !drop.verified ? sum + drop.points_earned : sum, 0) || 0;
+  const totalRecycled = recyclingDrops?.reduce((sum: number, drop: RecyclingDrop) => sum + drop.weight_grams, 0) || 0;
+  const totalPoints = recyclingDrops?.reduce((sum: number, drop: RecyclingDrop) => drop.verified ? sum + drop.points_earned : sum, 0) || 0;
+  const pendingPoints = recyclingDrops?.reduce((sum: number, drop: RecyclingDrop) => !drop.verified ? sum + drop.points_earned : sum, 0) || 0;
 
   const materials = ['PLA', 'PETG', 'ABS', 'TPU', 'Nylon', 'Resin', 'Mixed'];
 
@@ -261,7 +271,7 @@ const Recycling = () => {
             
             {recyclingDrops && recyclingDrops.length > 0 ? (
               <div className="space-y-3">
-                {recyclingDrops.map((drop: any) => (
+                {recyclingDrops.map((drop: RecyclingDrop) => (
                   <GlowCard key={drop.id} className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">

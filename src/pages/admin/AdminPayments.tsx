@@ -28,18 +28,31 @@ interface Order {
     order_number: string;
     user_id: string;
     quote_id?: string;
-    quote_snapshot: any;
+    quote_snapshot: Record<string, unknown>;
     total_cad: number;
     payment_method: string;
     status: string;
     notes?: string;
     admin_notes?: string;
-    shipping_address: any;
+    shipping_address: Record<string, unknown>;
     created_at: string;
     updated_at: string;
     payment_confirmed_at?: string;
     profiles?: { email?: string; full_name?: string };
 }
+
+type MakerAssignment = {
+    order_id: string;
+    maker_id: string;
+    status: string;
+};
+
+type MakerProfile = {
+    maker_id: string;
+    display_name: string | null;
+    location: string | null;
+    active: boolean | null;
+};
 
 const ORDER_STATUSES = [
     { value: 'awaiting_payment', label: 'Awaiting Payment', color: 'text-blue-400', icon: Clock },
@@ -83,8 +96,8 @@ const AdminPayments = () => {
     const { data: orders, isLoading, refetch } = useQuery({
         queryKey: ['admin_orders', statusFilter],
         queryFn: async () => {
-            let query = (supabase as any)
-                .from('orders')
+            let query = supabase
+                .from('orders' as never)
                 .select(`
                     *,
                     profiles:user_id (email, full_name)
@@ -105,7 +118,7 @@ const AdminPayments = () => {
     const confirmPayment = useMutation({
         mutationFn: async ({ orderId, reference, reason }: { orderId: string; reference: string; reason: string }) => {
             // Note: Type assertion used because RPC types need regeneration after migration
-            const { data, error } = await (supabase.rpc as any)('admin_confirm_payment', {
+            const { data, error } = await supabase.rpc('admin_confirm_payment' as never, {
                 p_order_id: orderId,
                 p_payment_reference: reference || null,
                 p_reason: reason || null
@@ -122,8 +135,9 @@ const AdminPayments = () => {
             setConfirmReason('');
             setConfirmReference('');
         },
-        onError: (error: any) => {
-            toast({ title: 'Error', description: error.message, variant: 'destructive' });
+        onError: (error: unknown) => {
+            const message = error instanceof Error ? error.message : 'Failed to confirm payment';
+            toast({ title: 'Error', description: message, variant: 'destructive' });
         }
     });
 
@@ -155,7 +169,7 @@ const AdminPayments = () => {
     });
 
     const getOrderAssignment = (orderId: string) => {
-        return assignments.find((a: any) => a.order_id === orderId);
+        return assignments.find((a: MakerAssignment) => a.order_id === orderId);
     };
 
     // Assign order to maker mutation (Phase 3F)
@@ -166,7 +180,7 @@ const AdminPayments = () => {
             reason: string;
             notes: string;
         }) => {
-            const { data, error } = await (supabase.rpc as any)('admin_assign_order_to_maker', {
+            const { data, error } = await supabase.rpc('admin_assign_order_to_maker' as never, {
                 p_order_id: orderId,
                 p_maker_id: makerId,
                 p_reason: reason,
@@ -186,8 +200,9 @@ const AdminPayments = () => {
             setAssignReason('');
             setAssignNotes('');
         },
-        onError: (error: any) => {
-            toast({ title: 'Error', description: error.message, variant: 'destructive' });
+        onError: (error: unknown) => {
+            const message = error instanceof Error ? error.message : 'Failed to assign maker';
+            toast({ title: 'Error', description: message, variant: 'destructive' });
         }
     });
 
@@ -218,7 +233,7 @@ const AdminPayments = () => {
     const updateStatus = useMutation({
         mutationFn: async ({ orderId, newStatus, reason }: { orderId: string; newStatus: string; reason: string }) => {
             // Note: Type assertion used because RPC types need regeneration after migration
-            const { data, error } = await (supabase.rpc as any)('admin_update_order_status', {
+            const { data, error } = await supabase.rpc('admin_update_order_status' as never, {
                 p_order_id: orderId,
                 p_new_status: newStatus,
                 p_reason: reason || null,
@@ -236,8 +251,9 @@ const AdminPayments = () => {
             setConfirmReason('');
             setConfirmNewStatus('');
         },
-        onError: (error: any) => {
-            toast({ title: 'Error', description: error.message, variant: 'destructive' });
+        onError: (error: unknown) => {
+            const message = error instanceof Error ? error.message : 'Failed to update order status';
+            toast({ title: 'Error', description: message, variant: 'destructive' });
         }
     });
 
@@ -637,7 +653,7 @@ const AdminPayments = () => {
                                             className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground"
                                         >
                                             <option value="">Select a maker...</option>
-                                            {makers.map((maker: any) => (
+                                            {makers.map((maker: MakerProfile) => (
                                                 <option key={maker.maker_id} value={maker.maker_id}>
                                                     {maker.display_name} ({maker.location || 'Location not provided'})
                                                 </option>

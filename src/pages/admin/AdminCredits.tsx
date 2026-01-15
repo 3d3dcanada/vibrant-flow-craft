@@ -61,8 +61,8 @@ const AdminCredits = () => {
     const { data: wallets, isLoading, refetch } = useQuery({
         queryKey: ['admin_credit_wallets'],
         queryFn: async () => {
-            const { data, error } = await (supabase as any)
-                .from('credit_wallets')
+            const { data, error } = await supabase
+                .from('credit_wallets' as never)
                 .select(`
                     *,
                     profiles:user_id (email, full_name)
@@ -77,7 +77,7 @@ const AdminCredits = () => {
     const adjustCredits = useMutation({
         mutationFn: async ({ userId, amount, reason, type }: { userId: string; amount: number; reason: string; type: string }) => {
             // Note: Type assertion used because RPC types need regeneration after migration
-            const { data, error } = await (supabase.rpc as any)('admin_adjust_credits', {
+            const { data, error } = await supabase.rpc('admin_adjust_credits' as never, {
                 p_user_id: userId,
                 p_amount: amount,
                 p_reason: reason,
@@ -102,8 +102,9 @@ const AdminCredits = () => {
                 loadTransactions(expandedUser);
             }
         },
-        onError: (error: any) => {
-            toast({ title: 'Error', description: error.message, variant: 'destructive' });
+        onError: (error: unknown) => {
+            const message = error instanceof Error ? error.message : 'Failed to adjust credits';
+            toast({ title: 'Error', description: message, variant: 'destructive' });
         }
     });
 
@@ -111,8 +112,8 @@ const AdminCredits = () => {
     const loadTransactions = async (userId: string) => {
         setLoadingTransactions(userId);
         try {
-            const { data, error } = await (supabase as any)
-                .from('credit_transactions')
+            const { data, error } = await supabase
+                .from('credit_transactions' as never)
                 .select('*')
                 .eq('user_id', userId)
                 .order('created_at', { ascending: false })
@@ -414,7 +415,7 @@ const AdminCredits = () => {
                                         <select
                                             id="adjustType"
                                             value={adjustType}
-                                            onChange={(e) => setAdjustType(e.target.value as any)}
+                                            onChange={(e) => setAdjustType(e.target.value as 'bonus' | 'correction' | 'refund')}
                                             className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground"
                                         >
                                             <option value="bonus">Bonus (add credits)</option>

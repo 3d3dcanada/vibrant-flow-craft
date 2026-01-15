@@ -8,8 +8,8 @@ export interface PrintRequest {
   user_id: string | null;
   maker_id: string | null;
   status: 'pending' | 'claimed' | 'quoted' | 'accepted' | 'declined' | 'cancelled';
-  specs: Record<string, any>;
-  attribution: Record<string, any>;
+  specs: Record<string, unknown>;
+  attribution: Record<string, unknown>;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -41,7 +41,7 @@ export interface MakerPrinter {
   connection_url: string | null;
   api_key: string | null;
   last_seen_at: string | null;
-  last_status: Record<string, any>;
+  last_status: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }
@@ -478,8 +478,8 @@ export const useSubmitPrintRequest = () => {
   
   return useMutation({
     mutationFn: async (request: {
-      specs: Record<string, any>;
-      attribution?: Record<string, any>;
+      specs: Record<string, unknown>;
+      attribution?: Record<string, unknown>;
       notes?: string;
     }) => {
       const { data, error } = await supabase

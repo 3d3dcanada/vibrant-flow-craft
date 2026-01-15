@@ -73,7 +73,7 @@ export const useUpsertPromoProduct = () => {
       } else {
         const { error } = await supabase
           .from('promo_products')
-          .insert(rest as any);
+          .insert(rest as Record<string, unknown>);
         if (error) throw error;
       }
     },
@@ -123,7 +123,7 @@ export const useUpsertStoreItem = () => {
       } else {
         const { error } = await supabase
           .from('store_items')
-          .insert(rest as any);
+          .insert(rest as Record<string, unknown>);
         if (error) throw error;
       }
     },
@@ -173,7 +173,7 @@ export const useUpsertCreditPackage = () => {
       } else {
         const { error } = await supabase
           .from('credit_packages')
-          .insert(rest as any);
+          .insert(rest as Record<string, unknown>);
         if (error) throw error;
       }
     },

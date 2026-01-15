@@ -102,22 +102,8 @@ export function OffCanvasDrawer({ isOpen, onClose, title = "Menu", children }: O
                     <div className="space-y-2">
                         {drawerItems.map((item) => {
                             const isExternal = item.href.startsWith("http");
-                            const Component = isExternal ? "a" : Link;
-                            const linkProps = isExternal
-                                ? { href: item.href, target: "_blank", rel: "noopener noreferrer" }
-                                : { to: item.href };
-
-                            return (
-                                <Component
-                                    key={item.label}
-                                    {...linkProps as any}
-                                    onClick={onClose}
-                                    className={cn(
-                                        "flex items-start gap-4 p-4 rounded-lg",
-                                        "glass-panel hover:border-secondary/40",
-                                        "transition-all duration-200 group"
-                                    )}
-                                >
+                            const content = (
+                                <>
                                     <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary group-hover:bg-secondary/20">
                                         {item.icon}
                                     </div>
@@ -129,7 +115,37 @@ export function OffCanvasDrawer({ isOpen, onClose, title = "Menu", children }: O
                                             {item.description}
                                         </p>
                                     </div>
-                                </Component>
+                                </>
+                            );
+
+                            return isExternal ? (
+                                <a
+                                    key={item.label}
+                                    href={item.href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={onClose}
+                                    className={cn(
+                                        "flex items-start gap-4 p-4 rounded-lg",
+                                        "glass-panel hover:border-secondary/40",
+                                        "transition-all duration-200 group"
+                                    )}
+                                >
+                                    {content}
+                                </a>
+                            ) : (
+                                <Link
+                                    key={item.label}
+                                    to={item.href}
+                                    onClick={onClose}
+                                    className={cn(
+                                        "flex items-start gap-4 p-4 rounded-lg",
+                                        "glass-panel hover:border-secondary/40",
+                                        "transition-all duration-200 group"
+                                    )}
+                                >
+                                    {content}
+                                </Link>
                             );
                         })}
                     </div>
