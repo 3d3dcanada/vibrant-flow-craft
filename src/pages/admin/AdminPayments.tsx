@@ -10,6 +10,7 @@ import AdminGuard from '@/components/guards/AdminGuard';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { NeonButton } from '@/components/ui/NeonButton';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -170,6 +171,22 @@ const AdminPayments = () => {
 
     const getOrderAssignment = (orderId: string) => {
         return assignments.find((a: MakerAssignment) => a.order_id === orderId);
+    };
+
+    const getAssignmentBadge = (assignment?: MakerAssignment | null) => {
+        if (!assignment) {
+            return { label: 'Unassigned', variant: 'outline' as const };
+        }
+        if (assignment.status === 'assigned') {
+            return { label: 'Assigned', variant: 'secondary' as const };
+        }
+        if (assignment.status === 'in_production') {
+            return { label: 'In production', variant: 'secondary' as const };
+        }
+        if (assignment.status === 'shipped') {
+            return { label: 'Shipped', variant: 'default' as const };
+        }
+        return { label: assignment.status.replace(/_/g, ' '), variant: 'outline' as const };
     };
 
     // Assign order to maker mutation (Phase 3F)
@@ -374,6 +391,8 @@ const AdminPayments = () => {
                                 const statusConfig = getStatusConfig(order.status);
                                 const StatusIcon = statusConfig.icon;
                                 const isExpanded = expandedOrder === order.id;
+                                const assignment = getOrderAssignment(order.id);
+                                const assignmentBadge = getAssignmentBadge(assignment);
 
                                 return (
                                     <GlowCard key={order.id} className="p-4">
@@ -390,6 +409,11 @@ const AdminPayments = () => {
                                                 <div className="text-sm text-muted-foreground">
                                                     {order.profiles?.full_name || order.profiles?.email || 'Unknown'}
                                                 </div>
+                                            </div>
+
+                                            <div className="min-w-[140px]">
+                                                <div className="text-xs text-muted-foreground">Maker Status</div>
+                                                <Badge variant={assignmentBadge.variant}>{assignmentBadge.label}</Badge>
                                             </div>
 
                                             {/* Amount */}

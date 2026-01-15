@@ -84,6 +84,30 @@ const CustomerDashboard = () => {
     { icon: Shield, title: "Tolerance", tip: "Add 0.2-0.4mm for moving parts" },
   ];
 
+  const getOrderStatusLabel = (status: string) => {
+    if (status === 'awaiting_payment') return 'Payment needed';
+    if (status === 'paid' || status === 'in_production') return 'In production';
+    if (status === 'shipped') return 'Shipped (tracking available)';
+    if (status === 'delivered') return 'Delivered';
+    return status.replace(/_/g, ' ');
+  };
+
+  const getOrderStatusStyles = (status: string) => {
+    if (status === 'awaiting_payment' || status === 'pending_payment') {
+      return 'bg-warning/20 text-warning';
+    }
+    if (status === 'paid' || status === 'in_production' || status === 'shipped') {
+      return 'bg-secondary/20 text-secondary';
+    }
+    if (status === 'delivered') {
+      return 'bg-success/20 text-success';
+    }
+    if (status === 'cancelled') {
+      return 'bg-destructive/20 text-destructive';
+    }
+    return 'bg-muted/20 text-muted-foreground';
+  };
+
   return (
     <div className="min-h-screen bg-background relative">
       <ParticleBackground />
@@ -408,10 +432,9 @@ const CustomerDashboard = () => {
               ) : orders && orders.length > 0 ? (
                 <div className="space-y-3 max-h-64 overflow-y-auto">
                   {orders.map((order) => (
-                    <Link
+                    <div
                       key={order.id}
-                      to={`/order/${order.id}`}
-                      className="flex items-center justify-between p-3 rounded-lg bg-background/50 border border-primary/10 hover:border-secondary/30 transition-colors"
+                      className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-lg bg-background/50 border border-primary/10"
                     >
                       <div className="min-w-0">
                         <div className="text-sm font-medium text-foreground truncate font-mono">
@@ -421,24 +444,28 @@ const CustomerDashboard = () => {
                           ${order.total_cad.toFixed(2)} CAD • {new Date(order.created_at).toLocaleDateString('en-CA')}
                         </div>
                       </div>
-                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${order.status === 'paid' || order.status === 'delivered' ? 'bg-success/20 text-success' :
-                          order.status === 'awaiting_payment' || order.status === 'pending_payment' ? 'bg-warning/20 text-warning' :
-                            order.status === 'in_production' || order.status === 'shipped' ? 'bg-secondary/20 text-secondary' :
-                              order.status === 'cancelled' ? 'bg-destructive/20 text-destructive' :
-                                'bg-muted/20 text-muted-foreground'
-                        }`}>
-                        {order.status.replace(/_/g, ' ')}
-                      </span>
-                    </Link>
+                      <div className="flex items-center gap-3">
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${getOrderStatusStyles(order.status)}`}>
+                          {getOrderStatusLabel(order.status)}
+                        </span>
+                        <Link to={`/order/${order.id}`}>
+                          <NeonButton size="sm" variant="secondary">
+                            Track
+                          </NeonButton>
+                        </Link>
+                      </div>
+                    </div>
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <ShoppingBag className="w-8 h-8 mx-auto mb-2 opacity-50" />
                   <p>No orders yet</p>
-                  <Link to="/quote" className="text-secondary text-sm hover:underline">
-                    Get a quote to place your first order
-                  </Link>
+                  <div className="mt-4 flex justify-center">
+                    <Link to="/quote">
+                      <NeonButton variant="primary">Get a Quote</NeonButton>
+                    </Link>
+                  </div>
                 </div>
               )}
             </GlowCard>

@@ -4,7 +4,7 @@
  * Any changes require a new phase review and explicit approval.
  */
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/ui/Navbar';
@@ -216,12 +216,21 @@ export default function OrderConfirmation() {
             Object.keys(fulfillmentSnapshot.tracking_info).length > 0
             ? fulfillmentSnapshot.tracking_info
             : null;
+    const fulfillmentPendingMessage = !fulfillmentLoading && !fulfillmentError && !fulfillment;
 
     return (
         <div className="min-h-screen bg-background">
             <Navbar />
             <div className="pt-24 pb-12 px-4">
                 <div className="max-w-3xl mx-auto">
+                    <div className="mb-4">
+                        <Link
+                            to="/dashboard/customer#my-orders"
+                            className="text-sm text-secondary hover:underline"
+                        >
+                            Back to My Orders
+                        </Link>
+                    </div>
                     {/* Success Header */}
                     <div className="text-center mb-8">
                         {isPaid ? (
@@ -367,6 +376,11 @@ export default function OrderConfirmation() {
                         </div>
                         {fulfillmentError && (
                             <p className="mt-3 text-sm text-destructive">{fulfillmentError}</p>
+                        )}
+                        {fulfillmentPendingMessage && (
+                            <p className="mt-3 text-sm text-muted-foreground">
+                                We’re preparing your fulfillment details.
+                            </p>
                         )}
                         <div className="mt-4">
                             <FulfillmentTimeline

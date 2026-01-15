@@ -335,7 +335,7 @@ const MakerJobs = () => {
                 {selectedMakerOrder?.status === 'in_production' && (
                   <>
                     <div>
-                      <Label htmlFor="tracking">Tracking Number (optional)</Label>
+                      <Label htmlFor="tracking">Tracking Number (required)</Label>
                       <Input
                         id="tracking"
                         value={trackingNumber}
@@ -344,7 +344,7 @@ const MakerJobs = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="carrier">Shipping Carrier (optional)</Label>
+                      <Label htmlFor="carrier">Shipping Carrier (required)</Label>
                       <Input
                         id="carrier"
                         value={shippingCarrier}
@@ -352,6 +352,9 @@ const MakerJobs = () => {
                         placeholder="e.g., Canada Post, UPS, etc."
                       />
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                      Tracking becomes visible to customers after shipment.
+                    </p>
                   </>
                 )}
                 <div>
