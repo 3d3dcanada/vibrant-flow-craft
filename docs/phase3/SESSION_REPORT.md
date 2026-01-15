@@ -1814,3 +1814,17 @@ Launch Impact: None, provided operator executes Gate 3 before production release
 **Status:** COMPLETE
 
 **Assertion:** “Any change to fulfillment, earnings, assignment, or customer payloads after this point requires a new phase.”
+
+---
+
+## Phase 3I Runtime Smoke
+
+**Status:** IN PROGRESS
+
+**Scope:** Add a truthful runtime smoke walkthrough to Fulfillment Audit, plus admin-safe preview order lookup and operator seed guidance.
+
+**Operator flow summary:**
+1. Run `pnpm seed:preview` with the required env vars (see Phase 3I runtime smoke doc).
+2. Sign in as seeded admin and open Fulfillment Audit → Runtime Smoke Walkthrough.
+3. Use deep links to Admin Payments, Maker Jobs, and Customer Dashboard to complete the fulfillment loop.
+4. Return to Audit Checks and re-run for PASS/FAIL.

@@ -2,8 +2,9 @@
  * 🔒 LAUNCH-FROZEN (Phase 3H)
  * Admin payments UI is frozen for launch readiness.
  * Any changes require a new phase review and explicit approval.
+ * Phase 3I: Runtime smoke deep-link support for seeded preview orders.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import AdminGuard from '@/components/guards/AdminGuard';
@@ -17,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useSearchParams } from 'react-router-dom';
 import {
     DollarSign, Package, Clock, CheckCircle, XCircle, Loader2,
     AlertTriangle, FileText, Truck, Eye, ChevronDown, ChevronUp,
@@ -70,6 +72,14 @@ const AdminPayments = () => {
     const [statusFilter, setStatusFilter] = useState<string>('awaiting_payment');
     const [searchQuery, setSearchQuery] = useState('');
     const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+    const [searchParams] = useSearchParams();
+
+    useEffect(() => {
+        const seedSearch = searchParams.get('search');
+        if (seedSearch) {
+            setSearchQuery(seedSearch);
+        }
+    }, [searchParams]);
 
     // Modal states
     const [confirmModal, setConfirmModal] = useState<{
