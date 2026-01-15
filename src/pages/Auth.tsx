@@ -47,7 +47,8 @@ const Auth = () => {
     if (locationState?.isSignup && mode === 'login') {
       setMode('signup');
     }
-  }, [locationState?.isSignup, mode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- allow user toggle; only react to navigation state
+  }, [locationState?.isSignup]);
 
   // Check if user is logged in and redirect based on role from user_roles table
   useEffect(() => {
