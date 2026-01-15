@@ -12,7 +12,7 @@ import {
   Coins, Recycle, Gift, Settings, LogOut,
   Sparkles, Crown, Zap, Star, Package, FileText, Search,
   CreditCard, Lightbulb, Box, Layers, Target, Shield, Copy, Check,
-  Loader2, ShoppingBag, Truck
+  Loader2, ShoppingBag
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatCad, CAD_PER_CREDIT } from '@/config/credits';
@@ -70,30 +70,6 @@ const CustomerDashboard = () => {
     { icon: Target, title: "Supports", tip: "Overhangs > 45° need supports" },
     { icon: Shield, title: "Tolerance", tip: "Add 0.2-0.4mm for moving parts" },
   ];
-
-  const orderStatusLabels: Record<string, string> = {
-    awaiting_payment: 'Awaiting payment',
-    pending_payment: 'Payment pending',
-    paid: 'Paid',
-    in_production: 'In production',
-    shipped: 'Shipped',
-    delivered: 'Delivered',
-    cancelled: 'Cancelled',
-    refunded: 'Refunded',
-  };
-
-  const orderStatusDescriptions: Record<string, string> = {
-    awaiting_payment: 'Invoice sent or pending verification.',
-    pending_payment: 'Payment verification is in progress.',
-    paid: 'Payment confirmed. Maker assignment begins.',
-    in_production: 'Your maker is printing your order.',
-    shipped: 'Tracking is live in your order page.',
-    delivered: 'Delivery confirmed by the carrier.',
-    cancelled: 'Order was cancelled.',
-    refunded: 'Refund completed.',
-  };
-
-  const hasShippedOrders = orders?.some((order) => ['shipped', 'delivered'].includes(order.status));
 
   return (
     <div className="min-h-screen bg-background relative">
@@ -411,14 +387,6 @@ const CustomerDashboard = () => {
                 <ShoppingBag className="w-5 h-5 text-secondary" />
                 My Orders
               </h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Track every step of fulfillment. Tracking appears after the maker hands off to the carrier.
-              </p>
-              {orders && orders.length > 0 && !hasShippedOrders && (
-                <div className="rounded-lg border border-secondary/30 bg-secondary/10 px-4 py-3 text-sm text-foreground mb-4">
-                  Your maker is preparing your order. Tracking appears after the maker hands off to the carrier.
-                </div>
-              )}
 
               {ordersLoading ? (
                 <div className="flex items-center justify-center py-8">
@@ -440,64 +408,26 @@ const CustomerDashboard = () => {
                           ${order.total_cad.toFixed(2)} CAD • {new Date(order.created_at).toLocaleDateString('en-CA')}
                         </div>
                       </div>
-                      <div className="text-right">
-                        <span className={`inline-flex text-xs px-2 py-1 rounded-full font-medium ${order.status === 'paid' || order.status === 'delivered' ? 'bg-success/20 text-success' :
-                            order.status === 'awaiting_payment' || order.status === 'pending_payment' ? 'bg-warning/20 text-warning' :
-                              order.status === 'in_production' || order.status === 'shipped' ? 'bg-secondary/20 text-secondary' :
-                                order.status === 'cancelled' ? 'bg-destructive/20 text-destructive' :
-                                  'bg-muted/20 text-muted-foreground'
-                          }`}>
-                          {orderStatusLabels[order.status] || order.status.replace(/_/g, ' ')}
-                        </span>
-                        <div className="text-[11px] text-muted-foreground mt-1">
-                          {orderStatusDescriptions[order.status] || 'Status update in progress.'}
-                        </div>
-                      </div>
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${order.status === 'paid' || order.status === 'delivered' ? 'bg-success/20 text-success' :
+                          order.status === 'awaiting_payment' || order.status === 'pending_payment' ? 'bg-warning/20 text-warning' :
+                            order.status === 'in_production' || order.status === 'shipped' ? 'bg-secondary/20 text-secondary' :
+                              order.status === 'cancelled' ? 'bg-destructive/20 text-destructive' :
+                                'bg-muted/20 text-muted-foreground'
+                        }`}>
+                        {order.status.replace(/_/g, ' ')}
+                      </span>
                     </Link>
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <ShoppingBag className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p className="font-medium text-foreground">No orders yet</p>
-                  <p className="text-sm">Start with a quote and we’ll guide you through every fulfillment step.</p>
+                  <p>No orders yet</p>
                   <Link to="/quote" className="text-secondary text-sm hover:underline">
                     Get a quote to place your first order
                   </Link>
                 </div>
               )}
-            </GlowCard>
-          </div>
-
-          <div className="mb-8 animate-fade-in" style={{ animationDelay: '585ms' }}>
-            <GlowCard className="p-6">
-              <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                <Shield className="w-5 h-5 text-secondary" />
-                Trusted fulfillment
-              </h3>
-              <div className="grid gap-3 md:grid-cols-3 text-sm">
-                <div className="flex items-start gap-3">
-                  <Shield className="w-4 h-4 text-success mt-0.5" />
-                  <div>
-                    <p className="font-medium text-foreground">Verified makers</p>
-                    <p className="text-muted-foreground">Every job is handled by vetted local makers.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Truck className="w-4 h-4 text-secondary mt-0.5" />
-                  <div>
-                    <p className="font-medium text-foreground">Tracking updates</p>
-                    <p className="text-muted-foreground">Carrier info appears the moment items ship.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Sparkles className="w-4 h-4 text-primary mt-0.5" />
-                  <div>
-                    <p className="font-medium text-foreground">Human oversight</p>
-                    <p className="text-muted-foreground">Admins confirm delivery to keep everything accurate.</p>
-                  </div>
-                </div>
-              </div>
             </GlowCard>
           </div>
 

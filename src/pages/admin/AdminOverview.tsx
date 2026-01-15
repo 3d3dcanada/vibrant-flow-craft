@@ -4,8 +4,6 @@ import DashboardLayout from '@/components/layouts/DashboardLayout';
 import AdminGuard from '@/components/guards/AdminGuard';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { useAdminStats } from '@/hooks/useAdminData';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
 import {
   LayoutDashboard,
   Package,
@@ -23,20 +21,6 @@ import {
 
 const AdminOverview = () => {
   const { data: stats, isLoading } = useAdminStats();
-  const { data: fulfillmentSignals, isLoading: fulfillmentLoading } = useQuery({
-    queryKey: ['admin_fulfillment_signals'],
-    queryFn: async () => {
-      const [blockedShipments, readyForDelivery] = await Promise.all([
-        supabase.from('maker_orders').select('id', { count: 'exact', head: true }).eq('status', 'in_production'),
-        supabase.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'shipped')
-      ]);
-
-      return {
-        blockedByShipment: blockedShipments.count || 0,
-        readyForDelivery: readyForDelivery.count || 0,
-      };
-    }
-  });
 
   const kpiTiles = [
     { label: 'Unassigned Requests', value: stats?.unassignedRequests || 0, icon: Package, color: 'text-warning', href: '/dashboard/admin/ops' },
@@ -90,7 +74,6 @@ const AdminOverview = () => {
               Admin Dashboard
             </h1>
             <p className="text-muted-foreground mt-1">Manage site content, makers, and operations</p>
-            <p className="text-xs text-muted-foreground mt-2">This system is launch-locked under Phase 3H.</p>
           </motion.div>
 
           {/* KPI Tiles */}
@@ -118,35 +101,6 @@ const AdminOverview = () => {
               ))}
             </div>
           )}
-
-          <GlowCard className="p-5 mb-8">
-            <div className="flex items-start justify-between flex-wrap gap-4">
-              <div>
-                <h2 className="text-lg font-tech font-bold text-foreground">Fulfillment attention</h2>
-                <p className="text-sm text-muted-foreground">
-                  Track orders waiting on shipment details and those ready for delivery confirmation.
-                </p>
-              </div>
-              {fulfillmentLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin text-secondary" />
-              ) : (
-                <div className="flex flex-wrap gap-3">
-                  <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-2">
-                    <div className="text-xs text-muted-foreground">Blocked by missing shipment</div>
-                    <div className="text-lg font-semibold text-warning">
-                      {fulfillmentSignals?.blockedByShipment ?? 0}
-                    </div>
-                  </div>
-                  <div className="rounded-lg border border-secondary/40 bg-secondary/10 px-4 py-2">
-                    <div className="text-xs text-muted-foreground">Ready for delivery confirmation</div>
-                    <div className="text-lg font-semibold text-secondary">
-                      {fulfillmentSignals?.readyForDelivery ?? 0}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </GlowCard>
 
           {/* Launch Preview */}
           <h2 className="text-xl font-tech font-bold text-foreground mb-4">Launch Preview</h2>

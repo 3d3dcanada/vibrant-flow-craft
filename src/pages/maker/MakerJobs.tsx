@@ -3,7 +3,7 @@
  * Maker jobs UI is frozen for launch readiness.
  * Any changes require a new phase review and explicit approval.
  */
-import { useState } from 'react';
+import { useState, type ComponentProps } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  Package, Clock, Download, Loader2, ArrowRight, Truck, AlertTriangle, Info
+  Package, Clock, Download, Loader2, ArrowRight, Truck, type LucideIcon
 } from 'lucide-react';
 import {
   Dialog,
@@ -28,21 +28,38 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import MakerGuard from '@/components/guards/MakerGuard';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
+type BadgeVariant = ComponentProps<typeof Badge>['variant'];
+
+type TrackingInfo = {
+  tracking_number?: string;
+  carrier?: string;
+};
+
+type QuoteSnapshot = {
+  material?: string;
+  quality?: string;
+  quantity?: number;
+};
+
+type ShippingAddress = {
+  city?: string;
+  province?: string;
+};
 
 interface MakerOrder {
   id: string;
   order_id: string;
   status: 'assigned' | 'in_production' | 'shipped' | 'completed';
   assigned_at: string;
-  tracking_info?: any;
+  tracking_info?: TrackingInfo | null;
   notes?: string;
   orders: {
     order_number: string;
     status: string;
     total_cad: number;
-    quote_snapshot: any;
-    shipping_address: any;
+    quote_snapshot?: QuoteSnapshot | null;
+    shipping_address?: ShippingAddress | null;
     created_at: string;
   };
 }
@@ -58,7 +75,6 @@ const MakerJobs = () => {
   const [trackingNumber, setTrackingNumber] = useState('');
   const [shippingCarrier, setShippingCarrier] = useState('');
   const [downloadingFile, setDownloadingFile] = useState(false);
-  const [updateError, setUpdateError] = useState<string | null>(null);
 
   // Fetch maker orders (CORRECTED: uses maker_orders, no accept/decline)
   const { data: makerOrders = [], isLoading } = useQuery({
@@ -92,6 +108,9 @@ const MakerJobs = () => {
     enabled: !!user,
   });
 
+  const getErrorMessage = (error: unknown, fallback: string) =>
+    error instanceof Error ? error.message : fallback;
+
   // Update order status (AUDIT-SAFE: passes explicit tracking params)
   const updateStatusMutation = useMutation({
     mutationFn: async ({ orderId, newStatus, notes, trackingNumber, carrier }: {
@@ -101,7 +120,7 @@ const MakerJobs = () => {
       trackingNumber?: string;
       carrier?: string;
     }) => {
-      const { data, error } = await (supabase.rpc as any)('maker_update_order_status', {
+      const { data, error } = await supabase.rpc('maker_update_order_status', {
         p_order_id: orderId,
         p_new_status: newStatus,
         p_notes: notes,
@@ -110,22 +129,21 @@ const MakerJobs = () => {
       });
 
       if (error) throw error;
-      if (!data.success) throw new Error(data.error);
+      const response = data as { success: boolean; error?: string };
+      if (!response.success) throw new Error(response.error);
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maker-orders'] });
       toast({ title: 'Status updated', description: 'Order status has been updated successfully' });
-      setUpdateError(null);
       setStatusDialogOpen(false);
       setSelectedMakerOrder(null);
       setStatusNotes('');
       setTrackingNumber('');
       setShippingCarrier('');
     },
-    onError: (error: any) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
-      setUpdateError(error.message || 'Status update failed. Please try again.');
+    onError: (error: unknown) => {
+      toast({ title: 'Error', description: getErrorMessage(error, 'Status update failed.'), variant: 'destructive' });
     },
   });
 
@@ -138,13 +156,16 @@ const MakerJobs = () => {
       });
 
       if (error) throw error;
-      if (!data.success) throw new Error(data.error || 'Failed to get file URL');
+      const response = data as { success: boolean; signed_url?: string; file_name?: string; error?: string };
+      if (!response.success) throw new Error(response.error || 'Failed to get file URL');
 
       // Open signed URL in new tab to download
-      window.open(data.signed_url, '_blank');
-      toast({ title: 'Download started', description: `Downloading ${data.file_name}` });
-    } catch (error: any) {
-      toast({ title: 'Download failed', description: error.message, variant: 'destructive' });
+      if (response.signed_url) {
+        window.open(response.signed_url, '_blank');
+      }
+      toast({ title: 'Download started', description: `Downloading ${response.file_name || 'file'}` });
+    } catch (error: unknown) {
+      toast({ title: 'Download failed', description: getErrorMessage(error, 'Download failed.'), variant: 'destructive' });
     } finally {
       setDownloadingFile(false);
     }
@@ -153,7 +174,6 @@ const MakerJobs = () => {
   const handleUpdateStatus = (makerOrder: MakerOrder) => {
     setSelectedMakerOrder(makerOrder);
     setStatusDialogOpen(true);
-    setUpdateError(null);
   };
 
   const confirmStatusUpdate = () => {
@@ -201,7 +221,7 @@ const MakerJobs = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    const badges: Record<string, { label: string; variant: any; icon: any }> = {
+    const badges: Record<string, { label: string; variant: BadgeVariant; icon: LucideIcon }> = {
       assigned: { label: 'Assigned', variant: 'default', icon: Clock },
       in_production: { label: 'In Production', variant: 'secondary', icon: Package },
       shipped: { label: 'Shipped', variant: 'default', icon: Truck },
@@ -213,51 +233,6 @@ const MakerJobs = () => {
         <Icon className="w-3 h-3" /> {config.label}
       </Badge>
     );
-  };
-
-  const getActionBadge = (makerOrder: MakerOrder) => {
-    const trackingInfo = makerOrder.tracking_info as Record<string, any> | undefined;
-    const hasTracking = Boolean(trackingInfo?.tracking_number && trackingInfo?.carrier);
-
-    if (makerOrder.status === 'assigned') {
-      return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-warning/15 text-warning border border-warning/40 px-2 py-0.5 text-xs font-semibold">
-          <Clock className="h-3 w-3" />
-          Awaiting action
-        </span>
-      );
-    }
-
-    if (makerOrder.status === 'in_production') {
-      return hasTracking ? (
-        <span className="inline-flex items-center gap-1 rounded-full bg-secondary/15 text-secondary border border-secondary/40 px-2 py-0.5 text-xs font-semibold">
-          <Truck className="h-3 w-3" />
-          Ready to ship
-        </span>
-      ) : (
-        <span className="inline-flex items-center gap-1 rounded-full bg-destructive/15 text-destructive border border-destructive/40 px-2 py-0.5 text-xs font-semibold">
-          <AlertTriangle className="h-3 w-3" />
-          Blocked (missing tracking)
-        </span>
-      );
-    }
-
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-success/15 text-success border border-success/40 px-2 py-0.5 text-xs font-semibold">
-        <Truck className="h-3 w-3" />
-        In transit
-      </span>
-    );
-  };
-
-  const getNextStepCopy = (status: MakerOrder['status']) => {
-    if (status === 'assigned') {
-      return 'Next step: start production when you begin printing. Files are ready to download.';
-    }
-    if (status === 'in_production') {
-      return 'Next step: add tracking to mark shipped. Customers see tracking once you submit it.';
-    }
-    return 'Delivery confirmation is handled by the admin team once the carrier confirms drop-off.';
   };
 
   const MakerOrderCard = ({ makerOrder }: { makerOrder: MakerOrder }) => {
@@ -273,7 +248,6 @@ const MakerJobs = () => {
               <div className="flex items-center gap-2 mb-2">
                 <h3 className="font-tech font-bold text-lg">{orders.order_number}</h3>
                 {getStatusBadge(status)}
-                {getActionBadge(makerOrder)}
               </div>
               <p className="text-sm text-muted-foreground">
                 Assigned {new Date(makerOrder.assigned_at).toLocaleDateString()}
@@ -304,16 +278,6 @@ const MakerJobs = () => {
               <p className="font-semibold">
                 {orders.shipping_address?.city}, {orders.shipping_address?.province}
               </p>
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-primary/10 bg-background/40 px-4 py-3 mb-4">
-            <div className="flex items-start gap-2 text-sm text-foreground">
-              <Info className="h-4 w-4 text-secondary mt-0.5" />
-              <div>
-                <p className="font-medium">What happens next</p>
-                <p className="text-muted-foreground">{getNextStepCopy(status)}</p>
-              </div>
             </div>
           </div>
 
@@ -364,12 +328,6 @@ const MakerJobs = () => {
             <p className="text-muted-foreground">Manage your assigned print jobs</p>
           </div>
 
-          {updateError && (
-            <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {updateError}
-            </div>
-          )}
-
           {makerOrders.length === 0 ? (
             <GlowCard className="p-12 text-center">
               <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
@@ -390,33 +348,17 @@ const MakerJobs = () => {
               <DialogHeader>
                 <DialogTitle>Update Order Status</DialogTitle>
                 <DialogDescription>
-                  {selectedMakerOrder?.status === 'assigned' && 'Move this order into production once printing begins.'}
-                  {selectedMakerOrder?.status === 'in_production' && 'Add tracking to mark shipped so customers can follow delivery.'}
+                  {selectedMakerOrder?.status === 'assigned' && 'Mark this order as in production'}
+                  {selectedMakerOrder?.status === 'in_production' && 'Mark this order as shipped and add tracking information'}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 {selectedMakerOrder?.status === 'in_production' && (
                   <>
                     <div>
-                      <div className="flex items-center gap-2">
-                        <Label htmlFor="tracking">
-                          {selectedMakerOrder?.status === 'in_production'
-                            ? 'Tracking Number (required to mark as shipped)'
-                            : 'Tracking Number (optional)'}
-                        </Label>
-                        <TooltipProvider delayDuration={150}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="text-muted-foreground">
-                                <Info className="h-4 w-4" />
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent side="right">
-                              Tracking is required so customers can verify shipment and delivery.
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
+                      <Label htmlFor="tracking">
+                        Tracking Number (required to mark as shipped)
+                      </Label>
                       <Input
                         id="tracking"
                         value={trackingNumber}
@@ -426,9 +368,7 @@ const MakerJobs = () => {
                     </div>
                     <div>
                       <Label htmlFor="carrier">
-                        {selectedMakerOrder?.status === 'in_production'
-                          ? 'Shipping Carrier (required to mark as shipped)'
-                          : 'Shipping Carrier (optional)'}
+                        Shipping Carrier (required to mark as shipped)
                       </Label>
                       <Input
                         id="carrier"
@@ -436,7 +376,6 @@ const MakerJobs = () => {
                         onChange={(e) => setShippingCarrier(e.target.value)}
                         placeholder="e.g., Canada Post, UPS, etc."
                       />
-                      <p className="text-xs text-muted-foreground mt-1">Helps customers locate their package quickly.</p>
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Required before shipment to display tracking to the customer.
@@ -452,48 +391,14 @@ const MakerJobs = () => {
                     placeholder="Add any relevant notes about this status change"
                     rows={3}
                   />
-                  {selectedMakerOrder?.status === 'in_production' && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
-                      <TooltipProvider delayDuration={150}>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="text-secondary">
-                              <Info className="h-4 w-4" />
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent side="top">
-                            Delivered status is admin-only to protect customer experience and earnings accuracy.
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      Delivered confirmation is admin-only after carrier validation.
-                    </div>
-                  )}
                 </div>
               </div>
               <DialogFooter>
                 <NeonButton variant="secondary" onClick={() => setStatusDialogOpen(false)}>Cancel</NeonButton>
-                <NeonButton
-                  onClick={confirmStatusUpdate}
-                  disabled={
-                    updateStatusMutation.isPending ||
-                    (selectedMakerOrder?.status === 'in_production' &&
-                      (!trackingNumber.trim() || !shippingCarrier.trim()))
-                  }
-                >
+                <NeonButton onClick={confirmStatusUpdate} disabled={updateStatusMutation.isPending}>
                   {updateStatusMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Update Status'}
                 </NeonButton>
               </DialogFooter>
-              {updateStatusMutation.isPending && (
-                <p className="text-xs text-muted-foreground">Updating status…</p>
-              )}
-              {selectedMakerOrder?.status === 'in_production' &&
-                !updateStatusMutation.isPending &&
-                (!trackingNumber.trim() || !shippingCarrier.trim()) && (
-                  <p className="text-xs text-muted-foreground">
-                    Tracking number and carrier are required before marking as shipped.
-                  </p>
-                )}
             </DialogContent>
           </Dialog>
         </div>

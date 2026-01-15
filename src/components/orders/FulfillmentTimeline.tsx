@@ -21,8 +21,6 @@ const FulfillmentTimeline = ({
   const isPaymentConfirmed =
     Boolean(paymentConfirmedAt) ||
     ['paid', 'in_production', 'shipped', 'delivered'].includes(orderStatus);
-  const hasMakerAssignment = Boolean(makerOrder?.status);
-  const isAssigned = makerOrder?.status === 'assigned';
   const isInProduction =
     ['in_production', 'shipped', 'delivered'].includes(orderStatus) ||
     ['in_production', 'shipped', 'completed'].includes(makerOrder?.status || '');
@@ -35,23 +33,23 @@ const FulfillmentTimeline = ({
     {
       key: 'payment',
       label: 'Payment confirmed',
-      description: 'Payment is verified and your order is queued for production.',
+      description: 'We have confirmed your payment and queued the order.',
       complete: isPaymentConfirmed,
       current: !isPaymentConfirmed,
       icon: CheckCircle,
     },
     {
       key: 'production',
-      label: 'Maker in production',
-      description: 'A verified local maker is printing and preparing your order.',
+      label: 'In production',
+      description: 'A vetted maker is preparing your print.',
       complete: isInProduction,
       current: isPaymentConfirmed && !isInProduction,
       icon: Package,
     },
     {
       key: 'shipped',
-      label: 'Shipped with tracking',
-      description: 'Tracking appears after the maker hands off to the carrier.',
+      label: 'Shipped',
+      description: 'Tracking details appear once the maker ships.',
       complete: isShipped,
       current: isInProduction && !isShipped,
       icon: Truck,
@@ -59,7 +57,7 @@ const FulfillmentTimeline = ({
     {
       key: 'delivered',
       label: 'Delivered',
-      description: 'Delivery is confirmed after the carrier marks it complete.',
+      description: 'Marked delivered after carrier confirmation.',
       complete: isDelivered,
       current: isShipped && !isDelivered,
       icon: CheckCircle,
@@ -77,17 +75,6 @@ const FulfillmentTimeline = ({
             : step.current
               ? 'bg-secondary/15 text-secondary border-secondary/50'
               : 'bg-muted/40 text-muted-foreground border-border';
-          const waitingMessage = step.key === 'payment'
-            ? 'Waiting on payment confirmation.'
-            : step.key === 'production'
-              ? !hasMakerAssignment
-                ? 'Waiting on maker assignment.'
-                : isAssigned
-                  ? 'Waiting on maker to start production.'
-                  : 'Waiting on production start.'
-              : step.key === 'shipped'
-                ? 'Waiting on shipment.'
-                : 'Waiting on delivery confirmation.';
 
           return (
             <li key={step.key} className="flex items-start gap-3">
@@ -111,8 +98,8 @@ const FulfillmentTimeline = ({
                   {step.complete
                     ? 'Complete'
                     : step.current
-                      ? waitingMessage
-                      : 'Up next'}
+                      ? 'In progress'
+                      : 'Pending'}
                 </div>
                 {index < steps.length - 1 && (
                   <div className="ml-1 mt-3 h-4 w-px bg-border" />

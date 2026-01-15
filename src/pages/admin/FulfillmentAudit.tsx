@@ -46,27 +46,6 @@ type GuardrailsResponse = {
 
 const actorKeys = ['changed_by', 'changed_by_role', 'admin_id', 'maker_id', 'user_id'];
 
-const CHECK_CATEGORIES = [
-  {
-    key: 'privacy',
-    title: 'Privacy',
-    helper: 'Why this matters: customer-facing payloads must never expose admin or maker identifiers.',
-    checks: ['sanitized-history', 'tracking-gate'],
-  },
-  {
-    key: 'lifecycle',
-    title: 'Lifecycle',
-    helper: 'Why this matters: delivery confirmation stays admin-controlled to protect earnings accuracy.',
-    checks: ['delivered-guard'],
-  },
-  {
-    key: 'guardrails',
-    title: 'Guardrails',
-    helper: 'Why this matters: fulfillment writes must be RPC-only for launch safety.',
-    checks: ['maker-policy', 'maker-orders-privs', 'maker-earnings-privs'],
-  },
-];
-
 const FulfillmentAudit = () => {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -76,6 +55,9 @@ const FulfillmentAudit = () => {
   const [copyFallbackText, setCopyFallbackText] = useState('');
   const fallbackTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
+  const getErrorMessage = (error: unknown, fallback: string) =>
+    error instanceof Error ? error.message : fallback;
+
   const copyReport = useCallback(async () => {
     const report = checks
       .map((check) => `${check.status.toUpperCase()} | ${check.label} | ${check.details} | ${check.lastRun}`)
@@ -83,12 +65,12 @@ const FulfillmentAudit = () => {
     try {
       await navigator.clipboard.writeText(report);
       toast({ title: 'Copied', description: 'Audit report copied to clipboard.' });
-    } catch (error: any) {
+    } catch (error: unknown) {
       setCopyFallbackText(report);
       setCopyFallbackOpen(true);
       toast({
         title: 'Copy failed',
-        description: error?.message ?? 'Unable to copy to clipboard.',
+        description: getErrorMessage(error, 'Unable to copy to clipboard.'),
         variant: 'destructive',
       });
     }
@@ -136,7 +118,7 @@ const FulfillmentAudit = () => {
     }
 
     const getCustomerFulfillment = async (orderId: string) => {
-      const { data, error } = await (supabase.rpc as any)('customer_get_order_fulfillment', {
+      const { data, error } = await supabase.rpc('customer_get_order_fulfillment', {
         p_order_id: orderId,
       });
       if (error) {
@@ -175,12 +157,12 @@ const FulfillmentAudit = () => {
           details: isArray && !hasActorIds ? 'Sanitized array verified.' : 'Actor fields detected or history not array.',
           lastRun: timestamp,
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         results.push({
           id: 'sanitized-history',
           label: 'Customer RPC status_history sanitized (no actor IDs)',
           status: 'fail',
-          details: error.message,
+          details: getErrorMessage(error, 'Audit check failed.'),
           lastRun: timestamp,
         });
       }
@@ -209,19 +191,19 @@ const FulfillmentAudit = () => {
           details: hasTracking ? 'Tracking info returned before shipment.' : 'Tracking info correctly withheld.',
           lastRun: timestamp,
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         results.push({
           id: 'tracking-gate',
           label: 'Customer RPC tracking_info null unless shipped/delivered',
           status: 'fail',
-          details: error.message,
+          details: getErrorMessage(error, 'Audit check failed.'),
           lastRun: timestamp,
         });
       }
     }
 
     try {
-      const { data, error } = await (supabase.rpc as any)('admin_get_fulfillment_guardrails');
+      const { data, error } = await supabase.rpc('admin_get_fulfillment_guardrails');
       if (error) {
         throw error;
       }
@@ -265,8 +247,8 @@ const FulfillmentAudit = () => {
           : 'Authenticated write privileges still present.',
         lastRun: timestamp,
       });
-    } catch (error: any) {
-      const message = error.message || 'Guardrail RPC failed';
+    } catch (error: unknown) {
+      const message = getErrorMessage(error, 'Guardrail RPC failed');
       results.push(
         {
           id: 'maker-policy',
@@ -302,7 +284,7 @@ const FulfillmentAudit = () => {
       });
     } else {
       try {
-        const { data, error } = await (supabase.rpc as any)('admin_simulate_delivered_guard', {
+        const { data, error } = await supabase.rpc('admin_simulate_delivered_guard', {
           p_order_id: unshippedOrder.id,
         });
         if (error) {
@@ -316,12 +298,12 @@ const FulfillmentAudit = () => {
           details: payload.success === false ? payload.error || 'Guard enforced.' : 'Guard unexpectedly passed.',
           lastRun: timestamp,
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         results.push({
           id: 'delivered-guard',
           label: 'Delivered guard rejects unshipped orders',
           status: 'fail',
-          details: error.message,
+          details: getErrorMessage(error, 'Audit check failed.'),
           lastRun: timestamp,
         });
       }
@@ -351,7 +333,6 @@ const FulfillmentAudit = () => {
             <p className="text-muted-foreground mt-1">
               Live launch-readiness checks for fulfillment, privacy, and guardrails.
             </p>
-            <p className="text-xs text-muted-foreground mt-2">This system is launch-locked under Phase 3H.</p>
             <p className="text-xs text-muted-foreground mt-2">
               Runtime checks require preview seed data. If no data is present, run the Phase 3G preview seed locally.
             </p>
@@ -379,66 +360,52 @@ const FulfillmentAudit = () => {
             </div>
           </GlowCard>
 
-          <div className="space-y-4">
-            {checks.length === 0 ? (
-              <GlowCard className="p-5">
-                <div className="text-center text-muted-foreground py-6">
-                  No checks run yet. Use “Re-run Checks” to generate results.
-                </div>
-              </GlowCard>
-            ) : (
-              CHECK_CATEGORIES.map((category) => {
-                const categoryChecks = checks.filter((check) => category.checks.includes(check.id));
-                if (categoryChecks.length === 0) return null;
-
-                return (
-                  <GlowCard key={category.key} className="p-5">
-                    <div className="mb-4">
-                      <h3 className="text-lg font-semibold text-foreground">{category.title}</h3>
-                      <p className="text-sm text-muted-foreground">{category.helper}</p>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="text-left text-muted-foreground border-b border-border">
-                            <th className="py-2">Check</th>
-                            <th className="py-2">Status</th>
-                            <th className="py-2">Details</th>
-                            <th className="py-2">Last Run</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {categoryChecks.map((check) => (
-                            <tr key={check.id} className="border-b border-border/50">
-                              <td className="py-3 pr-4 font-medium text-foreground">{check.label}</td>
-                              <td className="py-3 pr-4">
-                                <span
-                                  className={`inline-flex items-center gap-2 rounded-full px-2 py-1 text-xs font-semibold ${
-                                    check.status === 'pass'
-                                      ? 'bg-success/10 text-success border border-success/30'
-                                      : 'bg-destructive/25 text-destructive border border-destructive/50'
-                                  }`}
-                                >
-                                  {check.status === 'pass' ? (
-                                    <CheckCircle className="w-3 h-3" />
-                                  ) : (
-                                    <XCircle className="w-3 h-3" />
-                                  )}
-                                  {check.status.toUpperCase()}
-                                </span>
-                              </td>
-                              <td className="py-3 pr-4 text-muted-foreground">{check.details}</td>
-                              <td className="py-3 text-muted-foreground">{check.lastRun}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </GlowCard>
-                );
-              })
-            )}
-          </div>
+          <GlowCard className="p-5">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-muted-foreground border-b border-border">
+                    <th className="py-2">Check</th>
+                    <th className="py-2">Status</th>
+                    <th className="py-2">Details</th>
+                    <th className="py-2">Last Run</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {checks.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="py-6 text-center text-muted-foreground">
+                        No checks run yet. Use “Re-run Checks” to generate results.
+                      </td>
+                    </tr>
+                  )}
+                  {checks.map((check) => (
+                    <tr key={check.id} className="border-b border-border/50">
+                      <td className="py-3 pr-4 font-medium text-foreground">{check.label}</td>
+                      <td className="py-3 pr-4">
+                        <span
+                          className={`inline-flex items-center gap-2 rounded-full px-2 py-1 text-xs font-semibold ${
+                            check.status === 'pass'
+                              ? 'bg-success/15 text-success'
+                              : 'bg-destructive/15 text-destructive'
+                          }`}
+                        >
+                          {check.status === 'pass' ? (
+                            <CheckCircle className="w-3 h-3" />
+                          ) : (
+                            <XCircle className="w-3 h-3" />
+                          )}
+                          {check.status.toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="py-3 pr-4 text-muted-foreground">{check.details}</td>
+                      <td className="py-3 text-muted-foreground">{check.lastRun}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </GlowCard>
         </div>
       </AdminGuard>
       <Dialog open={copyFallbackOpen} onOpenChange={setCopyFallbackOpen}>
@@ -463,7 +430,7 @@ const FulfillmentAudit = () => {
                   }
                 }}
               >
-                Select All
+                Select all
               </NeonButton>
               <NeonButton onClick={() => setCopyFallbackOpen(false)}>Done</NeonButton>
             </div>
