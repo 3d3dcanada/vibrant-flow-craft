@@ -3,12 +3,13 @@
  * Fulfillment audit UI is frozen for launch readiness.
  * Any changes require a new phase review and explicit approval.
  */
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import AdminGuard from '@/components/guards/AdminGuard';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { NeonButton } from '@/components/ui/NeonButton';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -71,6 +72,9 @@ const FulfillmentAudit = () => {
   const { user } = useAuth();
   const [checks, setChecks] = useState<AuditCheck[]>([]);
   const [running, setRunning] = useState(false);
+  const [copyFallbackOpen, setCopyFallbackOpen] = useState(false);
+  const [copyFallbackText, setCopyFallbackText] = useState('');
+  const fallbackTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const copyReport = useCallback(async () => {
     const report = checks
@@ -80,6 +84,8 @@ const FulfillmentAudit = () => {
       await navigator.clipboard.writeText(report);
       toast({ title: 'Copied', description: 'Audit report copied to clipboard.' });
     } catch (error: any) {
+      setCopyFallbackText(report);
+      setCopyFallbackOpen(true);
       toast({
         title: 'Copy failed',
         description: error?.message ?? 'Unable to copy to clipboard.',
@@ -87,6 +93,13 @@ const FulfillmentAudit = () => {
       });
     }
   }, [checks, toast]);
+
+  useEffect(() => {
+    if (copyFallbackOpen && fallbackTextareaRef.current) {
+      fallbackTextareaRef.current.focus();
+      fallbackTextareaRef.current.select();
+    }
+  }, [copyFallbackOpen]);
 
   const runChecks = useCallback(async () => {
     if (!user?.id) {
@@ -141,7 +154,8 @@ const FulfillmentAudit = () => {
         id: 'sanitized-history',
         label: 'Customer RPC status_history sanitized (no actor IDs)',
         status: 'fail',
-        details: 'No shipped/delivered order owned by this admin user.',
+        details:
+          'No shipped order found for your account to test status_history sanitization. This is not a system failure—seed or complete a shipment to validate.',
         lastRun: timestamp,
       });
     } else {
@@ -341,6 +355,9 @@ const FulfillmentAudit = () => {
             <p className="text-xs text-muted-foreground mt-2">
               Runtime checks require preview seed data. If no data is present, run the Phase 3G preview seed locally.
             </p>
+            <p className="text-xs text-muted-foreground mt-2">
+              No data? Use preview seed, or run audit against your last 10 orders to validate the live flow.
+            </p>
           </motion.div>
 
           <GlowCard className="p-5">
@@ -424,6 +441,35 @@ const FulfillmentAudit = () => {
           </div>
         </div>
       </AdminGuard>
+      <Dialog open={copyFallbackOpen} onOpenChange={setCopyFallbackOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Copy Audit Report</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <textarea
+              ref={fallbackTextareaRef}
+              readOnly
+              value={copyFallbackText}
+              className="min-h-[200px] w-full rounded-md border border-border bg-background p-3 text-xs text-foreground"
+            />
+            <div className="flex justify-end gap-2">
+              <NeonButton
+                variant="secondary"
+                onClick={() => {
+                  if (fallbackTextareaRef.current) {
+                    fallbackTextareaRef.current.focus();
+                    fallbackTextareaRef.current.select();
+                  }
+                }}
+              >
+                Select All
+              </NeonButton>
+              <NeonButton onClick={() => setCopyFallbackOpen(false)}>Done</NeonButton>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };

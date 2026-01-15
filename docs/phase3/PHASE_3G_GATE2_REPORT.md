@@ -24,6 +24,7 @@ pnpm seed:preview
 ```
 
 **Expected PASS conditions:** Seed script completes without errors; Fulfillment Audit checks pass; click-path confirms seeded orders in admin, maker, and customer views.
+**Screenshots optional; browser automation may fail in container environments.**
 
 ---
 

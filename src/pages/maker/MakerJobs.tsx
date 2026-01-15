@@ -399,7 +399,11 @@ const MakerJobs = () => {
                   <>
                     <div>
                       <div className="flex items-center gap-2">
-                        <Label htmlFor="tracking">Tracking Number (required to mark as shipped)</Label>
+                        <Label htmlFor="tracking">
+                          {selectedMakerOrder?.status === 'in_production'
+                            ? 'Tracking Number (required to mark as shipped)'
+                            : 'Tracking Number (optional)'}
+                        </Label>
                         <TooltipProvider delayDuration={150}>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -419,10 +423,13 @@ const MakerJobs = () => {
                         onChange={(e) => setTrackingNumber(e.target.value)}
                         placeholder="e.g., 123456789"
                       />
-                      <p className="text-xs text-muted-foreground mt-1">Required to unlock the shipped status.</p>
                     </div>
                     <div>
-                      <Label htmlFor="carrier">Shipping Carrier (required to mark as shipped)</Label>
+                      <Label htmlFor="carrier">
+                        {selectedMakerOrder?.status === 'in_production'
+                          ? 'Shipping Carrier (required to mark as shipped)'
+                          : 'Shipping Carrier (optional)'}
+                      </Label>
                       <Input
                         id="carrier"
                         value={shippingCarrier}
@@ -431,6 +438,9 @@ const MakerJobs = () => {
                       />
                       <p className="text-xs text-muted-foreground mt-1">Helps customers locate their package quickly.</p>
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                      Required before shipment to display tracking to the customer.
+                    </p>
                   </>
                 )}
                 <div>
