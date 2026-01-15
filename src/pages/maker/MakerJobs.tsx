@@ -3,7 +3,7 @@
  * Maker jobs UI is frozen for launch readiness.
  * Any changes require a new phase review and explicit approval.
  */
-import { useState } from 'react';
+import { useState, type ComponentProps } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  Package, Clock, Download, Loader2, ArrowRight, Truck
+  Package, Clock, Download, Loader2, ArrowRight, Truck, type LucideIcon
 } from 'lucide-react';
 import {
   Dialog,
@@ -29,19 +29,37 @@ import { Label } from '@/components/ui/label';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import MakerGuard from '@/components/guards/MakerGuard';
 
+type BadgeVariant = ComponentProps<typeof Badge>['variant'];
+
+type TrackingInfo = {
+  tracking_number?: string;
+  carrier?: string;
+};
+
+type QuoteSnapshot = {
+  material?: string;
+  quality?: string;
+  quantity?: number;
+};
+
+type ShippingAddress = {
+  city?: string;
+  province?: string;
+};
+
 interface MakerOrder {
   id: string;
   order_id: string;
   status: 'assigned' | 'in_production' | 'shipped' | 'completed';
   assigned_at: string;
-  tracking_info?: any;
+  tracking_info?: TrackingInfo | null;
   notes?: string;
   orders: {
     order_number: string;
     status: string;
     total_cad: number;
-    quote_snapshot: any;
-    shipping_address: any;
+    quote_snapshot?: QuoteSnapshot | null;
+    shipping_address?: ShippingAddress | null;
     created_at: string;
   };
 }
@@ -90,6 +108,9 @@ const MakerJobs = () => {
     enabled: !!user,
   });
 
+  const getErrorMessage = (error: unknown, fallback: string) =>
+    error instanceof Error ? error.message : fallback;
+
   // Update order status (AUDIT-SAFE: passes explicit tracking params)
   const updateStatusMutation = useMutation({
     mutationFn: async ({ orderId, newStatus, notes, trackingNumber, carrier }: {
@@ -99,7 +120,7 @@ const MakerJobs = () => {
       trackingNumber?: string;
       carrier?: string;
     }) => {
-      const { data, error } = await (supabase.rpc as any)('maker_update_order_status', {
+      const { data, error } = await supabase.rpc('maker_update_order_status', {
         p_order_id: orderId,
         p_new_status: newStatus,
         p_notes: notes,
@@ -108,7 +129,8 @@ const MakerJobs = () => {
       });
 
       if (error) throw error;
-      if (!data.success) throw new Error(data.error);
+      const response = data as { success: boolean; error?: string };
+      if (!response.success) throw new Error(response.error);
       return data;
     },
     onSuccess: () => {
@@ -120,8 +142,8 @@ const MakerJobs = () => {
       setTrackingNumber('');
       setShippingCarrier('');
     },
-    onError: (error: any) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    onError: (error: unknown) => {
+      toast({ title: 'Error', description: getErrorMessage(error, 'Status update failed.'), variant: 'destructive' });
     },
   });
 
@@ -134,13 +156,16 @@ const MakerJobs = () => {
       });
 
       if (error) throw error;
-      if (!data.success) throw new Error(data.error || 'Failed to get file URL');
+      const response = data as { success: boolean; signed_url?: string; file_name?: string; error?: string };
+      if (!response.success) throw new Error(response.error || 'Failed to get file URL');
 
       // Open signed URL in new tab to download
-      window.open(data.signed_url, '_blank');
-      toast({ title: 'Download started', description: `Downloading ${data.file_name}` });
-    } catch (error: any) {
-      toast({ title: 'Download failed', description: error.message, variant: 'destructive' });
+      if (response.signed_url) {
+        window.open(response.signed_url, '_blank');
+      }
+      toast({ title: 'Download started', description: `Downloading ${response.file_name || 'file'}` });
+    } catch (error: unknown) {
+      toast({ title: 'Download failed', description: getErrorMessage(error, 'Download failed.'), variant: 'destructive' });
     } finally {
       setDownloadingFile(false);
     }
@@ -196,7 +221,7 @@ const MakerJobs = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    const badges: Record<string, { label: string; variant: any; icon: any }> = {
+    const badges: Record<string, { label: string; variant: BadgeVariant; icon: LucideIcon }> = {
       assigned: { label: 'Assigned', variant: 'default', icon: Clock },
       in_production: { label: 'In Production', variant: 'secondary', icon: Package },
       shipped: { label: 'Shipped', variant: 'default', icon: Truck },
@@ -331,7 +356,9 @@ const MakerJobs = () => {
                 {selectedMakerOrder?.status === 'in_production' && (
                   <>
                     <div>
-                      <Label htmlFor="tracking">Tracking Number (optional)</Label>
+                      <Label htmlFor="tracking">
+                        Tracking Number (required to mark as shipped)
+                      </Label>
                       <Input
                         id="tracking"
                         value={trackingNumber}
@@ -340,7 +367,9 @@ const MakerJobs = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="carrier">Shipping Carrier (optional)</Label>
+                      <Label htmlFor="carrier">
+                        Shipping Carrier (required to mark as shipped)
+                      </Label>
                       <Input
                         id="carrier"
                         value={shippingCarrier}
@@ -348,6 +377,9 @@ const MakerJobs = () => {
                         placeholder="e.g., Canada Post, UPS, etc."
                       />
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                      Required before shipment to display tracking to the customer.
+                    </p>
                   </>
                 )}
                 <div>

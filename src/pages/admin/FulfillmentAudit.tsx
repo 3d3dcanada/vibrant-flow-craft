@@ -3,12 +3,13 @@
  * Fulfillment audit UI is frozen for launch readiness.
  * Any changes require a new phase review and explicit approval.
  */
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import AdminGuard from '@/components/guards/AdminGuard';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { NeonButton } from '@/components/ui/NeonButton';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -50,6 +51,12 @@ const FulfillmentAudit = () => {
   const { user } = useAuth();
   const [checks, setChecks] = useState<AuditCheck[]>([]);
   const [running, setRunning] = useState(false);
+  const [copyFallbackOpen, setCopyFallbackOpen] = useState(false);
+  const [copyFallbackText, setCopyFallbackText] = useState('');
+  const fallbackTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const getErrorMessage = (error: unknown, fallback: string) =>
+    error instanceof Error ? error.message : fallback;
 
   const copyReport = useCallback(async () => {
     const report = checks
@@ -58,14 +65,23 @@ const FulfillmentAudit = () => {
     try {
       await navigator.clipboard.writeText(report);
       toast({ title: 'Copied', description: 'Audit report copied to clipboard.' });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      setCopyFallbackText(report);
+      setCopyFallbackOpen(true);
       toast({
         title: 'Copy failed',
-        description: error?.message ?? 'Unable to copy to clipboard.',
+        description: getErrorMessage(error, 'Unable to copy to clipboard.'),
         variant: 'destructive',
       });
     }
   }, [checks, toast]);
+
+  useEffect(() => {
+    if (copyFallbackOpen && fallbackTextareaRef.current) {
+      fallbackTextareaRef.current.focus();
+      fallbackTextareaRef.current.select();
+    }
+  }, [copyFallbackOpen]);
 
   const runChecks = useCallback(async () => {
     if (!user?.id) {
@@ -102,7 +118,7 @@ const FulfillmentAudit = () => {
     }
 
     const getCustomerFulfillment = async (orderId: string) => {
-      const { data, error } = await (supabase.rpc as any)('customer_get_order_fulfillment', {
+      const { data, error } = await supabase.rpc('customer_get_order_fulfillment', {
         p_order_id: orderId,
       });
       if (error) {
@@ -120,7 +136,8 @@ const FulfillmentAudit = () => {
         id: 'sanitized-history',
         label: 'Customer RPC status_history sanitized (no actor IDs)',
         status: 'fail',
-        details: 'No shipped/delivered order owned by this admin user.',
+        details:
+          'No shipped order found for your account to test status_history sanitization. This is not a system failure—seed or complete a shipment to validate.',
         lastRun: timestamp,
       });
     } else {
@@ -140,12 +157,12 @@ const FulfillmentAudit = () => {
           details: isArray && !hasActorIds ? 'Sanitized array verified.' : 'Actor fields detected or history not array.',
           lastRun: timestamp,
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         results.push({
           id: 'sanitized-history',
           label: 'Customer RPC status_history sanitized (no actor IDs)',
           status: 'fail',
-          details: error.message,
+          details: getErrorMessage(error, 'Audit check failed.'),
           lastRun: timestamp,
         });
       }
@@ -174,19 +191,19 @@ const FulfillmentAudit = () => {
           details: hasTracking ? 'Tracking info returned before shipment.' : 'Tracking info correctly withheld.',
           lastRun: timestamp,
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         results.push({
           id: 'tracking-gate',
           label: 'Customer RPC tracking_info null unless shipped/delivered',
           status: 'fail',
-          details: error.message,
+          details: getErrorMessage(error, 'Audit check failed.'),
           lastRun: timestamp,
         });
       }
     }
 
     try {
-      const { data, error } = await (supabase.rpc as any)('admin_get_fulfillment_guardrails');
+      const { data, error } = await supabase.rpc('admin_get_fulfillment_guardrails');
       if (error) {
         throw error;
       }
@@ -230,8 +247,8 @@ const FulfillmentAudit = () => {
           : 'Authenticated write privileges still present.',
         lastRun: timestamp,
       });
-    } catch (error: any) {
-      const message = error.message || 'Guardrail RPC failed';
+    } catch (error: unknown) {
+      const message = getErrorMessage(error, 'Guardrail RPC failed');
       results.push(
         {
           id: 'maker-policy',
@@ -267,7 +284,7 @@ const FulfillmentAudit = () => {
       });
     } else {
       try {
-        const { data, error } = await (supabase.rpc as any)('admin_simulate_delivered_guard', {
+        const { data, error } = await supabase.rpc('admin_simulate_delivered_guard', {
           p_order_id: unshippedOrder.id,
         });
         if (error) {
@@ -281,12 +298,12 @@ const FulfillmentAudit = () => {
           details: payload.success === false ? payload.error || 'Guard enforced.' : 'Guard unexpectedly passed.',
           lastRun: timestamp,
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         results.push({
           id: 'delivered-guard',
           label: 'Delivered guard rejects unshipped orders',
           status: 'fail',
-          details: error.message,
+          details: getErrorMessage(error, 'Audit check failed.'),
           lastRun: timestamp,
         });
       }
@@ -318,6 +335,9 @@ const FulfillmentAudit = () => {
             </p>
             <p className="text-xs text-muted-foreground mt-2">
               Runtime checks require preview seed data. If no data is present, run the Phase 3G preview seed locally.
+            </p>
+            <p className="text-xs text-muted-foreground mt-2">
+              No data? Use preview seed, or run audit against your last 10 orders to validate the live flow.
             </p>
           </motion.div>
 
@@ -388,6 +408,35 @@ const FulfillmentAudit = () => {
           </GlowCard>
         </div>
       </AdminGuard>
+      <Dialog open={copyFallbackOpen} onOpenChange={setCopyFallbackOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Copy Audit Report</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <textarea
+              ref={fallbackTextareaRef}
+              readOnly
+              value={copyFallbackText}
+              className="min-h-[200px] w-full rounded-md border border-border bg-background p-3 text-xs text-foreground"
+            />
+            <div className="flex justify-end gap-2">
+              <NeonButton
+                variant="secondary"
+                onClick={() => {
+                  if (fallbackTextareaRef.current) {
+                    fallbackTextareaRef.current.focus();
+                    fallbackTextareaRef.current.select();
+                  }
+                }}
+              >
+                Select all
+              </NeonButton>
+              <NeonButton onClick={() => setCopyFallbackOpen(false)}>Done</NeonButton>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
