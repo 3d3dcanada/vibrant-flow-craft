@@ -31,9 +31,9 @@ export const useUserQuotes = (limit = 10) => {
     queryKey: ['user_quotes', user?.id, limit],
     queryFn: async () => {
       if (!user) return [];
-      // Using explicit any to handle quotes table not in generated types
-      const { data, error } = await (supabase as any)
-        .from('quotes')
+      // Accessing quotes table not present in generated types
+      const { data, error } = await supabase
+        .from('quotes' as never)
         .select('id, material, quality, quantity, total_cad, status, expires_at, created_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
@@ -63,9 +63,9 @@ export const useUserOrders = (limit = 10) => {
     queryKey: ['user_orders', user?.id, limit],
     queryFn: async () => {
       if (!user) return [];
-      // Using explicit any to handle orders table not in generated types
-      const { data, error } = await (supabase as any)
-        .from('orders')
+      // Accessing orders table not present in generated types
+      const { data, error } = await supabase
+        .from('orders' as never)
         .select('id, order_number, total_cad, payment_method, status, created_at, quote_snapshot, shipping_address')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
@@ -78,8 +78,8 @@ export const useUserOrders = (limit = 10) => {
         payment_method: string;
         status: string;
         created_at: string;
-        quote_snapshot: any;
-        shipping_address: any;
+        quote_snapshot: unknown;
+        shipping_address: unknown;
       }>;
     },
     enabled: !!user

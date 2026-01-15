@@ -13,7 +13,8 @@ import {
   useIsAdmin,
   useAllMakers,
   useAssignRequestToMaker,
-  useAllUnassignedRequests
+  useAllUnassignedRequests,
+  type PrintRequest
 } from '@/hooks/useMakerData';
 import { useProfile } from '@/hooks/useUserData';
 import { useToast } from '@/hooks/use-toast';
@@ -129,7 +130,7 @@ const MakerRequests = () => {
   const unassignedRequests = isAdmin ? allUnassignedRequests : pendingRequests;
 
   const RequestCard = ({ request, isPending, showAdminControls }: { 
-    request: any; 
+    request: PrintRequest; 
     isPending: boolean;
     showAdminControls?: boolean;
   }) => (

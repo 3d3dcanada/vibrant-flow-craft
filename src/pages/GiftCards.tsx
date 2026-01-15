@@ -16,6 +16,16 @@ import {
 } from 'lucide-react';
 import { cadToCredits, formatCredits, formatCad } from '@/config/credits';
 
+type GiftCard = {
+  id: string;
+  credits_value: number;
+  price_cad: number;
+  created_at: string;
+  is_redeemed: boolean;
+  redeemed_by: string | null;
+  purchased_by: string | null;
+};
+
 const GiftCards = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
@@ -214,7 +224,7 @@ const GiftCards = () => {
 
             {myGiftCards && myGiftCards.length > 0 ? (
               <div className="space-y-4">
-                {myGiftCards.map((card: any) => (
+                {myGiftCards.map((card: GiftCard) => (
                   <GlowCard key={card.id} className="p-5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">

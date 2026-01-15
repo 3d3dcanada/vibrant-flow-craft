@@ -58,10 +58,11 @@ const FulfillmentAudit = () => {
     try {
       await navigator.clipboard.writeText(report);
       toast({ title: 'Copied', description: 'Audit report copied to clipboard.' });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unable to copy to clipboard.';
       toast({
         title: 'Copy failed',
-        description: error?.message ?? 'Unable to copy to clipboard.',
+        description: message,
         variant: 'destructive',
       });
     }
@@ -102,7 +103,7 @@ const FulfillmentAudit = () => {
     }
 
     const getCustomerFulfillment = async (orderId: string) => {
-      const { data, error } = await (supabase.rpc as any)('customer_get_order_fulfillment', {
+      const { data, error } = await supabase.rpc('customer_get_order_fulfillment' as never, {
         p_order_id: orderId,
       });
       if (error) {
@@ -140,12 +141,13 @@ const FulfillmentAudit = () => {
           details: isArray && !hasActorIds ? 'Sanitized array verified.' : 'Actor fields detected or history not array.',
           lastRun: timestamp,
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Unable to load fulfillment data.';
         results.push({
           id: 'sanitized-history',
           label: 'Customer RPC status_history sanitized (no actor IDs)',
           status: 'fail',
-          details: error.message,
+          details: message,
           lastRun: timestamp,
         });
       }
@@ -174,19 +176,20 @@ const FulfillmentAudit = () => {
           details: hasTracking ? 'Tracking info returned before shipment.' : 'Tracking info correctly withheld.',
           lastRun: timestamp,
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Unable to load fulfillment data.';
         results.push({
           id: 'tracking-gate',
           label: 'Customer RPC tracking_info null unless shipped/delivered',
           status: 'fail',
-          details: error.message,
+          details: message,
           lastRun: timestamp,
         });
       }
     }
 
     try {
-      const { data, error } = await (supabase.rpc as any)('admin_get_fulfillment_guardrails');
+      const { data, error } = await supabase.rpc('admin_get_fulfillment_guardrails' as never);
       if (error) {
         throw error;
       }
@@ -230,8 +233,8 @@ const FulfillmentAudit = () => {
           : 'Authenticated write privileges still present.',
         lastRun: timestamp,
       });
-    } catch (error: any) {
-      const message = error.message || 'Guardrail RPC failed';
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Guardrail RPC failed';
       results.push(
         {
           id: 'maker-policy',
@@ -267,7 +270,7 @@ const FulfillmentAudit = () => {
       });
     } else {
       try {
-        const { data, error } = await (supabase.rpc as any)('admin_simulate_delivered_guard', {
+        const { data, error } = await supabase.rpc('admin_simulate_delivered_guard' as never, {
           p_order_id: unshippedOrder.id,
         });
         if (error) {
@@ -281,12 +284,13 @@ const FulfillmentAudit = () => {
           details: payload.success === false ? payload.error || 'Guard enforced.' : 'Guard unexpectedly passed.',
           lastRun: timestamp,
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Simulation failed.';
         results.push({
           id: 'delivered-guard',
           label: 'Delivered guard rejects unshipped orders',
           status: 'fail',
-          details: error.message,
+          details: message,
           lastRun: timestamp,
         });
       }

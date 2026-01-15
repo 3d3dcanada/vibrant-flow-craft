@@ -22,14 +22,14 @@ interface Order {
     order_number: string;
     user_id: string;
     quote_id: string;
-    quote_snapshot: any;
+    quote_snapshot: Record<string, unknown>;
     total_cad: number;
     currency: string;
     payment_method: 'invoice' | 'credits';
     payment_confirmed_at?: string;
-    shipping_address: any;
+    shipping_address: Record<string, unknown>;
     status: string;
-    status_history?: any;
+    status_history?: unknown;
     created_at: string;
     notes?: string;
 }
@@ -38,9 +38,9 @@ interface FulfillmentData {
     order_id: string;
     order_status: string;
     payment_confirmed_at?: string | null;
-    status_history?: any;
+    status_history?: unknown;
     maker_stage?: string | null;
-    tracking_info?: any | null;
+    tracking_info?: Record<string, unknown> | null;
 }
 
 interface FulfillmentResponse {
@@ -49,7 +49,7 @@ interface FulfillmentResponse {
     error?: string;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
+const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
     'pending_payment': { label: 'Pending Payment', color: 'text-warning', icon: Clock },
     'awaiting_payment': { label: 'Awaiting Payment', color: 'text-blue-400', icon: Clock },
     'paid': { label: 'Paid', color: 'text-success', icon: CheckCircle },
@@ -105,8 +105,8 @@ export default function OrderConfirmation() {
             setFulfillmentError(null);
 
             try {
-                const { data, error: fetchError } = await (supabase as any)
-                    .from('orders')
+                const { data, error: fetchError } = await supabase
+                    .from('orders' as never)
                     .select('*')
                     .eq('id', orderId)
                     .eq('user_id', user.id)
@@ -121,8 +121,8 @@ export default function OrderConfirmation() {
                 setOrder(data);
 
                 setFulfillmentLoading(true);
-                const { data: fulfillmentData, error: fulfillmentFetchError } = await (supabase.rpc as any)(
-                    'customer_get_order_fulfillment',
+                const { data: fulfillmentData, error: fulfillmentFetchError } = await supabase.rpc(
+                    'customer_get_order_fulfillment' as never,
                     { p_order_id: orderId }
                 );
                 if (fulfillmentFetchError) {

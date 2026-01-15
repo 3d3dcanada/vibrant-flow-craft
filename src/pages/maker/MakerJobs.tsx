@@ -34,17 +34,19 @@ interface MakerOrder {
   order_id: string;
   status: 'assigned' | 'in_production' | 'shipped' | 'completed';
   assigned_at: string;
-  tracking_info?: any;
+  tracking_info?: Record<string, unknown>;
   notes?: string;
   orders: {
     order_number: string;
     status: string;
     total_cad: number;
-    quote_snapshot: any;
-    shipping_address: any;
+    quote_snapshot: Record<string, unknown>;
+    shipping_address: Record<string, unknown>;
     created_at: string;
   };
 }
+
+type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline';
 
 const MakerJobs = () => {
   const { toast } = useToast();
@@ -99,7 +101,7 @@ const MakerJobs = () => {
       trackingNumber?: string;
       carrier?: string;
     }) => {
-      const { data, error } = await (supabase.rpc as any)('maker_update_order_status', {
+      const { data, error } = await supabase.rpc('maker_update_order_status' as never, {
         p_order_id: orderId,
         p_new_status: newStatus,
         p_notes: notes,
@@ -120,8 +122,9 @@ const MakerJobs = () => {
       setTrackingNumber('');
       setShippingCarrier('');
     },
-    onError: (error: any) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : 'Failed to update status';
+      toast({ title: 'Error', description: message, variant: 'destructive' });
     },
   });
 
@@ -139,8 +142,9 @@ const MakerJobs = () => {
       // Open signed URL in new tab to download
       window.open(data.signed_url, '_blank');
       toast({ title: 'Download started', description: `Downloading ${data.file_name}` });
-    } catch (error: any) {
-      toast({ title: 'Download failed', description: error.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to download file';
+      toast({ title: 'Download failed', description: message, variant: 'destructive' });
     } finally {
       setDownloadingFile(false);
     }
@@ -196,7 +200,7 @@ const MakerJobs = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    const badges: Record<string, { label: string; variant: any; icon: any }> = {
+    const badges: Record<string, { label: string; variant: BadgeVariant; icon: typeof Clock }> = {
       assigned: { label: 'Assigned', variant: 'default', icon: Clock },
       in_production: { label: 'In Production', variant: 'secondary', icon: Package },
       shipped: { label: 'Shipped', variant: 'default', icon: Truck },

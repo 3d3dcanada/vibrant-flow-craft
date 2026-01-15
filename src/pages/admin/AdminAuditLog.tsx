@@ -18,15 +18,15 @@ interface AuditLogEntry {
     action_type: string;
     target_type: string;
     target_id: string;
-    before_state: any;
-    after_state: any;
+    before_state: unknown;
+    after_state: unknown;
     reason?: string;
-    metadata?: any;
+    metadata?: unknown;
     created_at: string;
     profiles?: { email?: string; full_name?: string };
 }
 
-const ACTION_TYPES: Record<string, { label: string; icon: any; color: string }> = {
+const ACTION_TYPES: Record<string, { label: string; icon: typeof ClipboardList; color: string }> = {
     'order_status_update': { label: 'Order Status Update', icon: Package, color: 'text-blue-400' },
     'payment_confirmation': { label: 'Payment Confirmed', icon: CreditCard, color: 'text-success' },
     'credit_adjustment': { label: 'Credit Adjustment', icon: Coins, color: 'text-warning' },
@@ -34,7 +34,7 @@ const ACTION_TYPES: Record<string, { label: string; icon: any; color: string }> 
     'gift_card_rejected': { label: 'Gift Card Rejected', icon: Coins, color: 'text-destructive' },
 };
 
-const TARGET_TYPES: Record<string, { label: string; icon: any }> = {
+const TARGET_TYPES: Record<string, { label: string; icon: typeof ClipboardList }> = {
     'order': { label: 'Order', icon: Package },
     'credit_wallet': { label: 'Credit Wallet', icon: Coins },
     'gift_card': { label: 'Gift Card', icon: CreditCard },
@@ -52,8 +52,8 @@ const AdminAuditLog = () => {
     const { data: entries, isLoading, refetch } = useQuery({
         queryKey: ['admin_audit_log', actionFilter, targetFilter, limit],
         queryFn: async () => {
-            let query = (supabase as any)
-                .from('admin_audit_log')
+            let query = supabase
+                .from('admin_audit_log' as never)
                 .select(`
                     *,
                     profiles:admin_id (email, full_name)
@@ -98,7 +98,7 @@ const AdminAuditLog = () => {
         return TARGET_TYPES[targetType] || { label: targetType, icon: ClipboardList };
     };
 
-    const formatJson = (obj: any) => {
+    const formatJson = (obj: unknown) => {
         if (!obj) return 'null';
         try {
             return JSON.stringify(obj, null, 2);

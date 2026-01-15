@@ -20,7 +20,7 @@ interface Quote {
     quality: string;
     quantity: number;
     total_cad: number;
-    price_breakdown: any;
+    price_breakdown: unknown;
     status: string;
     expires_at: string;
     created_at: string;
@@ -117,8 +117,8 @@ export default function Checkout() {
             setError(null);
 
             try {
-                const { data, error: fetchError } = await (supabase as any)
-                    .from('quotes')
+                const { data, error: fetchError } = await supabase
+                    .from('quotes' as never)
                     .select('*')
                     .eq('id', quoteId)
                     .eq('user_id', user.id)
@@ -266,8 +266,8 @@ export default function Checkout() {
                 payment_confirmed_at: fullyCoveredByCredits ? new Date().toISOString() : null,
             };
 
-            const { data: order, error: orderError } = await (supabase as any)
-                .from('orders')
+            const { data: order, error: orderError } = await supabase
+                .from('orders' as never)
                 .insert(orderData)
                 .select()
                 .single();
@@ -278,8 +278,8 @@ export default function Checkout() {
             }
 
             // Update quote status to 'ordered'
-            await (supabase as any)
-                .from('quotes')
+            await supabase
+                .from('quotes' as never)
                 .update({ status: 'ordered' })
                 .eq('id', quote.id);
 

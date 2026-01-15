@@ -212,7 +212,7 @@ const MakerFilament = () => {
                   <TableCell>
                     <Select 
                       value={fil.dry_status}
-                      onValueChange={(v: any) => handleQuickUpdate(fil, { dry_status: v })}
+                      onValueChange={(v: 'dry' | 'needs_drying' | 'unknown') => handleQuickUpdate(fil, { dry_status: v })}
                     >
                       <SelectTrigger className="w-[130px] h-8">
                         <div className="flex items-center gap-2">
@@ -307,7 +307,7 @@ const MakerFilament = () => {
 
             <div>
               <Label>Dry Status</Label>
-              <Select value={form.dry_status} onValueChange={(v: any) => setForm(f => ({ ...f, dry_status: v }))}>
+              <Select value={form.dry_status} onValueChange={(v: 'dry' | 'needs_drying' | 'unknown') => setForm(f => ({ ...f, dry_status: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="dry">Dry (ready to use)</SelectItem>

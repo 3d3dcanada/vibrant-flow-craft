@@ -17,6 +17,17 @@ import {
 } from 'lucide-react';
 import { formatCredits } from '@/config/credits';
 
+type CommunityModel = {
+  id: string;
+  name: string;
+  description: string | null;
+  thumbnail_url: string | null;
+  download_count: number | null;
+  price_credits: number | null;
+  total_earnings_credits?: number | null;
+  is_approved?: boolean | null;
+};
+
 const CommunityModels = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
@@ -112,10 +123,11 @@ const CommunityModels = () => {
       setUploadForm({ name: '', description: '', category: '', price_credits: 0 });
       refetchMyModels();
       setActiveTab('my-models');
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to submit model";
       toast({
         title: "Error",
-        description: err.message || "Failed to submit model",
+        description: message,
         variant: "destructive",
       });
     }
@@ -250,7 +262,7 @@ const CommunityModels = () => {
                 </div>
               ) : models && models.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {models.map((model: any, index: number) => (
+                  {models.map((model: CommunityModel, index: number) => (
                     <div
                       key={model.id}
                       className="animate-fade-in"
@@ -415,7 +427,7 @@ const CommunityModels = () => {
                 </div>
               ) : myModels && myModels.length > 0 ? (
                 <div className="space-y-4">
-                  {myModels.map((model: any) => (
+                  {myModels.map((model: CommunityModel) => (
                     <GlowCard key={model.id} className="p-5">
                       <div className="flex items-center gap-4">
                         <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center shrink-0">

@@ -15,6 +15,18 @@ import {
   ExternalLink, ChevronRight, Calendar
 } from 'lucide-react';
 
+type Referral = {
+  status: string;
+};
+
+type PointTransaction = {
+  id: string;
+  activity_type: string;
+  description: string;
+  created_at: string;
+  points: number;
+};
+
 const RewardsCenter = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
@@ -218,7 +230,7 @@ const RewardsCenter = () => {
                   <div>
                     <h3 className="font-semibold text-foreground text-lg">Share & Earn 500 Points!</h3>
                     <p className="text-sm text-muted-foreground">
-                      {referrals?.length || 0} friends referred • {referrals?.filter((r: any) => r.status === 'converted').length || 0} converted
+                      {referrals?.length || 0} friends referred • {referrals?.filter((r: Referral) => r.status === 'converted').length || 0} converted
                     </p>
                   </div>
                 </div>
@@ -335,7 +347,7 @@ const RewardsCenter = () => {
               <GlowCard className="p-6">
                 <div className="space-y-3">
                   {transactions && transactions.length > 0 ? (
-                    transactions.map((tx: any) => (
+                    transactions.map((tx: PointTransaction) => (
                       <div 
                         key={tx.id} 
                         className="flex items-center justify-between p-4 rounded-lg bg-background/50 border border-primary/10 hover:border-secondary/30 transition-colors"

@@ -19,6 +19,15 @@ import {
 } from 'lucide-react';
 import { creditsToCad, formatCredits, formatCad, CAD_PER_CREDIT } from '@/config/credits';
 
+type CreditTransaction = {
+  id: string;
+  type: string;
+  amount: number;
+  description?: string | null;
+  created_at: string;
+  balance_after?: number | null;
+};
+
 /**
  * Anycard Integration Configuration
  * 
@@ -154,7 +163,7 @@ const CreditsStore = () => {
         refetchWallet();
         refetchTransactions();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Redemption error:', error);
       setRedeemError("Service temporarily unavailable. Please try again later.");
     } finally {
@@ -500,7 +509,7 @@ const CreditsStore = () => {
                 </h3>
                 <div className="space-y-3">
                   {transactions && transactions.length > 0 ? (
-                    transactions.map((tx: any) => {
+                    transactions.map((tx: CreditTransaction) => {
                       const typeInfo = transactionTypeLabels[tx.type] || {
                         emoji: '💫',
                         label: tx.type,

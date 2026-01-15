@@ -47,6 +47,7 @@ const Auth = () => {
     if (locationState?.isSignup && mode === 'login') {
       setMode('signup');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- allow user toggle; only react to navigation state
   }, [locationState?.isSignup]);
 
   // Check if user is logged in and redirect based on role from user_roles table
@@ -314,7 +315,7 @@ const Auth = () => {
 
           const { error: consentError } = await supabase
             .from('profiles')
-            .update(consentData as any) // Type assertion: CASL columns added via migration 20260108100000
+            .update(consentData as Record<string, unknown>) // Type assertion: CASL columns added via migration 20260108100000
             .eq('id', (await supabase.auth.getUser()).data.user?.id);
 
           if (consentError) {

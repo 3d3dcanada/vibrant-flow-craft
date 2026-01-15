@@ -68,7 +68,8 @@ const ProfileSettings = () => {
         postal_code: profile.postal_code || '',
       });
       // Load CASL consent state from profile
-      setCaslConsent((profile as any).consent_email_marketing || false);
+      const consentValue = (profile as { consent_email_marketing?: boolean | null }).consent_email_marketing;
+      setCaslConsent(Boolean(consentValue));
     }
   }, [profile]);
 
@@ -103,7 +104,7 @@ const ProfileSettings = () => {
         title: "Profile Updated!",
         description: "Your changes have been saved successfully.",
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};
         err.errors.forEach(e => {
@@ -111,9 +112,10 @@ const ProfileSettings = () => {
         });
         setErrors(fieldErrors);
       } else {
+        const message = err instanceof Error ? err.message : "Failed to update profile";
         toast({
           title: "Error",
-          description: err.message || "Failed to update profile",
+          description: message,
           variant: "destructive",
         });
       }
@@ -141,7 +143,7 @@ const ProfileSettings = () => {
 
     const { error } = await supabase
       .from('profiles')
-      .update(updateData as any)
+      .update(updateData as Record<string, unknown>)
       .eq('id', user?.id);
 
     if (error) {

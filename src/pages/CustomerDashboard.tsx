@@ -17,6 +17,19 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { formatCad, CAD_PER_CREDIT } from '@/config/credits';
 
+type PrintRequestSummary = {
+  id: string;
+  created_at: string;
+  status: string;
+  specs?: { material?: string | null } | null;
+};
+
+type PointActivity = {
+  id: string;
+  description: string;
+  points: number;
+};
+
 const CustomerDashboard = () => {
   const { signOut } = useAuth();
   const { toast } = useToast();
@@ -230,7 +243,7 @@ const CustomerDashboard = () => {
                   </div>
                 ) : printRequests && printRequests.length > 0 ? (
                   <div className="space-y-3 max-h-64 overflow-y-auto">
-                    {printRequests.slice(0, 5).map((request: any) => (
+                    {printRequests.slice(0, 5).map((request: PrintRequestSummary) => (
                       <div
                         key={request.id}
                         className="flex items-center justify-between p-3 rounded-lg bg-background/50 border border-primary/10"
@@ -311,7 +324,7 @@ const CustomerDashboard = () => {
                     <div>
                       <div className="text-xs font-medium text-muted-foreground mb-2">Recent Activity</div>
                       <div className="space-y-1">
-                        {recentActivity.slice(0, 3).map((activity: any) => (
+                        {recentActivity.slice(0, 3).map((activity: PointActivity) => (
                           <div key={activity.id} className="flex justify-between text-xs">
                             <span className="text-muted-foreground truncate">{activity.description}</span>
                             <span className={activity.points > 0 ? 'text-green-500' : 'text-red-500'}>

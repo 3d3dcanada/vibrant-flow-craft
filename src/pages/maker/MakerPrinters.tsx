@@ -92,7 +92,7 @@ const MakerPrinters = () => {
   const handleSave = async () => {
     try {
       if (editingPrinter) {
-        const updates: any = { ...form };
+        const updates: Partial<MakerPrinter> = { ...form };
         if (!form.api_key) delete updates.api_key; // Don't overwrite if empty
         await updateMutation.mutateAsync({ printerId: editingPrinter.id, updates });
         toast({ title: 'Printer updated' });
@@ -133,15 +133,16 @@ const MakerPrinters = () => {
           variant: 'destructive' 
         });
       }
-    } catch (error: any) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to test printer connection';
+      toast({ title: 'Error', description: message, variant: 'destructive' });
     } finally {
       setTestingPrinterId(null);
     }
   };
 
   const PrinterCard = ({ printer }: { printer: MakerPrinter }) => {
-    const lastStatus = printer.last_status as any;
+    const lastStatus = printer.last_status as { connected?: boolean; state?: string; progress?: number } | null;
     
     return (
       <motion.div
@@ -355,7 +356,7 @@ const MakerPrinters = () => {
 
             <div>
               <Label>Status</Label>
-              <Select value={form.status} onValueChange={(v: any) => setForm(f => ({ ...f, status: v }))}>
+              <Select value={form.status} onValueChange={(v: MakerPrinter['status']) => setForm(f => ({ ...f, status: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="available">Available</SelectItem>
@@ -384,7 +385,7 @@ const MakerPrinters = () => {
               <div className="space-y-3">
                 <div>
                   <Label>Connection Type</Label>
-                  <Select value={form.connection_type} onValueChange={(v: any) => setForm(f => ({ ...f, connection_type: v }))}>
+                  <Select value={form.connection_type} onValueChange={(v: MakerPrinter['connection_type']) => setForm(f => ({ ...f, connection_type: v }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">None</SelectItem>
