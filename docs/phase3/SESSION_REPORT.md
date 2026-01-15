@@ -1814,3 +1814,15 @@ Launch Impact: None, provided operator executes Gate 3 before production release
 **Status:** COMPLETE
 
 **Assertion:** “Any change to fulfillment, earnings, assignment, or customer payloads after this point requires a new phase.”
+
+---
+
+## Phase 3H.1 Fulfillment Visibility — Customer Track Links
+
+**Status:** COMPLETE
+
+**Highlights:**
+- Added Track entry points on the Customer Dashboard order list with clearer status labels and a primary “Get a Quote” empty-state CTA.
+- Added a “Back to My Orders” link and a fulfillment data fallback message on Order Confirmation.
+- Clarified maker shipment field requirements and added a helper note on customer tracking visibility.
+- Added maker assignment/shipment status badges on Admin Payments rows.
