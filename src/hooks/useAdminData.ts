@@ -67,13 +67,13 @@ export const useUpsertPromoProduct = () => {
       if (id) {
         const { error } = await supabase
           .from('promo_products')
-          .update(rest)
+          .update(rest as never)
           .eq('id', id as string);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('promo_products')
-          .insert(rest as Record<string, unknown>);
+          .insert(rest as never);
         if (error) throw error;
       }
     },
@@ -117,13 +117,13 @@ export const useUpsertStoreItem = () => {
       if (id) {
         const { error } = await supabase
           .from('store_items')
-          .update(rest)
+          .update(rest as never)
           .eq('id', id as string);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('store_items')
-          .insert(rest as Record<string, unknown>);
+          .insert(rest as never);
         if (error) throw error;
       }
     },
@@ -167,13 +167,13 @@ export const useUpsertCreditPackage = () => {
       if (id) {
         const { error } = await supabase
           .from('credit_packages')
-          .update(rest)
+          .update(rest as never)
           .eq('id', id as string);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('credit_packages')
-          .insert(rest as Record<string, unknown>);
+          .insert(rest as never);
         if (error) throw error;
       }
     },

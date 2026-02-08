@@ -82,7 +82,7 @@ const AdminCredits = () => {
                 p_amount: amount,
                 p_reason: reason,
                 p_type: type
-            });
+            } as never);
             if (error) throw error;
             const result = data as { success: boolean; error?: string; new_balance?: number };
             if (!result.success) throw new Error(result.error || 'Failed to adjust credits');

@@ -124,25 +124,39 @@ export default function Checkout() {
                     .eq('user_id', user.id)
                     .single();
 
-                if (fetchError) {
+                if (fetchError || !data) {
                     setError('Quote not found or access denied.');
                     return;
                 }
 
+                const quoteData = data as Record<string, unknown>;
+
                 // Check expiry
-                const expiryDate = new Date(data.expires_at);
+                const expiryDate = new Date(quoteData.expires_at as string);
                 if (expiryDate < new Date()) {
                     setError('This quote has expired. Please create a new quote.');
                     return;
                 }
 
                 // Check if already ordered
-                if (data.status === 'ordered') {
+                if (quoteData.status === 'ordered') {
                     setError('This quote has already been ordered.');
                     return;
                 }
 
-                setQuote(data);
+                setQuote({
+                    id: String(quoteData.id),
+                    material: String(quoteData.material || ''),
+                    quality: String(quoteData.quality || ''),
+                    quantity: Number(quoteData.quantity || 0),
+                    total_cad: Number(quoteData.total_cad || 0),
+                    price_breakdown: quoteData.price_breakdown,
+                    status: String(quoteData.status || ''),
+                    expires_at: String(quoteData.expires_at || ''),
+                    created_at: String(quoteData.created_at || ''),
+                    file_name: quoteData.file_name as string | undefined,
+                    delivery_speed: quoteData.delivery_speed as string | undefined,
+                });
 
                 // Pre-fill from profile
                 const { data: profile } = await supabase
@@ -266,21 +280,23 @@ export default function Checkout() {
                 payment_confirmed_at: fullyCoveredByCredits ? new Date().toISOString() : null,
             };
 
-            const { data: order, error: orderError } = await supabase
+            const { data: orderResult, error: orderError } = await supabase
                 .from('orders' as never)
-                .insert(orderData)
+                .insert(orderData as never)
                 .select()
                 .single();
 
-            if (orderError) {
+            if (orderError || !orderResult) {
                 console.error('Order creation error:', orderError);
                 throw new Error('Failed to create order');
             }
 
+            const order = orderResult as Record<string, unknown>;
+
             // Update quote status to 'ordered'
             await supabase
                 .from('quotes' as never)
-                .update({ status: 'ordered' })
+                .update({ status: 'ordered' } as never)
                 .eq('id', quote.id);
 
             // If credits were used, we need to deduct from wallet

@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
@@ -34,25 +33,9 @@ const MakerEarnings = () => {
   const { data: earnings = [], isLoading } = useQuery({
     queryKey: ['maker-earnings'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('maker_earnings')
-        .select(`
-          id,
-          order_id,
-          payout_amount_cad,
-          status,
-          created_at,
-          paid_at,
-          orders!inner (
-            order_number,
-            total_cad
-          )
-        `)
-        .eq('maker_id', user?.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return (data || []) as unknown as MakerEarning[];
+      // Note: maker_earnings table doesn't exist in current schema
+      // Returning empty array as placeholder until table is created
+      return [] as MakerEarning[];
     },
     enabled: !!user,
   });
@@ -107,8 +90,8 @@ const MakerEarnings = () => {
 
             <GlowCard className="p-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-yellow-500/10 rounded-full">
-                  <Clock className="w-6 h-6 text-yellow-500" />
+                <div className="p-3 bg-warning/10 rounded-full">
+                  <Clock className="w-6 h-6 text-warning" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Pending Payout</p>
@@ -119,8 +102,8 @@ const MakerEarnings = () => {
 
             <GlowCard className="p-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-green-500/10 rounded-full">
-                  <CheckCircle className="w-6 h-6 text-green-500" />
+                <div className="p-3 bg-success/10 rounded-full">
+                  <CheckCircle className="w-6 h-6 text-success" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Paid</p>

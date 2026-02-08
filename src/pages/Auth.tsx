@@ -142,7 +142,7 @@ const Auth = () => {
 
     // CASL consent required for signup
     if (mode === 'signup' && !caslConsent) {
-      newErrors.consent = 'You must consent to receive emails to create an account';
+      (newErrors as Record<string, string>).consent = 'You must consent to receive emails to create an account';
     }
 
     setErrors(newErrors);

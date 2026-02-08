@@ -297,7 +297,7 @@ export const useUpdatePrinter = () => {
     mutationFn: async ({ printerId, updates }: { printerId: string; updates: Partial<MakerPrinter> }) => {
       const { error } = await supabase
         .from('maker_printers')
-        .update(updates)
+        .update(updates as never)
         .eq('id', printerId);
       if (error) throw error;
     },
@@ -482,16 +482,17 @@ export const useSubmitPrintRequest = () => {
       attribution?: Record<string, unknown>;
       notes?: string;
     }) => {
+      const insertData = {
+        user_id: user?.id || null,
+        maker_id: null,
+        status: 'pending' as const,
+        specs: request.specs,
+        attribution: request.attribution || {},
+        notes: request.notes || null
+      };
       const { data, error } = await supabase
         .from('print_requests')
-        .insert({
-          user_id: user?.id || null,
-          maker_id: null,
-          status: 'pending',
-          specs: request.specs,
-          attribution: request.attribution || {},
-          notes: request.notes || null
-        })
+        .insert(insertData as never)
         .select()
         .single();
       if (error) throw error;

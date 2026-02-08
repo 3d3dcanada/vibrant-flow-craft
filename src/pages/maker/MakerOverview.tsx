@@ -218,21 +218,24 @@ const MakerOverview = () => {
             Recent Requests
           </h3>
           <div className="space-y-3">
-            {[...pendingRequests, ...makerRequests].slice(0, 5).map(req => (
-              <div key={req.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                <div>
-                  <div className="text-sm font-medium">
-                    {req.specs?.material || 'PLA'} - {req.specs?.quantity || 1} pcs
+            {[...pendingRequests, ...makerRequests].slice(0, 5).map(req => {
+              const specs = req.specs as Record<string, unknown> | null;
+              return (
+                <div key={req.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                  <div>
+                    <div className="text-sm font-medium">
+                      {String(specs?.material || 'PLA')} - {String(specs?.quantity || 1)} pcs
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(req.created_at).toLocaleDateString()}
+                    </div>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {new Date(req.created_at).toLocaleDateString()}
-                  </div>
+                  <Badge variant={req.status === 'pending' ? 'secondary' : 'outline'}>
+                    {req.status}
+                  </Badge>
                 </div>
-                <Badge variant={req.status === 'pending' ? 'secondary' : 'outline'}>
-                  {req.status}
-                </Badge>
-              </div>
-            ))}
+              );
+            })}
             {pendingRequests.length === 0 && makerRequests.length === 0 && (
               <p className="text-center text-muted-foreground py-8">No requests yet</p>
             )}
