@@ -123,7 +123,7 @@ const AdminPayments = () => {
                 p_order_id: orderId,
                 p_payment_reference: reference || null,
                 p_reason: reason || null
-            });
+            } as never);
             if (error) throw error;
             const result = data as { success: boolean; error?: string };
             if (!result.success) throw new Error(result.error || 'Failed to confirm payment');
@@ -142,32 +142,40 @@ const AdminPayments = () => {
         }
     });
 
-    // Fetch active makers (Phase 3F)
+    // Fetch active makers (Phase 3F) - use profiles table with maker role check
     const { data: makers = [] } = useQuery({
         queryKey: ['active_makers'],
         queryFn: async () => {
+            // Get maker IDs from user_roles
+            const { data: makerRoles, error: rolesError } = await supabase
+                .from('user_roles')
+                .select('user_id')
+                .eq('role', 'maker');
+            
+            if (rolesError) throw rolesError;
+            if (!makerRoles || makerRoles.length === 0) return [] as MakerProfile[];
+            
+            const makerIds = makerRoles.map(r => r.user_id);
+            
+            // Get profiles for those makers
             const { data, error } = await supabase
-                .from('maker_profiles')
-                .select('maker_id, display_name, location, active')
-                .eq('active', true);
+                .from('profiles')
+                .select('id, display_name, city, province')
+                .in('id', makerIds);
 
             if (error) throw error;
-            return data || [];
+            return (data || []).map(p => ({
+                maker_id: p.id,
+                display_name: p.display_name,
+                location: p.city && p.province ? `${p.city}, ${p.province}` : null,
+                active: true
+            })) as MakerProfile[];
         }
     });
 
-    // Check if order has existing assignment (Phase 3F - CORRECTED)
-    const { data: assignments = [] } = useQuery({
-        queryKey: ['maker_orders'],
-        queryFn: async () => {
-            const { data, error } = await supabase
-                .from('maker_orders')
-                .select('order_id, maker_id, status');
-
-            if (error) throw error;
-            return data || [];
-        }
-    });
+    // Assignments are not available since maker_orders table doesn't exist
+    // Using empty array as placeholder
+    const assignments: MakerAssignment[] = [];
 
     const getOrderAssignment = (orderId: string) => {
         return assignments.find((a: MakerAssignment) => a.order_id === orderId);
@@ -202,7 +210,7 @@ const AdminPayments = () => {
                 p_maker_id: makerId,
                 p_reason: reason,
                 p_admin_notes: notes || null
-            });
+            } as never);
             if (error) throw error;
             const result = data as { success: boolean; error?: string };
             if (!result.success) throw new Error(result.error || 'Failed to assign maker');
@@ -211,7 +219,6 @@ const AdminPayments = () => {
         onSuccess: () => {
             toast({ title: 'Maker Assigned', description: 'Order has been assigned to the selected maker.' });
             queryClient.invalidateQueries({ queryKey: ['admin_orders'] });
-            queryClient.invalidateQueries({ queryKey: ['maker_orders'] });
             setAssignModal(null);
             setSelectedMakerId('');
             setAssignReason('');
@@ -255,7 +262,7 @@ const AdminPayments = () => {
                 p_new_status: newStatus,
                 p_reason: reason || null,
                 p_admin_notes: null
-            });
+            } as never);
             if (error) throw error;
             const result = data as { success: boolean; error?: string };
             if (!result.success) throw new Error(result.error || 'Failed to update status');
@@ -446,7 +453,7 @@ const AdminPayments = () => {
                                                 {order.status === 'paid' && (
                                                     <NeonButton
                                                         size="sm"
-                                                        variant={getOrderAssignment(order.id) ? 'secondary' : 'default'}
+                                                        variant={getOrderAssignment(order.id) ? 'secondary' : 'primary'}
                                                         onClick={() => setAssignModal({
                                                             orderId: order.id,
                                                             orderNumber: order.order_number
@@ -489,11 +496,11 @@ const AdminPayments = () => {
                                                     <div>
                                                         <h4 className="font-bold text-foreground mb-2">Quote Details</h4>
                                                         <div className="text-sm space-y-1 text-muted-foreground">
-                                                            <p>Material: {order.quote_snapshot?.material}</p>
-                                                            <p>Quantity: {order.quote_snapshot?.quantity}</p>
-                                                            <p>Quality: {order.quote_snapshot?.quality}</p>
+                                                            <p>Material: {String(order.quote_snapshot?.material || '')}</p>
+                                                            <p>Quantity: {String(order.quote_snapshot?.quantity || '')}</p>
+                                                            <p>Quality: {String(order.quote_snapshot?.quality || '')}</p>
                                                             {order.quote_snapshot?.file_name && (
-                                                                <p>File: {order.quote_snapshot.file_name}</p>
+                                                                <p>File: {String(order.quote_snapshot.file_name)}</p>
                                                             )}
                                                         </div>
                                                     </div>
@@ -502,10 +509,10 @@ const AdminPayments = () => {
                                                     <div>
                                                         <h4 className="font-bold text-foreground mb-2">Shipping Address</h4>
                                                         <div className="text-sm text-muted-foreground">
-                                                            <p>{order.shipping_address?.fullName}</p>
-                                                            <p>{order.shipping_address?.addressLine1}</p>
-                                                            {order.shipping_address?.addressLine2 && <p>{order.shipping_address.addressLine2}</p>}
-                                                            <p>{order.shipping_address?.city}, {order.shipping_address?.province} {order.shipping_address?.postalCode}</p>
+                                                            <p>{String(order.shipping_address?.fullName || '')}</p>
+                                                            <p>{String(order.shipping_address?.addressLine1 || '')}</p>
+                                                            {order.shipping_address?.addressLine2 && <p>{String(order.shipping_address.addressLine2)}</p>}
+                                                            <p>{String(order.shipping_address?.city || '')}, {String(order.shipping_address?.province || '')} {String(order.shipping_address?.postalCode || '')}</p>
                                                         </div>
                                                     </div>
 

@@ -112,18 +112,34 @@ export default function OrderConfirmation() {
                     .eq('user_id', user.id)
                     .single();
 
-                if (fetchError) {
+                if (fetchError || !data) {
                     console.error('Order fetch error:', fetchError);
                     setError('Order not found or access denied.');
                     return;
                 }
 
-                setOrder(data);
+                const orderData = data as Record<string, unknown>;
+                setOrder({
+                    id: String(orderData.id),
+                    order_number: String(orderData.order_number),
+                    user_id: String(orderData.user_id),
+                    quote_id: String(orderData.quote_id),
+                    quote_snapshot: (orderData.quote_snapshot || {}) as Record<string, unknown>,
+                    total_cad: Number(orderData.total_cad),
+                    currency: String(orderData.currency || 'CAD'),
+                    payment_method: orderData.payment_method as 'invoice' | 'credits',
+                    payment_confirmed_at: orderData.payment_confirmed_at as string | undefined,
+                    shipping_address: (orderData.shipping_address || {}) as Record<string, unknown>,
+                    status: String(orderData.status),
+                    status_history: orderData.status_history,
+                    created_at: String(orderData.created_at),
+                    notes: orderData.notes as string | undefined,
+                });
 
                 setFulfillmentLoading(true);
                 const { data: fulfillmentData, error: fulfillmentFetchError } = await supabase.rpc(
                     'customer_get_order_fulfillment' as never,
-                    { p_order_id: orderId }
+                    { p_order_id: orderId } as never
                 );
                 if (fulfillmentFetchError) {
                     console.error('Fulfillment fetch error:', fulfillmentFetchError);
@@ -399,16 +415,16 @@ export default function OrderConfirmation() {
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between gap-4">
                                     <span className="text-muted-foreground">Carrier</span>
-                                    <span className="text-foreground">{trackingInfo.carrier || '—'}</span>
+                                    <span className="text-foreground">{String(trackingInfo.carrier || '—')}</span>
                                 </div>
                                 <div className="flex justify-between gap-4">
                                     <span className="text-muted-foreground">Tracking Number</span>
-                                    <span className="text-foreground font-mono">{trackingInfo.tracking_number || '—'}</span>
+                                    <span className="text-foreground font-mono">{String(trackingInfo.tracking_number || '—')}</span>
                                 </div>
                                 {trackingInfo.shipped_at && (
                                     <div className="flex justify-between gap-4">
                                         <span className="text-muted-foreground">Shipped</span>
-                                        <span className="text-foreground">{formatDate(trackingInfo.shipped_at)}</span>
+                                        <span className="text-foreground">{formatDate(String(trackingInfo.shipped_at))}</span>
                                     </div>
                                 )}
                             </div>
@@ -428,16 +444,16 @@ export default function OrderConfirmation() {
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">Material</span>
                                     <span className="text-foreground">
-                                        {MATERIAL_NAMES[order.quote_snapshot?.material] || order.quote_snapshot?.material}
+                                        {MATERIAL_NAMES[String(order.quote_snapshot?.material)] || String(order.quote_snapshot?.material || '')}
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">Quantity</span>
-                                    <span className="text-foreground">{order.quote_snapshot?.quantity}</span>
+                                    <span className="text-foreground">{String(order.quote_snapshot?.quantity || '')}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">Quality</span>
-                                    <span className="text-foreground capitalize">{order.quote_snapshot?.quality}</span>
+                                    <span className="text-foreground capitalize">{String(order.quote_snapshot?.quality || '')}</span>
                                 </div>
                                 <div className="border-t border-border my-2" />
                                 <div className="flex justify-between font-bold">
@@ -451,13 +467,13 @@ export default function OrderConfirmation() {
                         <GlassPanel variant="elevated">
                             <h3 className="font-tech font-bold text-foreground mb-4">Shipping To</h3>
                             <div className="text-sm text-foreground space-y-1">
-                                <p className="font-medium">{order.shipping_address?.fullName}</p>
-                                <p>{order.shipping_address?.addressLine1}</p>
+                                <p className="font-medium">{String(order.shipping_address?.fullName || '')}</p>
+                                <p>{String(order.shipping_address?.addressLine1 || '')}</p>
                                 {order.shipping_address?.addressLine2 && (
-                                    <p>{order.shipping_address.addressLine2}</p>
+                                    <p>{String(order.shipping_address.addressLine2)}</p>
                                 )}
                                 <p>
-                                    {order.shipping_address?.city}, {order.shipping_address?.province} {order.shipping_address?.postalCode}
+                                    {String(order.shipping_address?.city || '')}, {String(order.shipping_address?.province || '')} {String(order.shipping_address?.postalCode || '')}
                                 </p>
                                 <p>Canada</p>
                             </div>

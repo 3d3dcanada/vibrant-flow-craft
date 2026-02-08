@@ -146,9 +146,9 @@ const MakerRequests = () => {
               {new Date(request.created_at).toLocaleDateString()}
             </span>
           </div>
-          {request.attribution?.source_platform && (
+          {(request.attribution as Record<string, unknown>)?.source_platform && (
             <Badge variant="outline" className="text-xs">
-              {request.attribution.source_platform}
+              {String((request.attribution as Record<string, unknown>).source_platform)}
             </Badge>
           )}
         </div>
@@ -157,27 +157,27 @@ const MakerRequests = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
           <div>
             <div className="text-xs text-muted-foreground">Material</div>
-            <div className="text-sm font-medium">{request.specs?.material || request.specs?.materialType || 'PLA'}</div>
+            <div className="text-sm font-medium">{String(request.specs?.material || request.specs?.materialType || 'PLA')}</div>
           </div>
           <div>
             <div className="text-xs text-muted-foreground">Color</div>
-            <div className="text-sm font-medium">{request.specs?.color || 'Any'}</div>
+            <div className="text-sm font-medium">{String(request.specs?.color || 'Any')}</div>
           </div>
           <div>
             <div className="text-xs text-muted-foreground">Size</div>
-            <div className="text-sm font-medium capitalize">{request.specs?.jobSize || 'Medium'}</div>
+            <div className="text-sm font-medium capitalize">{String(request.specs?.jobSize || 'Medium')}</div>
           </div>
           <div>
             <div className="text-xs text-muted-foreground">Quantity</div>
-            <div className="text-sm font-medium">{request.specs?.quantity || 1}</div>
+            <div className="text-sm font-medium">{String(request.specs?.quantity || 1)}</div>
           </div>
         </div>
 
         {/* Extra specs */}
         {(request.specs?.grams || request.specs?.hours) && (
           <div className="flex gap-4 mb-4 text-xs text-muted-foreground">
-            {request.specs?.grams && <span>Weight: {request.specs.grams}g</span>}
-            {request.specs?.hours && <span>Est. Time: {request.specs.hours.toFixed(1)}h</span>}
+            {request.specs?.grams && <span>Weight: {String(request.specs.grams)}g</span>}
+            {request.specs?.hours && <span>Est. Time: {Number(request.specs.hours).toFixed(1)}h</span>}
             {request.specs?.deliverySpeed && (
               <Badge variant={request.specs.deliverySpeed === 'emergency' ? 'destructive' : 'outline'} className="text-xs">
                 {request.specs.deliverySpeed === 'emergency' ? 'RUSH' : 'Standard'}
@@ -194,24 +194,24 @@ const MakerRequests = () => {
         </div>
 
         {/* Attribution */}
-        {request.attribution?.model_url && (
+        {(request.attribution as Record<string, unknown>)?.model_url && (
           <div className="p-3 rounded-lg bg-muted/20 border border-border/50 mb-4">
             <div className="flex items-center gap-2 mb-2">
               <ExternalLink className="w-3 h-3 text-secondary" />
               <span className="text-xs font-medium">Model Source</span>
             </div>
             <a 
-              href={request.attribution.model_url} 
+              href={String((request.attribution as Record<string, unknown>).model_url)} 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-xs text-secondary hover:underline truncate block"
             >
-              {request.attribution.model_url}
+              {String((request.attribution as Record<string, unknown>).model_url)}
             </a>
-            {request.attribution.designer_name && (
+            {(request.attribution as Record<string, unknown>).designer_name && (
               <div className="flex items-center gap-1 mt-1">
                 <User className="w-3 h-3" />
-                <span className="text-xs">{request.attribution.designer_name}</span>
+                <span className="text-xs">{String((request.attribution as Record<string, unknown>).designer_name)}</span>
               </div>
             )}
           </div>
@@ -227,7 +227,7 @@ const MakerRequests = () => {
         {/* Estimated Total */}
         {request.specs?.estimatedTotal && (
           <div className="text-sm font-medium text-secondary mb-4">
-            Est. Total: ${request.specs.estimatedTotal.toFixed(2)} CAD
+            Est. Total: ${Number(request.specs.estimatedTotal).toFixed(2)} CAD
           </div>
         )}
 

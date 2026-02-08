@@ -30,6 +30,18 @@ type PointActivity = {
   points: number;
 };
 
+// Helper to safely extract print request data
+const toPrintRequestSummary = (data: unknown): PrintRequestSummary => {
+  const item = data as Record<string, unknown>;
+  const specs = item.specs as Record<string, unknown> | null | undefined;
+  return {
+    id: String(item.id || ''),
+    created_at: String(item.created_at || ''),
+    status: String(item.status || ''),
+    specs: specs ? { material: specs.material as string | null | undefined } : null
+  };
+};
+
 const CustomerDashboard = () => {
   const { signOut } = useAuth();
   const { toast } = useToast();
@@ -267,28 +279,31 @@ const CustomerDashboard = () => {
                   </div>
                 ) : printRequests && printRequests.length > 0 ? (
                   <div className="space-y-3 max-h-64 overflow-y-auto">
-                    {printRequests.slice(0, 5).map((request: PrintRequestSummary) => (
-                      <div
-                        key={request.id}
-                        className="flex items-center justify-between p-3 rounded-lg bg-background/50 border border-primary/10"
-                      >
-                        <div className="min-w-0">
-                          <div className="text-sm font-medium text-foreground truncate">
-                            {request.specs?.material || 'Print Request'}
+                    {printRequests.slice(0, 5).map((rawRequest) => {
+                      const request = toPrintRequestSummary(rawRequest);
+                      return (
+                        <div
+                          key={request.id}
+                          className="flex items-center justify-between p-3 rounded-lg bg-background/50 border border-primary/10"
+                        >
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium text-foreground truncate">
+                              {request.specs?.material || 'Print Request'}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {new Date(request.created_at).toLocaleDateString('en-CA')}
+                            </div>
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            {new Date(request.created_at).toLocaleDateString('en-CA')}
-                          </div>
+                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${request.status === 'pending' ? 'bg-warning/20 text-warning' :
+                            request.status === 'claimed' ? 'bg-secondary/20 text-secondary' :
+                              request.status === 'accepted' ? 'bg-success/20 text-success' :
+                                'bg-muted/20 text-muted-foreground'
+                            }`}>
+                            {request.status}
+                          </span>
                         </div>
-                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${request.status === 'pending' ? 'bg-warning/20 text-warning' :
-                          request.status === 'claimed' ? 'bg-secondary/20 text-secondary' :
-                            request.status === 'accepted' ? 'bg-success/20 text-success' :
-                              'bg-muted/20 text-muted-foreground'
-                          }`}>
-                          {request.status}
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">

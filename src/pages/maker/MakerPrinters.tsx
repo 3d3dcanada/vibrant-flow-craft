@@ -203,15 +203,15 @@ const MakerPrinters = () => {
                 </Badge>
               </div>
               
-              {lastStatus?.temps && (
+              {(lastStatus as Record<string, unknown>)?.temps && (
                 <div className="flex gap-4 text-xs text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <Thermometer className="w-3 h-3" />
-                    Bed: {lastStatus.temps.bed?.toFixed(1) || '--'}°C
+                    Bed: {String(((lastStatus as Record<string, unknown>).temps as Record<string, number>)?.bed?.toFixed?.(1) || '--')}°C
                   </div>
                   <div className="flex items-center gap-1">
                     <Thermometer className="w-3 h-3" />
-                    Hotend: {lastStatus.temps.hotend?.toFixed(1) || '--'}°C
+                    Hotend: {String(((lastStatus as Record<string, unknown>).temps as Record<string, number>)?.hotend?.toFixed?.(1) || '--')}°C
                   </div>
                 </div>
               )}

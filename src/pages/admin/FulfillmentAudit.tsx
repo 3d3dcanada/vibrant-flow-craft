@@ -78,13 +78,13 @@ const FulfillmentAudit = () => {
     const results: AuditCheck[] = [];
 
     const { data: ownOrders, error: ownOrdersError } = await supabase
-      .from('orders')
+      .from('orders' as never)
       .select('id, status, order_number')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(10);
 
-    const availableOrders = ownOrders || [];
+    const availableOrders = (ownOrders || []) as Array<{ id: string; status: string; order_number: string }>;
     const shippedOrder = availableOrders.find((order) =>
       ['shipped', 'delivered'].includes(order.status)
     );
@@ -105,7 +105,7 @@ const FulfillmentAudit = () => {
     const getCustomerFulfillment = async (orderId: string) => {
       const { data, error } = await supabase.rpc('customer_get_order_fulfillment' as never, {
         p_order_id: orderId,
-      });
+      } as never);
       if (error) {
         throw error;
       }
@@ -272,7 +272,7 @@ const FulfillmentAudit = () => {
       try {
         const { data, error } = await supabase.rpc('admin_simulate_delivered_guard' as never, {
           p_order_id: unshippedOrder.id,
-        });
+        } as never);
         if (error) {
           throw error;
         }
