@@ -1,15 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import '@/contexts/AuthContext';
 import { useProfile, useSubscription, useCreditWallet, usePointWallet, useReferralCode, usePointTransactions } from '@/hooks/useUserData';
 import { useUserPrintRequests, useUserQuotes, useUserOrders } from '@/hooks/useCustomerData';
-import { ParticleBackground } from '@/components/ui/ParticleBackground';
-import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 import { NeonButton } from '@/components/ui/NeonButton';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { RepositoryDrawer } from '@/components/repositories/RepositoryDrawer';
+import DashboardLayout from '@/components/layouts/DashboardLayout';
 import {
-  Coins, Recycle, Gift, Settings, LogOut,
+  Coins, Recycle, Gift,
   Sparkles, Crown, Zap, Star, Package, FileText, Search,
   CreditCard, Lightbulb, Box, Layers, Target, Shield, Copy, Check,
   Loader2, ShoppingBag
@@ -43,7 +42,6 @@ const toPrintRequestSummary = (data: unknown): PrintRequestSummary => {
 };
 
 const CustomerDashboard = () => {
-  const { signOut } = useAuth();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [repositoryOpen, setRepositoryOpen] = useState(false);
@@ -57,10 +55,6 @@ const CustomerDashboard = () => {
   const { data: printRequests, isLoading: requestsLoading } = useUserPrintRequests();
   const { data: quotes, isLoading: quotesLoading } = useUserQuotes(5);
   const { data: orders, isLoading: ordersLoading } = useUserOrders(5);
-
-  const handleSignOut = async () => {
-    await signOut();
-  };
 
   const copyReferralCode = () => {
     if (referralCode?.code) {
@@ -121,34 +115,9 @@ const CustomerDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background relative">
-      <ParticleBackground />
-
+    <DashboardLayout>
       <div className="relative z-10">
-        {/* Header */}
-        <header className="border-b border-primary/10 bg-background/80 backdrop-blur-xl sticky top-0 z-50">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <Link to="/">
-              <AnimatedLogo size="sm" />
-            </Link>
-
-            <div className="flex items-center gap-4">
-              <Link to="/dashboard/settings">
-                <button className="p-2 hover:bg-primary/10 rounded-lg transition-colors">
-                  <Settings className="w-5 h-5 text-muted-foreground" />
-                </button>
-              </Link>
-              <button
-                onClick={handleSignOut}
-                className="p-2 hover:bg-destructive/10 rounded-lg transition-colors"
-              >
-                <LogOut className="w-5 h-5 text-muted-foreground" />
-              </button>
-            </div>
-          </div>
-        </header>
-
-        <main className="container mx-auto px-4 py-8">
+        <main className="container mx-auto px-4 py-6">
           {/* Welcome Section */}
           <div className="mb-8 animate-fade-in">
             <div className="flex items-center justify-between flex-wrap gap-4">
@@ -505,13 +474,13 @@ const CustomerDashboard = () => {
                   </div>
                 ))}
               </div>
-            </GlowCard>
+          </GlowCard>
           </div>
         </main>
       </div>
 
       <RepositoryDrawer isOpen={repositoryOpen} onClose={() => setRepositoryOpen(false)} />
-    </div>
+    </DashboardLayout>
   );
 };
 

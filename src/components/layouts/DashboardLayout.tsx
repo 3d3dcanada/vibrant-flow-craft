@@ -5,6 +5,7 @@ import { useProfile, useSubscription, useCreditWallet, usePointWallet } from '@/
 import { usePrimaryRole } from '@/hooks/useUserRoles';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 import { ParticleBackground } from '@/components/ui/ParticleBackground';
+import { BottomNav } from '@/components/navigation/BottomNav';
 import { 
   LayoutDashboard, Coins, Sparkles, Recycle, Gift, Settings, 
   LogOut, ChevronLeft, ChevronRight, Crown, Zap, Star, Package,
@@ -22,7 +23,7 @@ interface NavItem {
 
 // Customer-only navigation (NOT shown to makers)
 const customerNav: NavItem[] = [
-  { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
+  { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard/customer' },
   { label: 'Credits Store', icon: CreditCard, href: '/dashboard/credits' },
   { label: 'Rewards Center', icon: Sparkles, href: '/dashboard/rewards' },
   { label: 'Achievements', icon: Trophy, href: '/dashboard/achievements' },
@@ -99,8 +100,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   };
 
   const isActive = (href: string) => {
-    if (href === '/dashboard') {
-      return location.pathname === '/dashboard';
+    if (href === '/dashboard' || href === '/dashboard/customer' || href === '/dashboard/maker' || href === '/dashboard/admin') {
+      return location.pathname === href;
     }
     return location.pathname.startsWith(href);
   };
@@ -281,21 +282,23 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         <SidebarContent />
       </aside>
 
-      {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 h-16 bg-card/90 backdrop-blur-xl border-b border-border/50 flex items-center justify-between px-4">
-        <button
-          onClick={() => setMobileOpen(true)}
-          className="p-2 hover:bg-muted/50 rounded-lg transition-colors"
-        >
-          <Menu className="w-6 h-6 text-foreground" />
-        </button>
-        <AnimatedLogo size="sm" />
-        <div className="flex items-center gap-2">
-          <div className="text-xs font-medium text-secondary">{creditWallet?.balance || 0} credits</div>
+      {/* Mobile Header - compact top bar */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 h-14 bg-card/95 backdrop-blur-xl border-b border-border/50 flex items-center justify-between px-4">
+        <Link to="/">
+          <AnimatedLogo size="sm" />
+        </Link>
+        <div className="flex items-center gap-3">
+          <div className="text-xs font-tech font-medium text-secondary">{creditWallet?.balance || 0} cr</div>
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="p-2 hover:bg-muted/50 rounded-lg transition-colors"
+          >
+            <Menu className="w-5 h-5 text-foreground" />
+          </button>
         </div>
       </div>
 
-      {/* Mobile Sidebar Overlay */}
+      {/* Mobile Sidebar Overlay (for full nav access) */}
       {mobileOpen && (
         <>
           <div
@@ -317,9 +320,12 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 relative z-10 lg:pt-0 pt-16 min-w-0">
+      <main className="flex-1 relative z-10 lg:pt-0 pt-14 pb-20 lg:pb-0 min-w-0">
         {children || <Outlet />}
       </main>
+
+      {/* Bottom Navigation - Mobile only */}
+      <BottomNav role={primaryRole} />
     </div>
   );
 };
